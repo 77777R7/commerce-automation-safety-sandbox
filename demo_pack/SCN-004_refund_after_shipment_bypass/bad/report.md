@@ -1,6 +1,6 @@
 # Commerce Safety Report: refund_after_shipment_bypass
 
-- Run ID: `run_20260529T195554905642Z_SCN-004_bad_runner`
+- Run ID: `run_20260529T200609102154Z_SCN-004_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
 
@@ -90,4 +90,4 @@ Treat shipped or carrier-scanned orders as approval-required before issuing refu
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T195554905642Z_SCN-004_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T200609102154Z_SCN-004_bad_runner` to print the recorded timeline from `trace.json`.
