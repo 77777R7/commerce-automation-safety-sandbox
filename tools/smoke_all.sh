@@ -25,10 +25,12 @@ echo "== Offline Audit smoke gates =="
 
 echo "== Demo pack generation and verification =="
 python3 tools/generate_demo_pack.py
+python3 tools/generate_demo_viewer.py
 python3 - <<'PY'
 from pathlib import Path
 
 root = Path("demo_pack")
+viewer = Path("demo_viewer")
 scenarios = [
     "SCN-001_duplicate_webhook_fulfillment",
     "SCN-002_timeout_after_commit_retry",
@@ -41,6 +43,12 @@ top_level = [
     "executive_summary.md",
     "sales_one_pager.md",
     "demo_walkthrough.md",
+]
+viewer_files = [
+    "index.html",
+    "styles.css",
+    "app.js",
+    "demo-data.js",
 ]
 scenario_files = [
     "bad_report.md",
@@ -60,6 +68,26 @@ missing = []
 for filename in top_level:
     if not (root / filename).is_file():
         missing.append(str(root / filename))
+
+for filename in viewer_files:
+    if not (viewer / filename).is_file():
+        missing.append(str(viewer / filename))
+
+viewer_html = (viewer / "index.html").read_text(encoding="utf-8")
+viewer_js = (viewer / "app.js").read_text(encoding="utf-8")
+viewer_data = (viewer / "demo-data.js").read_text(encoding="utf-8")
+required_snippets = [
+    "Commerce Automation Safety Sandbox",
+    "gsap.min.js",
+    "Business risk summary",
+]
+for snippet in required_snippets:
+    if snippet not in viewer_html:
+        missing.append(f"demo_viewer/index.html missing {snippet!r}")
+if "window.gsap" not in viewer_js:
+    missing.append("demo_viewer/app.js missing GSAP runtime guard")
+if "SCN-005" not in viewer_data:
+    missing.append("demo_viewer/demo-data.js missing SCN-005 data")
 
 for scenario in scenarios:
     base = root / scenario

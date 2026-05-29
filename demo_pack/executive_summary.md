@@ -49,4 +49,4 @@
 - `policy_findings.md`：Policy Engine 抓到什么，为什么危险，怎么修。
 - `bad/` 和 `good/`：原始 `trace.json`、`policy_report.json`、`state_diff.json`、`report.md`。
 
-Generated at: `2026-05-29T05:58:01.623076+00:00`
+Generated at: `2026-05-29T06:38:24.703980+00:00`

@@ -83,6 +83,7 @@ verification.
 
 ## Demo And POC Materials
 
+- [Static demo viewer](demo_viewer/index.html)
 - [Demo pack guide](demo_pack/README.md)
 - [Executive summary](demo_pack/executive_summary.md)
 - [Sales one-pager](demo_pack/sales_one_pager.md)
@@ -90,6 +91,12 @@ verification.
 - [Demo/POC readiness](docs/DEMO_POC_READINESS.md)
 - [Offline Audit POC playbook](docs/OFFLINE_AUDIT_POC_PLAYBOOK.md)
 - [POC input templates](poc_templates/)
+
+Open the static demo viewer locally:
+
+```bash
+open demo_viewer/index.html
+```
 
 ## Known Issues / Current Limits
 

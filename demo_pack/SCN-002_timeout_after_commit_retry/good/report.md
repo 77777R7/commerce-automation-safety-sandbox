@@ -1,6 +1,6 @@
 # Commerce Safety Report: timeout_after_commit_retry
 
-- Run ID: `run_20260529T055801586936Z_SCN-002_good_runner`
+- Run ID: `run_20260529T063815342075Z_SCN-002_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
 
@@ -47,4 +47,4 @@ The automation treated timeout-after-commit as an uncertain state, reused a stab
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T055801586936Z_SCN-002_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T063815342075Z_SCN-002_good_runner` to print the recorded timeline from `trace.json`.

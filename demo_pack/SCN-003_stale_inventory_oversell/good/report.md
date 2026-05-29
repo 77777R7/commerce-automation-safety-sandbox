@@ -1,6 +1,6 @@
 # Commerce Safety Report: stale_inventory_oversell
 
-- Run ID: `run_20260529T055801597579Z_SCN-003_good_runner`
+- Run ID: `run_20260529T063818049896Z_SCN-003_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
 
@@ -47,4 +47,4 @@ The automation treated stale inventory as unsafe, refreshed the snapshot, and av
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T055801597579Z_SCN-003_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T063818049896Z_SCN-003_good_runner` to print the recorded timeline from `trace.json`.

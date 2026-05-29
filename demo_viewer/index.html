@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Commerce Safety Demo Viewer</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to demo</a>
+    <header class="topbar" aria-label="Demo navigation">
+      <div class="brand-lockup" aria-label="Commerce Safety Demo Viewer">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Commerce Safety</span>
+      </div>
+      <nav class="top-actions" aria-label="Sections">
+        <a href="#scenarios">Scenarios</a>
+        <a href="#offline-audit">Offline Audit</a>
+        <a href="#gate">Gate</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Pre-production crash test layer</p>
+          <h1 id="hero-title">Commerce Automation Safety Sandbox</h1>
+          <p class="hero-subtitle">
+            A boardroom-readable demo of five commerce automation accidents:
+            duplicate fulfillment, unsafe retry, oversell, refund bypass, and
+            warehouse conflict. Each case uses the same scenario to compare a
+            bad automation path against a safe one.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#scenarios">Review accidents</a>
+            <a class="button secondary" href="#offline-audit">See POC audit</a>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Demo health overview">
+          <div class="signal-strip">
+            <span class="status-dot failed"></span>
+            <span>Bad automation fails safely in test</span>
+          </div>
+          <div class="hero-metrics" id="heroMetrics"></div>
+          <div class="state-flow" aria-hidden="true">
+            <span>Webhook</span>
+            <i></i>
+            <span>Twin state</span>
+            <i></i>
+            <span>Policy finding</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="viewer-shell" id="scenarios" aria-label="Scenario viewer">
+        <aside class="scenario-rail" aria-label="P0 scenarios">
+          <p class="section-label">P0 accident library</p>
+          <div id="scenarioNav" class="scenario-nav"></div>
+        </aside>
+
+        <section class="case-workspace" aria-live="polite">
+          <div class="case-header">
+            <div>
+              <p class="case-kicker" id="caseId"></p>
+              <h2 id="caseTitle"></h2>
+            </div>
+            <div class="runner-toggle" role="group" aria-label="Timeline runner">
+              <button type="button" class="toggle active" data-runner="bad">Bad runner</button>
+              <button type="button" class="toggle" data-runner="good">Good runner</button>
+            </div>
+          </div>
+
+          <div class="comparison-grid" id="comparisonGrid"></div>
+
+          <section class="risk-panel" aria-labelledby="risk-title">
+            <p class="section-label">Business risk summary</p>
+            <h3 id="risk-title"></h3>
+            <p id="riskPolicy" class="policy-chip"></p>
+            <p id="riskImpact"></p>
+            <p id="riskRecommendation"></p>
+          </section>
+
+          <div class="detail-grid">
+            <section class="timeline-panel" aria-labelledby="timeline-title">
+              <div class="panel-heading">
+                <p class="section-label">Replay timeline</p>
+                <h3 id="timeline-title">Recorded state sequence</h3>
+              </div>
+              <ol id="timelineList" class="timeline-list"></ol>
+            </section>
+
+            <section class="findings-panel" aria-labelledby="findings-title">
+              <div class="panel-heading">
+                <p class="section-label">Policy engine</p>
+                <h3 id="findings-title">Findings and evidence</h3>
+              </div>
+              <div id="findingsList" class="findings-list"></div>
+            </section>
+          </div>
+
+          <section class="state-panel" aria-labelledby="state-title">
+            <div class="panel-heading">
+              <p class="section-label">State diff</p>
+              <h3 id="state-title">What changed in the commerce twin</h3>
+            </div>
+            <div id="stateDiff" class="state-diff"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="offline-band" id="offline-audit" aria-labelledby="offline-title">
+        <div>
+          <p class="section-label">First sellable wedge</p>
+          <h2 id="offline-title">Offline Fulfillment Automation Audit</h2>
+          <p id="offlineAsk"></p>
+        </div>
+        <div class="audit-proof" id="auditProof"></div>
+      </section>
+
+      <section class="gate-band" id="gate" aria-labelledby="gate-title">
+        <p class="section-label">Launch gate</p>
+        <h2 id="gate-title">If policy findings exist, automation does not go live.</h2>
+        <p>
+          This viewer is generated from the same raw artifacts as the CLI:
+          trace, policy report, state diff, and markdown report.
+        </p>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="demo-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

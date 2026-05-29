@@ -1,10 +1,10 @@
 {
-  "run_id": "run_20260529T055801608192Z_SCN-004_good_runner",
+  "run_id": "run_20260529T063819780760Z_SCN-004_good_runner",
   "scenario_id": "SCN-004",
   "scenario_name": "refund_after_shipment_bypass",
   "runner": "good_runner",
   "status": "passed",
-  "generated_at": "2026-05-29T05:58:01.608264+00:00",
+  "generated_at": "2026-05-29T06:38:19.780841+00:00",
   "initial_state": {
     "orders": {
       "order_4001": {
