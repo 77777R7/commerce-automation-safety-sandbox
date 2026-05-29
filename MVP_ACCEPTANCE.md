@@ -1,10 +1,22 @@
-# MVP Acceptance Contract
+# V3.5 Acceptance Contract
 
-This document defines the non-negotiable behavior for the current Week 1 MVP.
+This document defines the non-negotiable behavior for the Commerce Automation
+Safety Sandbox. It preserves the existing incident core and rebaselines V3.5
+toward Live Agent Sandbox-first execution.
+
+V3.5 core narrative:
+
+```txt
+External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+```
+
+MCP is not optional for V3.5. HTTP Twin API and action-log replay are also
+required surfaces. Offline Audit remains a supporting entrypoint and no longer
+defines the mainline.
 
 ## Hard Rules
 
-1. CLI-first only.
+1. V3.5 is Live Agent Sandbox-first.
 2. The twin is permissive: bad actions must be allowed to mutate state.
 3. Policy Engine detects incidents after the twin records state changes.
 4. Policy findings must make `commerce-safety run` exit non-zero by default.
@@ -26,6 +38,142 @@ This document defines the non-negotiable behavior for the current Week 1 MVP.
    order quantity, not use a naive `reserved > 1` check.
 10. Duplicate webhook detection should track duplicate side effects generally.
     The current slice must at least include reservations and fulfillments.
+11. Every stage must define a strict gate and pass it before the next stage.
+12. V3.5 live validation must prove unsafe and safe external-agent paths without
+    relying only on internal `bad_runner` / `good_runner`.
+
+## Stage Gate Acceptance
+
+Stage 0 through Stage 8 must follow `ROADMAP.md`. The stage gates are:
+
+```txt
+Stage 0: ./tools/smoke_stage0_rebaseline.sh
+Stage 1: python -m pytest tests/test_live_session_kernel.py
+         ./tools/smoke_stage1_live_session.sh
+Stage 2: python -m pytest tests/test_live_http_scn002.py
+         ./tools/smoke_stage2_http_scn002.sh
+Stage 3: python -m pytest tests/test_mcp_scn002.py
+         ./tools/smoke_stage3_mcp_scn002.sh
+Stage 4: python -m pytest tests/test_live_p0_coverage.py
+         ./tools/smoke_live_all.sh
+Stage 5: python -m pytest tests/test_action_log_gate.py
+         ./tools/smoke_stage5_action_log_gate.sh
+Stage 6: python -m pytest tests/test_agent_repair_artifacts.py
+         ./tools/smoke_stage6_repair_loop.sh
+Stage 7: python -m pytest tests/test_live_demo_pack.py
+         ./tools/smoke_stage7_demo_pack.sh
+Stage 8: ./tools/smoke_v35.sh
+```
+
+No stage is considered complete without fresh gate evidence.
+
+## Stage 0 Rebaseline Acceptance
+
+Gate:
+
+```bash
+./tools/smoke_stage0_rebaseline.sh
+```
+
+Acceptance:
+
+- `ROADMAP.md`, `AGENTS.md`, `MVP_ACCEPTANCE.md`, and `README.md` all identify
+  V3.5 as Live Agent Sandbox-first.
+- Source-of-truth docs state that MCP is required for V3.5.
+- Source-of-truth docs include the narrative:
+  `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
+- Offline Audit is described as supporting or secondary.
+- `ROADMAP.md` defines Stage 0 through Stage 8 and gives each stage a gate.
+
+## Stage 1 Live Session Kernel Acceptance
+
+Acceptance:
+
+- `LiveSession` and `SessionManager` exist.
+- A session can load `SCN-002_timeout_after_commit_retry`.
+- Manual twin calls can mutate state inside one session without affecting another
+  session created from the same scenario.
+- `complete_session` writes:
+  - `trace.json`
+  - `policy_report.json`
+  - `state_diff.json`
+  - `report.md`
+  - `patch_hints.md`
+  - `patch_hints.json`
+
+## Stage 2 HTTP Twin API Vertical Slice Acceptance
+
+Acceptance:
+
+- `commerce-safety live serve` starts a local server.
+- `POST /sessions` creates an isolated session.
+- `GET /sessions/{session_id}/tasks/next` returns the seeded SCN-002 task.
+- `POST /sessions/{session_id}/twin/create_fulfillment` mutates the twin.
+- `GET /sessions/{session_id}/trace` returns recorded events.
+- `POST /sessions/{session_id}/complete` evaluates policies and writes artifacts.
+- External unsafe Python script fails and external safe Python script passes.
+
+## Stage 3 MCP Interface MVP Acceptance
+
+Acceptance:
+
+- MCP tools exist for:
+  - `commerce.start_session`
+  - `commerce.get_task`
+  - `commerce.create_fulfillment`
+  - `commerce.find_fulfillment`
+  - `commerce.complete_session`
+  - `commerce.get_trace`
+  - `commerce.get_policy_report`
+  - `commerce.get_patch_hints`
+- `SCN-002` unsafe/safe proof can run only through MCP tool calls.
+- The proof does not require CLI `bad_runner` or `good_runner`.
+
+## Stage 4 Five P0 Live Coverage Acceptance
+
+Acceptance:
+
+- All five P0 scenarios have external unsafe and external safe live flows.
+- Unsafe flows fail with policy findings.
+- Safe flows pass with zero findings.
+- Live artifact set is written for every run.
+
+## Stage 5 Action Log Adapter + CI Gate Acceptance
+
+Acceptance:
+
+- `commerce-safety live from-action-log` can replay at least SCN-004 refund logs.
+- `commerce-safety gate` exits `1` for unsafe logs.
+- `commerce-safety gate` exits `0` for safe logs.
+- `--json` returns session id, status, artifacts, and findings.
+
+## Stage 6 Agent-Readable Repair Loop Acceptance
+
+Acceptance:
+
+- `patch_hints.json`, `agent_summary.md`, and `failure_explain.md` exist for live
+  failures.
+- Artifacts identify unsafe agent step, root cause, violated policy, likely
+  guardrail, replay command, and suggested repair.
+
+## Stage 7 V3.5 Demo Pack Acceptance
+
+Acceptance:
+
+- `demo_pack/live_agent_validation/` exists.
+- Docs exist:
+  - `docs/LIVE_AGENT_VALIDATION.md`
+  - `docs/MCP_AGENT_QUICKSTART.md`
+  - `docs/ACTION_LOG_POC.md`
+- Demo narrative is agent sandbox-first, not CLI-only.
+
+## Stage 8 Arga-Style Next Layer Acceptance
+
+Acceptance:
+
+- Stage 8 is split into separate sub-goals before implementation.
+- Stage 8 does not start until Stage 7 has passed.
+- `./tools/smoke_v35.sh` includes all completed stage gates.
 
 ## Current Baseline Scenario
 

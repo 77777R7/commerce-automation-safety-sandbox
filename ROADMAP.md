@@ -1,259 +1,371 @@
-# Commerce Automation Safety Sandbox Roadmap
+# Commerce Automation Safety Sandbox V3.5 Roadmap
 
-This roadmap keeps the MVP focused on the incident-validation core before any
-platform work.
+This roadmap supersedes the earlier Offline Audit-first roadmap. The product
+mainline is now `Live Agent Sandbox` first: external AI agents must be able to
+connect to a stateful commerce twin, make real commerce mutations under seeded
+scenario faults, and receive policy findings plus agent-readable repair
+artifacts.
+
+Core narrative:
+
+```txt
+External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+```
 
 ## Product Direction
 
-Build one commerce automation incident validation core with two future
-entrypoints:
+Build one commerce automation incident validation core with live agent testing
+as the primary entrypoint.
 
-- `Offline Fulfillment Automation Audit` for seller/operator POCs.
-- `Live Commerce Agent Validation` for agents, workflows, and SaaS builders.
+- Primary: `Live Commerce Agent Validation` for AI agents, workflows, and SaaS
+  builders.
+- Required V3.5 interface: MCP. MCP is not optional for V3.5 because agent
+  builders need a native tool interface.
+- Required V3.5 interface: HTTP Twin API for workflows, scripts, and non-MCP
+  clients.
+- Supporting entrypoint: `Offline Fulfillment Automation Audit` remains useful
+  for operators and POCs, but it is no longer the project mainline.
 
-The current repo is only implementing the Week 1 incident core demo.
+## Existing Foundation
 
-## Non-Goals For The Current Lane
+The repo already has a working incident core:
 
-Do not build these yet:
-
-- UI or dashboard.
-- API server.
-- GitHub App or PR check.
-- MCP server.
-- Offline Audit importer/reporting.
-- Full Shopify GraphQL skin.
-- Full Amazon SP-API subset.
-- Egress proxy.
-- Agent container.
-- Browser runner.
-- LLM buyer simulator.
-
-## Stage 0: Lock The Current Slice
-
-Goal: make `duplicate_webhook -> duplicate_fulfillment` a non-regression
-baseline.
-
-Scope:
-
-- Preserve the permissive twin pattern: unsafe mutations are allowed first,
-  then policies catch the incident.
-- Keep one shared scenario:
-  `commerce-safety-sandbox/scenarios/duplicate_webhook.yaml`.
-- Under that same scenario, `bad_runner` must fail and `good_runner` must pass.
-- `bad_runner` must exit non-zero by default when policy findings exist.
-- `good_runner` must exit zero.
-- Replay must read from `trace.json`, not rerun the scenario.
-- Run artifacts must include `trace.json`, `policy_report.json`,
-  `state_diff.json`, and `report.md`.
-
-Completion line:
-
-```bash
-./tools/smoke_week1.sh
-```
-
-## Stage 1: Finish Week 1 Flagship Scenarios
-
-Goal: prove the incident core across five deep scenarios before adding platform
-surface area.
-
-Canonical scenario library:
-
-- See `SCENARIO_LIBRARY.md`.
-- Do not add a sixth P0 flagship scenario.
-- Tracking timing, SKU mapping, timezone, and null discount issues are P1.
-- Each P0 scenario should tell one main accident.
-
-Scenario order:
-
-1. `SCN-001 duplicate_webhook_fulfillment` - done as the baseline slice.
-2. `SCN-002 timeout_after_commit_retry` - implemented.
-3. `SCN-003 stale_inventory_oversell` - implemented.
-4. `SCN-004 refund_after_shipment_bypass` - implemented.
-5. `SCN-005 cancel_after_pick_pack_conflict` - implemented.
-
-Each scenario must have:
-
-- One scenario YAML.
-- `bad_runner` failure.
-- `good_runner` pass.
-- Permissive twin mutation before policy evaluation.
-- Structured `PolicyFinding`.
-- Trace-based replay.
+- Five P0 commerce accident scenarios.
+- `Permissive Twin + Policy Check`.
+- `bad_runner` / `good_runner` CLI validation.
 - `trace.json`, `policy_report.json`, `state_diff.json`, and `report.md`.
+- Regression scenario capture.
+- Offline Audit v0.
+- Demo pack and static demo viewer.
 
-## Stage 2: Make Reports Demo-Ready
+Do not rewrite this foundation. V3.5 builds live agent validation on top of it.
 
-Goal: make the output understandable without reading code.
+## Current Non-Goals
 
-Add or tighten:
+Do not build these before the relevant stage gate asks for them:
 
-- Boss-readable executive summary.
-- Business impact language.
-- Recommended fixes.
-- Clear state change section.
-- Good-run explanation.
-- Demo pack with failing and passing reports for all five scenarios.
+- Full Shopify GraphQL implementation.
+- Full Amazon SP-API clone.
+- Hosted multi-tenant control plane.
+- Agent container, egress proxy, browser runner, or microVM runtime.
+- Buyer simulator or autonomous red-team buyer.
+- GitHub App / PR check before Stage 8.
+- Decorative dashboard polish before the live agent sandbox core works.
+- New P0 scenario classes.
 
-Completion line:
+## Global Stage Rule
+
+Each stage must have a named gate. Do not move to the next stage until the
+current stage gate passes in the current worktree.
+
+The complete V3.5 objective is not achieved until Stage 7 passes. Stage 8 is
+the Arga-style next layer after the live agent sandbox is real.
+
+## Stage 0: V3.5 Rebaseline
+
+Goal: move the project source of truth from Offline Audit-first to Live Agent
+Sandbox-first.
+
+Deliverables:
+
+- Update `ROADMAP.md`.
+- Update `AGENTS.md`.
+- Update `MVP_ACCEPTANCE.md`.
+- Update `README.md` if needed for public orientation.
+- Mark MCP as required for V3.5.
+- Mark Offline Audit as a supporting entrypoint, not the mainline.
+- Define strict gates for Stage 0 through Stage 8.
+
+Gate:
 
 ```bash
-./tools/smoke_week1.sh
-ls demo_pack/
+./tools/smoke_stage0_rebaseline.sh
 ```
 
-## Stage 3: Regression Scenario Library
+The gate must verify that source-of-truth docs contain:
 
-Goal: start turning failures into reusable test assets.
+- `Live Agent Sandbox-first`.
+- `MCP is not optional for V3.5`.
+- `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
+- `Offline Audit` described as supporting or secondary.
+- Stage 0 through Stage 8 sections.
 
-Minimal feature:
+## Stage 1: Live Session Kernel
+
+Goal: extract live validation session lifecycle before HTTP or MCP.
+
+Deliverables:
+
+- `LiveSession`.
+- `SessionManager`.
+- `complete_session`.
+- Shared artifact writer for live runs.
+- `patch_hints.md`.
+- `patch_hints.json`.
+
+Acceptance:
+
+- A session can load `SCN-002_timeout_after_commit_retry`.
+- A test can manually call twin methods inside that session.
+- `complete_session` evaluates policies and writes:
+  - `trace.json`
+  - `policy_report.json`
+  - `state_diff.json`
+  - `report.md`
+  - `patch_hints.md`
+  - `patch_hints.json`
+- Session state is isolated between two sessions created from the same scenario.
+
+Gate:
 
 ```bash
-./commerce-safety save-regression runs/<run_id> --name <name>
+python -m pytest tests/test_live_session_kernel.py
+./tools/smoke_stage1_live_session.sh
 ```
 
-Expected output:
+Do not proceed to Stage 2 until both commands pass.
+
+## Stage 2: HTTP Twin API Vertical Slice
+
+Goal: complete the first true external-agent demo over HTTP.
+
+Scope: only `SCN-002 timeout_after_commit_retry`.
+
+Deliverables:
 
 ```txt
-regressions/<name>/
-  scenario.yaml
-  trace.json
-  policy_report.json
-  state_diff.json
-  summary.md
+commerce-safety live serve
+POST /sessions
+GET /sessions/{session_id}/tasks/next
+POST /sessions/{session_id}/twin/create_fulfillment
+GET /sessions/{session_id}/trace
+POST /sessions/{session_id}/complete
 ```
 
-Rules:
+Acceptance:
 
-- Only failed runs with policy findings can be saved.
-- New runs preserve their source `scenario.yaml` inside the run directory.
-- `summary.md` must explain the incident, findings, saved artifacts, and future
-  regression gate in non-engineering language.
+- An external Python script calls the HTTP Twin API.
+- Unsafe path triggers `timeout_after_commit` and retries blindly.
+- Safe path uses a stable idempotency key and/or queries existing fulfillment.
+- Unsafe path fails with policy findings.
+- Safe path passes with zero findings.
+- API remains permissive: unsafe commerce actions mutate state first and are
+  caught by policy evaluation after completion.
 
-Completion line:
+Gate:
 
 ```bash
-./tools/smoke_stage3_regression.sh
+python -m pytest tests/test_live_http_scn002.py
+./tools/smoke_stage2_http_scn002.sh
 ```
 
-## Stage 3.5: Failure Intelligence Scenario Expansion
+## Stage 3: MCP Interface MVP
 
-Goal: keep expanding the scenario library without destabilizing the five P0
-flagship scenarios.
+Goal: give AI agents a native interface.
 
-Inputs:
-
-- `outputs/failure_intelligence/reddit_p0_deep_extract_20260528/approved_scenarios.jsonl`
-- `outputs/failure_intelligence/reddit_p0_deep_extract_20260528/policy_candidates.jsonl`
-- `SCENARIO_LIBRARY.md`
-
-Rules:
-
-- Do not add a sixth P0 scenario.
-- New approved scenarios should enter P1 packs first.
-- Prefer packs that support both entrypoints:
-  `Offline Fulfillment Automation Audit` and `Live Commerce Agent Validation`.
-- Track whether a new approved scenario is:
-  - already covered by an existing P0 scenario,
-  - a P1 variant of an existing P0 scenario,
-  - a genuinely new P1 pack.
-
-Current approved P1 packs:
-
-- Tracking visibility and first carrier scan.
-- Webhook reliability and reconciliation.
-- Multichannel inventory authority.
-- WMS and bundle mapping.
-- Cancel window between label creation and warehouse processing.
-
-Do this in parallel with Demo Pack work only as documentation and backlog
-curation. Do not implement new engine behavior until the demo pack is readable
-and the five P0 scenarios are stable.
-
-## Stage 4: Offline Fulfillment Automation Audit
-
-Goal: open the first commercial entrypoint.
-
-Inputs:
-
-- `orders.csv`
-- `inventory.csv`
-- `fulfillments.csv`
-- `refunds.csv`
-
-Capabilities:
-
-- Manual schema mapping.
-- PII redaction.
-- Data quality profiling.
-- State reconstruction.
-- Offline risk report.
-
-Current v0 scope:
-
-- CSV and XLSX importer.
-- Optional YAML mapping from canonical fields to customer export headers.
-- Optional worksheet selection for XLSX inputs.
-- Redacted canonical copies of input files.
-- Boss-readable markdown report.
-- Structured JSON artifacts for future workflow integration.
-
-Expected output:
+Required MCP tools:
 
 ```txt
-offline_audits/<audit_id>/
-  manifest.json
-  data_quality.json
-  state_reconstruction.json
-  policy_report.json
-  report.md
-  redacted_inputs/
-    orders.csv
-    inventory.csv
-    fulfillments.csv
-    refunds.csv
+commerce.start_session
+commerce.get_task
+commerce.create_fulfillment
+commerce.find_fulfillment
+commerce.complete_session
+commerce.get_trace
+commerce.get_policy_report
+commerce.get_patch_hints
 ```
 
-Completion line:
+Acceptance:
+
+- `SCN-002` unsafe and safe paths can run only through MCP tool calls.
+- The proof does not use CLI `bad_runner` / `good_runner`.
+- MCP outputs are structured enough for Codex/Claude to inspect trace, findings,
+  and patch hints.
+
+Gate:
 
 ```bash
-./tools/smoke_stage4_offline_audit.sh
-./tools/smoke_stage4_offline_audit_xlsx.sh
-./tools/smoke_stage4_offline_audit_clean.sh
+python -m pytest tests/test_mcp_scn002.py
+./tools/smoke_stage3_mcp_scn002.sh
 ```
 
-Deferred Stage 4 hardening:
+## Stage 4: Five P0 Live Coverage
 
-- Richer customer-like ERP export fixtures.
-- Financial impact estimates by shipping cost, refund amount, and inventory cost.
-- More mapping presets for common Shopify/ERP/OMS column names.
-- Optional multi-file audit bundle packaging for POC delivery.
+Goal: convert all five P0 scenarios to live mode.
 
-## Stage 5: Demo / POC Polish
+Deliverables:
 
-Goal: turn the working MVP into a repeatable sales and POC package.
+- Live external unsafe/safe flows for:
+  - `SCN-001 duplicate_webhook_fulfillment`
+  - `SCN-002 timeout_after_commit_retry`
+  - `SCN-003 stale_inventory_oversell`
+  - `SCN-004 refund_after_shipment_bypass`
+  - `SCN-005 cancel_after_pick_pack_conflict`
+- Twin/API actions needed by P0 live mode:
+  - inventory promise
+  - inventory refresh
+  - manual review route
+  - refund approval
+  - warehouse hold/cancel
+  - cancel order
+  - release inventory
+  - warehouse continues fulfillment
+  - find fulfillment
 
-Scope:
+Acceptance:
 
-- Keep one repo entrypoint in `README.md`.
-- Keep one full verification gate: `./tools/smoke_all.sh`.
-- Keep `demo_pack/` readable as a standalone sales artifact.
-- Add sales materials:
-  - `demo_pack/sales_one_pager.md`
-  - `demo_pack/demo_walkthrough.md`
-- Add POC operating docs:
-  - `docs/DEMO_POC_READINESS.md`
-  - `docs/OFFLINE_AUDIT_POC_PLAYBOOK.md`
-- Keep generated/runtime artifacts ignored:
-  - `runs/`
-  - `offline_audits/`
-  - `regressions/`
-  - `demo_pack/_generated_runs/`
-  - `outputs/`
+- Every P0 scenario has external unsafe fail and external safe pass.
+- Every run writes the live artifact set.
+- The twin stays permissive in all live flows.
 
-Completion line:
+Gate:
 
 ```bash
-./tools/smoke_all.sh
+python -m pytest tests/test_live_p0_coverage.py
+./tools/smoke_live_all.sh
 ```
+
+## Stage 5: Action Log Adapter + CI Gate
+
+Goal: serve AI SaaS and agency prospects who cannot connect directly by API yet.
+
+Deliverables:
+
+```txt
+commerce-safety live from-action-log
+commerce-safety gate
+--json
+```
+
+Acceptance:
+
+- `SCN-004 refund_after_shipment_bypass` action log can be replayed into a live
+  session.
+- Bad action log generates trace/report and exits `1`.
+- Safe action log exits `0`.
+- `--json` includes session id, status, artifact paths, and findings.
+
+Gate:
+
+```bash
+python -m pytest tests/test_action_log_gate.py
+./tools/smoke_stage5_action_log_gate.sh
+```
+
+## Stage 6: Agent-Readable Repair Loop
+
+Goal: make the product start feeling Arga-like by producing repair artifacts
+that Codex/Claude can directly use.
+
+Deliverables:
+
+```txt
+patch_hints.json
+agent_summary.md
+failure_explain.md
+likely_guardrails
+replay command
+```
+
+Acceptance:
+
+- For each supported policy finding, artifacts explain:
+  - the unsafe agent step
+  - root cause
+  - violated policy
+  - likely guardrail
+  - replay command
+  - suggested repair
+- Codex/Claude can identify what to change without reading source code.
+
+Gate:
+
+```bash
+python -m pytest tests/test_agent_repair_artifacts.py
+./tools/smoke_stage6_repair_loop.sh
+```
+
+## Stage 7: V3.5 Demo Pack
+
+Goal: replace the toy-like demo with an agent sandbox demo.
+
+Deliverables:
+
+```txt
+demo_pack/live_agent_validation/
+docs/LIVE_AGENT_VALIDATION.md
+docs/MCP_AGENT_QUICKSTART.md
+docs/ACTION_LOG_POC.md
+```
+
+Demo narrative:
+
+```txt
+External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+```
+
+Acceptance:
+
+- Demo pack shows at least:
+  - HTTP external agent unsafe/safe path for `SCN-002`
+  - MCP unsafe/safe path for `SCN-002`
+  - Action-log replay for `SCN-004`
+- A reader can understand why this is an AI agent sandbox, not an internal
+  CLI-only demo.
+
+Gate:
+
+```bash
+python -m pytest tests/test_live_demo_pack.py
+./tools/smoke_stage7_demo_pack.sh
+```
+
+## Stage 8: Arga-Style Next Layer
+
+Goal: add developer workflow and platform depth after V3.5 live validation
+works.
+
+Deferred capabilities:
+
+- GitHub Actions gate.
+- PR check.
+- Scenario registry.
+- Stub coverage.
+- Trace streaming.
+- Hosted sessions.
+- Team workspace.
+
+Acceptance:
+
+- Stage 8 must be split into separate sub-goals before implementation.
+- No Stage 8 work should begin until Stage 7 has passed.
+
+Gate:
+
+```bash
+./tools/smoke_v35.sh
+```
+
+The Stage 8 gate must include all earlier stage gates plus any new developer
+workflow checks introduced in Stage 8.
+
+## Full V3.5 Gate
+
+Once Stage 7 is implemented, the V3.5 release gate is:
+
+```bash
+./tools/smoke_v35.sh
+```
+
+This command must run:
+
+- Existing core smoke checks.
+- Stage 0 rebaseline check.
+- Stage 1 live session checks.
+- Stage 2 HTTP vertical slice.
+- Stage 3 MCP vertical slice.
+- Stage 4 five P0 live coverage.
+- Stage 5 action-log/CI gate.
+- Stage 6 repair artifacts.
+- Stage 7 live demo pack generation.

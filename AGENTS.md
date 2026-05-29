@@ -20,11 +20,24 @@ environment details.
 The product is `Commerce Automation Safety Sandbox`: a pre-production crash
 test layer for commerce automation and AI agents.
 
-The current sellable wedge is:
+The V3.5 mainline is:
 
 ```txt
-Offline Fulfillment Automation Audit
+Live Agent Sandbox-first
 ```
+
+Core narrative:
+
+```txt
+External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+```
+
+MCP is not optional for V3.5. It is a required native interface for Codex,
+Claude, and other agent builders. HTTP Twin API is also required for workflows,
+scripts, and non-MCP clients.
+
+`Offline Fulfillment Automation Audit` remains a useful supporting entrypoint,
+but it is no longer the mainline for V3.5 execution.
 
 ## Hard MVP Principles
 
@@ -46,24 +59,51 @@ Offline Fulfillment Automation Audit
   `state_diff.json`, and `report.md`.
 - Keep `PolicyFinding` structured with `policy_id`, `severity`, `status`,
   `evidence`, `business_impact`, and `recommendation`.
+- Every V3.5 stage must define and pass a strict gate before the next stage
+  begins.
 
 ## Current Non-Goals
 
 Do not build these in the current lane:
 
-- API server
 - GitHub PR check
-- MCP server
 - Shopify-like or Amazon-like full API skin
 - Buyer simulator
 - Agent container
 - Egress proxy
 - New P0 scenario classes
+- Hosted multi-tenant control plane
+- Decorative dashboard polish before live agent validation works
+
+## V3.5 Stage Gates
+
+Stage 0 is the active rebaseline stage. Its gate is:
+
+```bash
+./tools/smoke_stage0_rebaseline.sh
+```
+
+After Stage 0, follow `ROADMAP.md` stage by stage:
+
+1. Stage 1: Live Session Kernel.
+2. Stage 2: HTTP Twin API Vertical Slice.
+3. Stage 3: MCP Interface MVP.
+4. Stage 4: Five P0 Live Coverage.
+5. Stage 5: Action Log Adapter + CI Gate.
+6. Stage 6: Agent-Readable Repair Loop.
+7. Stage 7: V3.5 Demo Pack.
+8. Stage 8: Arga-style Next Layer.
 
 ## Completion Gate
 
-The full Demo/POC readiness gate is:
+The current full baseline gate remains:
 
 ```bash
 ./tools/smoke_all.sh
+```
+
+The future V3.5 release gate is:
+
+```bash
+./tools/smoke_v35.sh
 ```

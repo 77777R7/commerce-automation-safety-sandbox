@@ -1,6 +1,6 @@
 # SCN-005 Cancel After Pick/Pack Warehouse Conflict - bad_runner
 
-- Run ID: `run_20260529T063822659748Z_SCN-005_bad_runner`
+- Run ID: `run_20260529T195605472569Z_SCN-005_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -31,7 +31,7 @@
 
 # Commerce Safety Report: cancel_after_pick_pack_conflict
 
-- Run ID: `run_20260529T063822659748Z_SCN-005_bad_runner`
+- Run ID: `run_20260529T195605472569Z_SCN-005_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
 
@@ -164,4 +164,4 @@ Treat picked, packed, label-created, carrier-scanned, and shipped warehouse stat
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T063822659748Z_SCN-005_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T195605472569Z_SCN-005_bad_runner` to print the recorded timeline from `trace.json`.

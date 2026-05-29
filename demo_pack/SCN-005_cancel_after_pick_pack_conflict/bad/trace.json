@@ -1,10 +1,10 @@
 {
-  "run_id": "run_20260529T063822659748Z_SCN-005_bad_runner",
+  "run_id": "run_20260529T195605472569Z_SCN-005_bad_runner",
   "scenario_id": "SCN-005",
   "scenario_name": "cancel_after_pick_pack_conflict",
   "runner": "bad_runner",
   "status": "failed",
-  "generated_at": "2026-05-29T06:38:22.660260+00:00",
+  "generated_at": "2026-05-29T19:56:05.472875+00:00",
   "initial_state": {
     "orders": {
       "order_5001": {

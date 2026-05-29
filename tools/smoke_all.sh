@@ -5,6 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
+echo "== Stage 0 rebaseline gate =="
+./tools/smoke_stage0_rebaseline.sh
+
 echo "== Unit tests =="
 python3 -m pytest
 

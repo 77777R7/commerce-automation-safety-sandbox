@@ -35,7 +35,7 @@ window.DEMO_VIEWER_DATA = {
       "recommendation": "Check existing fulfillment state before creating another fulfillment, and use a stable dedupe or idempotency key for repeated delivery or retry paths.",
       "bad": {
         "status": "failed",
-        "runId": "run_20260529T063812178261Z_duplicate_webhook_bad_runner",
+        "runId": "run_20260529T195546832340Z_duplicate_webhook_bad_runner",
         "findings": [
           {
             "policy_id": "no_duplicate_fulfillment",
@@ -344,7 +344,7 @@ window.DEMO_VIEWER_DATA = {
       },
       "good": {
         "status": "passed",
-        "runId": "run_20260529T063812188720Z_duplicate_webhook_good_runner",
+        "runId": "run_20260529T195546836502Z_duplicate_webhook_good_runner",
         "findings": [],
         "timeline": [
           {
@@ -482,7 +482,7 @@ window.DEMO_VIEWER_DATA = {
       "recommendation": "Use a stable idempotency key for mutating fulfillment requests and, after timeout, query existing fulfillment state before retrying.",
       "bad": {
         "status": "failed",
-        "runId": "run_20260529T063815329071Z_SCN-002_bad_runner",
+        "runId": "run_20260529T195546843524Z_SCN-002_bad_runner",
         "findings": [
           {
             "policy_id": "idempotency_required_for_mutating_retries",
@@ -734,7 +734,7 @@ window.DEMO_VIEWER_DATA = {
       },
       "good": {
         "status": "passed",
-        "runId": "run_20260529T063815342075Z_SCN-002_good_runner",
+        "runId": "run_20260529T195546847833Z_SCN-002_good_runner",
         "findings": [],
         "timeline": [
           {
@@ -875,7 +875,7 @@ window.DEMO_VIEWER_DATA = {
       "recommendation": "Reserve inventory for the order before promising fulfillment. If fresh inventory cannot be reserved, route the order to manual review.",
       "bad": {
         "status": "failed",
-        "runId": "run_20260529T063818043907Z_SCN-003_bad_runner",
+        "runId": "run_20260529T195548193456Z_SCN-003_bad_runner",
         "findings": [
           {
             "policy_id": "reservation_required_before_promise",
@@ -1083,7 +1083,7 @@ window.DEMO_VIEWER_DATA = {
       },
       "good": {
         "status": "passed",
-        "runId": "run_20260529T063818049896Z_SCN-003_good_runner",
+        "runId": "run_20260529T195548204202Z_SCN-003_good_runner",
         "findings": [],
         "timeline": [
           {
@@ -1198,7 +1198,7 @@ window.DEMO_VIEWER_DATA = {
       "recommendation": "When an order is shipped or carrier-scanned, create an approval request and hold the refund until a reviewer confirms the correct after-shipment action.",
       "bad": {
         "status": "failed",
-        "runId": "run_20260529T063819776100Z_SCN-004_bad_runner",
+        "runId": "run_20260529T195554905642Z_SCN-004_bad_runner",
         "findings": [
           {
             "policy_id": "no_refund_after_shipment_without_approval",
@@ -1364,7 +1364,7 @@ window.DEMO_VIEWER_DATA = {
       },
       "good": {
         "status": "passed",
-        "runId": "run_20260529T063819780760Z_SCN-004_good_runner",
+        "runId": "run_20260529T195558345102Z_SCN-004_good_runner",
         "findings": [],
         "timeline": [
           {
@@ -1479,7 +1479,7 @@ window.DEMO_VIEWER_DATA = {
       "recommendation": "When warehouse status is picked, packed, label-created, carrier-scanned, or shipped, place the order on hold and submit a warehouse cancellation request before refunding or releasing inventory.",
       "bad": {
         "status": "failed",
-        "runId": "run_20260529T063822659748Z_SCN-005_bad_runner",
+        "runId": "run_20260529T195605472569Z_SCN-005_bad_runner",
         "findings": [
           {
             "policy_id": "warehouse_conflict_requires_hold",
@@ -1825,7 +1825,7 @@ window.DEMO_VIEWER_DATA = {
       },
       "good": {
         "status": "passed",
-        "runId": "run_20260529T063822672754Z_SCN-005_good_runner",
+        "runId": "run_20260529T195609094405Z_SCN-005_good_runner",
         "findings": [],
         "timeline": [
           {

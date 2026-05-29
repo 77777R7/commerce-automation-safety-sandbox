@@ -1,6 +1,7 @@
 # Commerce Automation Safety Sandbox
 
-CLI-first MVP for a commerce automation incident validation core.
+V3.5 work is now focused on a Live Agent Sandbox for commerce automation and AI
+agents.
 
 The product principle is:
 
@@ -12,6 +13,17 @@ The twin allows unsafe automation to mutate state first. The policy engine then
 detects the business incident from trace, state diff, and structured policy
 findings. This is what makes the demo feel like an accident sandbox instead of
 a normal API validator.
+
+V3.5 mainline:
+
+```txt
+External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+```
+
+MCP is not optional for V3.5. HTTP Twin API and action-log replay are also
+required surfaces, but MCP is the native interface for Codex, Claude, and other
+agent builders. `Offline Fulfillment Automation Audit` remains as a supporting
+entrypoint, not the mainline.
 
 ## Current MVP
 
@@ -81,6 +93,18 @@ This runs unit tests, all current P0 scenario checks, regression capture,
 Offline Audit CSV and XLSX checks, clean audit check, and demo pack
 verification.
 
+Stage 0 rebaseline gate:
+
+```bash
+./tools/smoke_stage0_rebaseline.sh
+```
+
+Future V3.5 release gate:
+
+```bash
+./tools/smoke_v35.sh
+```
+
 ## Demo And POC Materials
 
 - [Static demo viewer](demo_viewer/index.html)
@@ -109,6 +133,8 @@ open demo_viewer/index.html
   address, billing address, or free-form customer notes in the first POC.
 - The current repo is not a full Shopify sandbox, Amazon emulator, API server,
   PR check platform, or buyer red-team product.
+- The current repo has not yet completed the V3.5 live HTTP/MCP agent sandbox;
+  see [ROADMAP.md](ROADMAP.md) for the staged gates.
 
 ## Source Of Truth
 

@@ -1,6 +1,6 @@
 # Commerce Safety Report: timeout_after_commit_retry
 
-- Run ID: `run_20260529T063815329071Z_SCN-002_bad_runner`
+- Run ID: `run_20260529T195546843524Z_SCN-002_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
 
@@ -113,4 +113,4 @@ Use a stable idempotency key for mutating fulfillment actions. If a timeout happ
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T063815329071Z_SCN-002_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T195546843524Z_SCN-002_bad_runner` to print the recorded timeline from `trace.json`.
