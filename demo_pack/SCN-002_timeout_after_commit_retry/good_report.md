@@ -1,6 +1,6 @@
 # SCN-002 Timeout After Commit Unsafe Retry - good_runner
 
-- Run ID: `run_20260529T053022722480Z_SCN-002_good_runner`
+- Run ID: `run_20260529T055801586936Z_SCN-002_good_runner`
 - Status: `passed`
 - Runner: `good_runner`
 - Demo meaning: 通过：同一场景下没有产生 policy violation。
@@ -27,9 +27,15 @@
 
 # Commerce Safety Report: timeout_after_commit_retry
 
-- Run ID: `run_20260529T053022722480Z_SCN-002_good_runner`
+- Run ID: `run_20260529T055801586936Z_SCN-002_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
+
+## Business Risk Summary
+
+- Risk: timeout_after_commit_retry completed without policy findings.
+- Possible impact: No immediate commerce accident was detected in this run.
+- Recommended control: Keep the same guardrails and rerun this scenario after automation changes.
 
 ## Executive Summary
 
@@ -68,4 +74,4 @@ The automation treated timeout-after-commit as an uncertain state, reused a stab
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022722480Z_SCN-002_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801586936Z_SCN-002_good_runner` to print the recorded timeline from `trace.json`.

@@ -4,6 +4,7 @@
 .pycache_tmp/
 __pycache__/
 *.pyc
+.pytest_cache/
 .venv/
 .venv312/
 runs/

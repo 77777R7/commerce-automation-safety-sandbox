@@ -1,0 +1,29 @@
+orders:
+  order_id: order_id
+  buyer_id: buyer_id
+  sku: sku
+  quantity: quantity
+  payment_status: payment_status
+  order_status: order_status
+  created_at: created_at
+
+inventory:
+  sku: sku
+  on_hand: on_hand
+  reserved: reserved
+  warehouse: warehouse
+
+fulfillments:
+  order_id: order_id
+  sku: sku
+  quantity: quantity
+  fulfillment_status: fulfillment_status
+  tracking_number: tracking_number
+  warehouse_status: warehouse_status
+
+refunds:
+  order_id: order_id
+  amount: amount
+  refund_status: refund_status
+  reason: reason
+  approved_by: approved_by

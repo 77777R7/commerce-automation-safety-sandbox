@@ -1,6 +1,6 @@
 # SCN-001 Duplicate Webhook Fulfillment - bad_runner
 
-- Run ID: `run_20260529T053022709212Z_duplicate_webhook_bad_runner`
+- Run ID: `run_20260529T055801572279Z_duplicate_webhook_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -32,9 +32,15 @@
 
 # Commerce Safety Report: Duplicate webhook creates duplicate fulfillment
 
-- Run ID: `run_20260529T053022709212Z_duplicate_webhook_bad_runner`
+- Run ID: `run_20260529T055801572279Z_duplicate_webhook_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
+
+## Business Risk Summary
+
+- Risk: Duplicate webhook creates duplicate fulfillment triggered `no_duplicate_fulfillment`.
+- Possible impact: The automation created more fulfillment than the order requires, creating duplicate shipment and inventory loss risk.
+- Recommended control: Check existing fulfillment state before creating another fulfillment, and use a stable dedupe or idempotency key for repeated delivery or retry paths.
 
 ## Executive Summary
 
@@ -154,4 +160,4 @@ Use webhook ID deduplication before mutating order state. For fulfillment action
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022709212Z_duplicate_webhook_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801572279Z_duplicate_webhook_bad_runner` to print the recorded timeline from `trace.json`.

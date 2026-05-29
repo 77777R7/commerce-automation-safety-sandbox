@@ -4,6 +4,57 @@ import json
 from typing import Any
 
 
+def _sentence(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return ""
+    return text if text.endswith((".", "!", "?")) else f"{text}."
+
+
+def build_business_risk_summary(
+    *,
+    title: str,
+    findings: list[dict[str, Any]],
+    scenario_report: dict[str, Any],
+) -> list[str]:
+    if findings:
+        primary = findings[0]
+        risk = scenario_report.get(
+            "risk",
+            f"{title} triggered `{primary['policy_id']}`.",
+        )
+        impact = scenario_report.get(
+            "possible_impact",
+            primary["business_impact"],
+        )
+        control = scenario_report.get(
+            "recommended_control",
+            primary["recommendation"],
+        )
+    else:
+        risk = scenario_report.get(
+            "risk",
+            f"{title} completed without policy findings.",
+        )
+        impact = scenario_report.get(
+            "possible_impact",
+            "No immediate commerce accident was detected in this run.",
+        )
+        control = scenario_report.get(
+            "recommended_control",
+            "Keep the same guardrails and rerun this scenario after automation changes.",
+        )
+
+    return [
+        "## Business Risk Summary",
+        "",
+        f"- Risk: {_sentence(risk)}",
+        f"- Possible impact: {_sentence(impact)}",
+        f"- Recommended control: {_sentence(control)}",
+        "",
+    ]
+
+
 def build_state_diff(
     before: dict[str, Any],
     after: dict[str, Any],
@@ -191,9 +242,20 @@ def build_markdown_report(
         f"- Runner: `{runner_name}`",
         f"- Status: `{status}`",
         "",
+    ]
+    lines.extend(
+        build_business_risk_summary(
+            title=title,
+            findings=findings,
+            scenario_report=scenario_report,
+        )
+    )
+    lines.extend(
+        [
         "## Executive Summary",
         "",
-    ]
+        ]
+    )
     if status == "passed":
         passed_summary = scenario_report.get("passed_summary") or [
             "The automation handled the scenario without creating a business accident.",

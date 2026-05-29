@@ -1,8 +1,14 @@
 # Commerce Safety Report: Duplicate webhook creates duplicate fulfillment
 
-- Run ID: `run_20260529T053022712725Z_duplicate_webhook_good_runner`
+- Run ID: `run_20260529T055801576327Z_duplicate_webhook_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
+
+## Business Risk Summary
+
+- Risk: Duplicate webhook creates duplicate fulfillment completed without policy findings.
+- Possible impact: No immediate commerce accident was detected in this run.
+- Recommended control: Keep the same guardrails and rerun this scenario after automation changes.
 
 ## Executive Summary
 
@@ -40,4 +46,4 @@ The automation avoided unsafe duplicate mutation and kept the state within polic
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022712725Z_duplicate_webhook_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801576327Z_duplicate_webhook_good_runner` to print the recorded timeline from `trace.json`.

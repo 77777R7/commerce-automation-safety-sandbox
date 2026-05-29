@@ -1,8 +1,14 @@
 # Commerce Safety Report: refund_after_shipment_bypass
 
-- Run ID: `run_20260529T053022743048Z_SCN-004_good_runner`
+- Run ID: `run_20260529T055801608192Z_SCN-004_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
+
+## Business Risk Summary
+
+- Risk: refund_after_shipment_bypass completed without policy findings.
+- Possible impact: No immediate commerce accident was detected in this run.
+- Recommended control: Keep the same guardrails and rerun this scenario after automation changes.
 
 ## Executive Summary
 
@@ -41,4 +47,4 @@ The automation checked shipment state first, created an approval request, and av
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022743048Z_SCN-004_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801608192Z_SCN-004_good_runner` to print the recorded timeline from `trace.json`.

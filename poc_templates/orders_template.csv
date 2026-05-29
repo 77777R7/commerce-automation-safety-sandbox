@@ -1,0 +1,2 @@
+order_id,buyer_id,sku,quantity,payment_status,order_status,created_at
+order_1001,buyer_external_id_1,sku_example_1,1,paid,open,2026-05-01T10:00:00Z

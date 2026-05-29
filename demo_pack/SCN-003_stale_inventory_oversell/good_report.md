@@ -1,6 +1,6 @@
 # SCN-003 Stale Inventory Oversell - good_runner
 
-- Run ID: `run_20260529T053022732737Z_SCN-003_good_runner`
+- Run ID: `run_20260529T055801597579Z_SCN-003_good_runner`
 - Status: `passed`
 - Runner: `good_runner`
 - Demo meaning: 通过：同一场景下没有产生 policy violation。
@@ -24,9 +24,15 @@
 
 # Commerce Safety Report: stale_inventory_oversell
 
-- Run ID: `run_20260529T053022732737Z_SCN-003_good_runner`
+- Run ID: `run_20260529T055801597579Z_SCN-003_good_runner`
 - Runner: `good_runner`
 - Status: `passed`
+
+## Business Risk Summary
+
+- Risk: stale_inventory_oversell completed without policy findings.
+- Possible impact: No immediate commerce accident was detected in this run.
+- Recommended control: Keep the same guardrails and rerun this scenario after automation changes.
 
 ## Executive Summary
 
@@ -65,4 +71,4 @@ The automation treated stale inventory as unsafe, refreshed the snapshot, and av
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022732737Z_SCN-003_good_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801597579Z_SCN-003_good_runner` to print the recorded timeline from `trace.json`.

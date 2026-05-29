@@ -1,8 +1,14 @@
 # Commerce Safety Report: cancel_after_pick_pack_conflict
 
-- Run ID: `run_20260529T053022750334Z_SCN-005_bad_runner`
+- Run ID: `run_20260529T055801615963Z_SCN-005_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
+
+## Business Risk Summary
+
+- Risk: cancel_after_pick_pack_conflict triggered `warehouse_conflict_requires_hold`.
+- Possible impact: The automation handled a picked or packed warehouse order as if cancellation were still simple. That can produce a refund, inventory release, and outbound parcel for the same order.
+- Recommended control: When warehouse status is picked, packed, label-created, carrier-scanned, or shipped, place the order on hold and submit a warehouse cancellation request before refunding or releasing inventory.
 
 ## Executive Summary
 
@@ -127,4 +133,4 @@ Treat picked, packed, label-created, carrier-scanned, and shipped warehouse stat
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022750334Z_SCN-005_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801615963Z_SCN-005_bad_runner` to print the recorded timeline from `trace.json`.

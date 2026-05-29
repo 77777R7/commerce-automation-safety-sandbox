@@ -1,58 +1,69 @@
-# Global Codex Operating Instructions
+# Agent Operating Notes
 
-Before non-trivial work for Howard, read and apply this experience playbook:
+For internal Codex and coding-agent use only.
 
-`/Users/howard07/.codex/agent_docs/codex-operating-experience-playbook.md`
+Do not rely on local machine paths. This repository should stay shareable with
+collaborators, investors, and POC customers without exposing personal local
+environment details.
 
-It contains the reusable execution lessons, product/UI preferences, and behavior rules distilled from prior Codex conversations and execution logs. Keep this file as a stable pointer rather than duplicating the full document here.
+## Current Source Of Truth
 
-The same operating memory is also packaged as callable Codex skills:
+- `README.md`
+- `ROADMAP.md`
+- `SCENARIO_LIBRARY.md`
+- `MVP_ACCEPTANCE.md`
+- `docs/DEMO_POC_READINESS.md`
+- `docs/OFFLINE_AUDIT_POC_PLAYBOOK.md`
 
-- `$howard-operating-playbook`
-- `$howard-execution-guardrails`
-- `$howard-product-style-profile`
-- `$howard-skill-distiller`
+## Current Product Direction
 
-# Commerce Automation Safety Sandbox MVP
+The product is `Commerce Automation Safety Sandbox`: a pre-production crash
+test layer for commerce automation and AI agents.
 
-Current source of truth:
+The current sellable wedge is:
 
-- Persistent strategy note: `/Users/howard07/.codex/memories/extensions/ad_hoc/notes/20260528T022459-0700-commerce-automation-safety-sandbox-final.md`
-- MVP code root: `commerce-safety-sandbox/`
-- CLI wrapper: `commerce-safety`
+```txt
+Offline Fulfillment Automation Audit
+```
 
-Current implementation lane:
+## Hard MVP Principles
 
-- Strictly Week 1 Incident Core Demo.
-- CLI-first only.
-- No UI, API server, GitHub App, PR check, MCP, Offline Audit, full Shopify/Amazon skin, egress proxy, agent container, browser runner, or LLM buyer simulator yet.
-
-Hard MVP principles:
-
-- Use a permissive twin: unsafe actions are allowed to mutate state, then Policy Engine catches the business incident.
-- Same scenario must prove both paths: `bad_runner` fails and `good_runner` passes under `commerce-safety-sandbox/scenarios/duplicate_webhook.yaml`.
-- The P0 scenario library has exactly five flagship scenarios: `SCN-001 duplicate_webhook_fulfillment`, `SCN-002 timeout_after_commit_retry`, `SCN-003 stale_inventory_oversell`, `SCN-004 refund_after_shipment_bypass`, and `SCN-005 cancel_after_pick_pack_conflict`.
-- Do not add a sixth P0 scenario. Tracking timing, SKU mapping, timezone, null discount, and similar cases are P1.
-- Each P0 scenario should tell one main accident with one clean primary policy.
-- CLI runs must exit non-zero when any policy finding is produced, so the MVP can become a CI/gate later.
+- Use `Permissive Twin + Policy Check`: unsafe actions are allowed to mutate
+  twin state, then policies catch the resulting business incident.
+- Keep the P0 library to exactly five flagship scenarios:
+  `SCN-001 duplicate_webhook_fulfillment`,
+  `SCN-002 timeout_after_commit_retry`,
+  `SCN-003 stale_inventory_oversell`,
+  `SCN-004 refund_after_shipment_bypass`, and
+  `SCN-005 cancel_after_pick_pack_conflict`.
+- Do not add a sixth P0 scenario. Tracking timing, SKU mapping, timezone,
+  null discount, and similar cases belong in P1.
+- The same scenario YAML must drive both `bad_runner` and `good_runner`.
+- `bad_runner` must fail with structured policy findings and non-zero exit.
+- `good_runner` must pass with zero findings.
 - Replay must read from `trace.json`; it must not rerun the scenario.
-- `PolicyFinding` must stay structured with `policy_id`, `severity`, `status`, `evidence`, `business_impact`, and `recommendation`.
-- Inventory accident signals must compare reserved inventory to expected order quantity, not use a naive `reserved > 1` check.
-- Duplicate webhook policy should evolve toward duplicate side effects generally, not only duplicate fulfillment. The current slice should at least consider reservation and fulfillment side effects.
-- Run artifacts must include `trace.json`, `policy_report.json`, `state_diff.json`, and `report.md`.
-- Stage 3 regression capture must save failed runs with policy findings into `regressions/<slug>/` with `scenario.yaml`, `trace.json`, `policy_report.json`, `state_diff.json`, and `summary.md`.
-- Stage 4 Offline Audit v0 imports CSV or XLSX tables for orders, inventory, fulfillments, and refunds; support optional YAML schema mapping and worksheet selection; redact buyer identifiers; output `manifest.json`, `data_quality.json`, `state_reconstruction.json`, `policy_report.json`, `report.md`, and `redacted_inputs/*.csv`.
+- Run artifacts must include `trace.json`, `policy_report.json`,
+  `state_diff.json`, and `report.md`.
+- Keep `PolicyFinding` structured with `policy_id`, `severity`, `status`,
+  `evidence`, `business_impact`, and `recommendation`.
 
-Current completion line:
+## Current Non-Goals
+
+Do not build these in the current lane:
+
+- API server
+- GitHub PR check
+- MCP server
+- Shopify-like or Amazon-like full API skin
+- Buyer simulator
+- Agent container
+- Egress proxy
+- New P0 scenario classes
+
+## Completion Gate
+
+The full Demo/POC readiness gate is:
 
 ```bash
-./tools/smoke_week1.sh
-./tools/smoke_scn002.sh
-./tools/smoke_scn003.sh
-./tools/smoke_scn004.sh
-./tools/smoke_scn005.sh
-./tools/smoke_stage3_regression.sh
-./tools/smoke_stage4_offline_audit.sh
-./tools/smoke_stage4_offline_audit_xlsx.sh
-./tools/smoke_stage4_offline_audit_clean.sh
+./tools/smoke_all.sh
 ```

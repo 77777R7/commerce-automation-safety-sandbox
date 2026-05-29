@@ -1,6 +1,6 @@
 # SCN-003 Stale Inventory Oversell - bad_runner
 
-- Run ID: `run_20260529T053022728660Z_SCN-003_bad_runner`
+- Run ID: `run_20260529T055801593271Z_SCN-003_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -27,9 +27,15 @@
 
 # Commerce Safety Report: stale_inventory_oversell
 
-- Run ID: `run_20260529T053022728660Z_SCN-003_bad_runner`
+- Run ID: `run_20260529T055801593271Z_SCN-003_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
+
+## Business Risk Summary
+
+- Risk: stale_inventory_oversell triggered `reservation_required_before_promise`.
+- Possible impact: The automation promised fulfillment without reserving inventory for this order. If the visible stock was stale, the seller can oversell and later cancel or disappoint the customer.
+- Recommended control: Reserve inventory for the order before promising fulfillment. If fresh inventory cannot be reserved, route the order to manual review.
 
 ## Executive Summary
 
@@ -133,4 +139,4 @@ Refresh inventory before making customer-facing fulfillment promises. Only promi
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022728660Z_SCN-003_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801593271Z_SCN-003_bad_runner` to print the recorded timeline from `trace.json`.

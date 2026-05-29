@@ -27,6 +27,9 @@ apps, or no order/inventory/refund authority.
 
 Ask for four exports. CSV is best; XLSX is supported.
 
+Use the starter files in `poc_templates/` when a customer does not already have
+exports in this shape.
+
 `orders`
 
 ```txt
@@ -75,6 +78,11 @@ approved_by
 - The POC does not need API credentials.
 - The POC does not touch live Shopify, Amazon, ERP, WMS, or payment systems.
 - Raw customer exports should not be committed to the repo.
+- First-version POCs should only include the canonical fields listed above.
+- Do not upload email, phone, address, customer name, shipping address, billing
+  address, or free-form customer notes.
+- If a customer must export sensitive fields, remove or redact them before the
+  file reaches this tool.
 
 ## Local Sample Run
 

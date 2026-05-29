@@ -1,10 +1,10 @@
 {
-  "run_id": "run_20260529T053022728660Z_SCN-003_bad_runner",
+  "run_id": "run_20260529T055801593271Z_SCN-003_bad_runner",
   "scenario_id": "SCN-003",
   "scenario_name": "stale_inventory_oversell",
   "runner": "bad_runner",
   "status": "failed",
-  "generated_at": "2026-05-29T05:30:22.728737+00:00",
+  "generated_at": "2026-05-29T05:58:01.593375+00:00",
   "initial_state": {
     "orders": {
       "order_3001": {

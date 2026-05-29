@@ -35,6 +35,26 @@ Each run writes:
 - `state_diff.json`
 - `report.md`
 
+## Quickstart
+
+```bash
+git clone https://github.com/77777R7/commerce-automation-safety-sandbox.git
+cd commerce-automation-safety-sandbox
+
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+
+chmod +x commerce-safety tools/*.sh
+./tools/smoke_all.sh
+```
+
+Run the unit tests directly:
+
+```bash
+python -m pytest
+```
+
 ## Main Commands
 
 ```bash
@@ -57,8 +77,9 @@ Each run writes:
 ./tools/smoke_all.sh
 ```
 
-This runs all current P0 scenario checks, regression capture, Offline Audit CSV
-and XLSX checks, clean audit check, and demo pack verification.
+This runs unit tests, all current P0 scenario checks, regression capture,
+Offline Audit CSV and XLSX checks, clean audit check, and demo pack
+verification.
 
 ## Demo And POC Materials
 
@@ -68,6 +89,19 @@ and XLSX checks, clean audit check, and demo pack verification.
 - [Demo walkthrough](demo_pack/demo_walkthrough.md)
 - [Demo/POC readiness](docs/DEMO_POC_READINESS.md)
 - [Offline Audit POC playbook](docs/OFFLINE_AUDIT_POC_PLAYBOOK.md)
+- [POC input templates](poc_templates/)
+
+## Known Issues / Current Limits
+
+- Offline Audit v0 expects four canonical export tables: orders, inventory,
+  fulfillments, and refunds.
+- Real customer exports still require schema mapping when column names differ
+  from the canonical fields.
+- PII redaction currently applies only to the canonical `buyer_id` field.
+- Customers should not provide email, phone, address, customer name, shipping
+  address, billing address, or free-form customer notes in the first POC.
+- The current repo is not a full Shopify sandbox, Amazon emulator, API server,
+  PR check platform, or buyer red-team product.
 
 ## Source Of Truth
 

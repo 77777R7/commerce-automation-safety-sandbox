@@ -1,6 +1,6 @@
 # SCN-002 Timeout After Commit Unsafe Retry - bad_runner
 
-- Run ID: `run_20260529T053022718698Z_SCN-002_bad_runner`
+- Run ID: `run_20260529T055801582886Z_SCN-002_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -28,9 +28,15 @@
 
 # Commerce Safety Report: timeout_after_commit_retry
 
-- Run ID: `run_20260529T053022718698Z_SCN-002_bad_runner`
+- Run ID: `run_20260529T055801582886Z_SCN-002_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
+
+## Business Risk Summary
+
+- Risk: timeout_after_commit_retry triggered `idempotency_required_for_mutating_retries`.
+- Possible impact: The first fulfillment committed, but the automation received a timeout and retried as a new mutation. This can create duplicate fulfillment when the system was actually successful.
+- Recommended control: Use a stable idempotency key for mutating fulfillment requests and, after timeout, query existing fulfillment state before retrying.
 
 ## Executive Summary
 
@@ -135,4 +141,4 @@ Use a stable idempotency key for mutating fulfillment actions. If a timeout happ
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022718698Z_SCN-002_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801582886Z_SCN-002_bad_runner` to print the recorded timeline from `trace.json`.

@@ -5,6 +5,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cd "$ROOT_DIR"
 
+echo "== Unit tests =="
+python3 -m pytest
+
 echo "== P0 scenario smoke gates =="
 ./tools/smoke_week1.sh
 ./tools/smoke_scn002.sh

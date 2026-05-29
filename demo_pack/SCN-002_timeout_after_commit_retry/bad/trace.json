@@ -1,10 +1,10 @@
 {
-  "run_id": "run_20260529T053022718698Z_SCN-002_bad_runner",
+  "run_id": "run_20260529T055801582886Z_SCN-002_bad_runner",
   "scenario_id": "SCN-002",
   "scenario_name": "timeout_after_commit_retry",
   "runner": "bad_runner",
   "status": "failed",
-  "generated_at": "2026-05-29T05:30:22.718772+00:00",
+  "generated_at": "2026-05-29T05:58:01.582966+00:00",
   "initial_state": {
     "orders": {
       "order_2001": {

@@ -1,0 +1,2 @@
+order_id,sku,quantity,fulfillment_status,tracking_number,warehouse_status
+order_1001,sku_example_1,1,fulfilled,TRACK123,shipped

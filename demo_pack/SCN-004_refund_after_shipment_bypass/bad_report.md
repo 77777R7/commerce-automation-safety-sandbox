@@ -1,6 +1,6 @@
 # SCN-004 Refund After Shipment Approval Bypass - bad_runner
 
-- Run ID: `run_20260529T053022739025Z_SCN-004_bad_runner`
+- Run ID: `run_20260529T055801604207Z_SCN-004_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -26,9 +26,15 @@
 
 # Commerce Safety Report: refund_after_shipment_bypass
 
-- Run ID: `run_20260529T053022739025Z_SCN-004_bad_runner`
+- Run ID: `run_20260529T055801604207Z_SCN-004_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
+
+## Business Risk Summary
+
+- Risk: refund_after_shipment_bypass triggered `no_refund_after_shipment_without_approval`.
+- Possible impact: The automation issued a refund after the shipment had already left the controllable fulfillment stage. This can create money-plus-goods loss and manual recovery work.
+- Recommended control: When an order is shipped or carrier-scanned, create an approval request and hold the refund until a reviewer confirms the correct after-shipment action.
 
 ## Executive Summary
 
@@ -110,4 +116,4 @@ Treat shipped or carrier-scanned orders as approval-required before issuing refu
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T053022739025Z_SCN-004_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T055801604207Z_SCN-004_bad_runner` to print the recorded timeline from `trace.json`.
