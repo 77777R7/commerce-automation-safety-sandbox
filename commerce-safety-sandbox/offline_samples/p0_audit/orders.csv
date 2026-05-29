@@ -1,0 +1,5 @@
+Order ID,Buyer Email,SKU,Qty,Payment,Order Status,Created At
+order_9001,alice@example.com,sku_widget,1,paid,open,2026-05-27T10:00:00Z
+order_9002,bob@example.com,sku_over,2,paid,open,2026-05-27T10:05:00Z
+order_9003,cara@example.com,sku_refund,1,paid,open,2026-05-27T10:10:00Z
+order_9004,dan@example.com,sku_cancel,1,paid,cancelled,2026-05-27T10:15:00Z

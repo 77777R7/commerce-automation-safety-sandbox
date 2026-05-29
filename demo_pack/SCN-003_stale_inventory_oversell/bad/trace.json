@@ -1,0 +1,249 @@
+{
+  "run_id": "run_20260529T053022728660Z_SCN-003_bad_runner",
+  "scenario_id": "SCN-003",
+  "scenario_name": "stale_inventory_oversell",
+  "runner": "bad_runner",
+  "status": "failed",
+  "generated_at": "2026-05-29T05:30:22.728737+00:00",
+  "initial_state": {
+    "orders": {
+      "order_3001": {
+        "order_id": "order_3001",
+        "payment_status": "paid",
+        "order_status": "pending_promise",
+        "line_items": [
+          {
+            "sku": "sku_stale_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_stale_1": {
+        "sku": "sku_stale_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 1,
+        "committed": 1,
+        "true_available": 0,
+        "source_version": "stale",
+        "last_synced_at": "stale"
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_stale_1": 1
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_3001": {
+        "order_id": "order_3001",
+        "payment_status": "paid",
+        "order_status": "pending_promise",
+        "line_items": [
+          {
+            "sku": "sku_stale_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_stale_1": {
+        "sku": "sku_stale_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 1,
+        "committed": 1,
+        "true_available": 0,
+        "source_version": "stale",
+        "last_synced_at": "stale"
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [
+      {
+        "promise_id": "promise_001",
+        "order_id": "order_3001",
+        "sku": "sku_stale_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "source_event_id": "task_promise_3001",
+        "based_on_available": 1,
+        "true_available_at_commit": 0,
+        "snapshot_version": "stale",
+        "last_synced_at": "stale",
+        "reservation_id": null
+      }
+    ],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 1,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_stale_1": 1
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "inventory_promise_task_received",
+      "message": "Inventory promise task task_promise_3001 received for order order_3001 with fault stale_inventory_snapshot.",
+      "details": {
+        "type": "inventory_promise_task",
+        "id": "task_promise_3001",
+        "order_id": "order_3001",
+        "fault": {
+          "type": "stale_inventory_snapshot"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "actor": "bad_runner",
+      "event": "inventory_snapshot_read",
+      "message": "bad_runner reads stale inventory for sku_stale_1: available=1, true_available=0.",
+      "details": {
+        "task_id": "task_promise_3001",
+        "sku": "sku_stale_1",
+        "available": 1,
+        "true_available": 0,
+        "last_synced_at": "stale"
+      }
+    },
+    {
+      "step": 3,
+      "actor": "bad_runner",
+      "event": "fulfillment_promised",
+      "message": "bad_runner promises fulfillment for order order_3001, sku sku_stale_1, using available=1 without confirmed reservation.",
+      "details": {
+        "promise_id": "promise_001",
+        "order_id": "order_3001",
+        "sku": "sku_stale_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "source_event_id": "task_promise_3001",
+        "based_on_available": 1,
+        "true_available_at_commit": 0,
+        "snapshot_version": "stale",
+        "last_synced_at": "stale",
+        "reservation_id": null
+      }
+    },
+    {
+      "step": 4,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: reservation_required_before_promise (critical).",
+      "details": {
+        "policy_id": "reservation_required_before_promise",
+        "severity": "critical",
+        "status": "failed",
+        "evidence": {
+          "promise_id": "promise_001",
+          "order_id": "order_3001",
+          "sku": "sku_stale_1",
+          "quantity": 1,
+          "based_on_available": 1,
+          "true_available_at_commit": 0,
+          "reservation_id": null,
+          "matching_reservations": []
+        },
+        "business_impact": "The automation promised fulfillment without reserving inventory for this order. If the visible stock was stale, the seller can oversell and later cancel or disappoint the customer.",
+        "recommendation": "Reserve inventory for the order before promising fulfillment. If fresh inventory cannot be reserved, route the order to manual review."
+      }
+    },
+    {
+      "step": 5,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: no_inventory_commit_from_stale_snapshot (high).",
+      "details": {
+        "policy_id": "no_inventory_commit_from_stale_snapshot",
+        "severity": "high",
+        "status": "failed",
+        "evidence": {
+          "promise_id": "promise_001",
+          "order_id": "order_3001",
+          "sku": "sku_stale_1",
+          "quantity": 1,
+          "based_on_available": 1,
+          "true_available_at_commit": 0,
+          "stale_markers": {
+            "last_synced_at": "stale",
+            "snapshot_version": "stale"
+          }
+        },
+        "business_impact": "The automation committed a fulfillment promise from an outdated inventory snapshot. Stale stock data can turn a normal order into an oversell incident.",
+        "recommendation": "Refresh inventory before committing customer-facing promises, and block or review the action when the inventory snapshot is stale."
+      }
+    },
+    {
+      "step": 6,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: no_oversell (critical).",
+      "details": {
+        "policy_id": "no_oversell",
+        "severity": "critical",
+        "status": "failed",
+        "evidence": {
+          "promise_id": "promise_001",
+          "order_id": "order_3001",
+          "sku": "sku_stale_1",
+          "promised_quantity": 1,
+          "true_available_at_commit": 0,
+          "oversell_quantity": 1
+        },
+        "business_impact": "The automation promised more units than were truly available, creating cancellation, backorder, extra support, and review risk.",
+        "recommendation": "Only promise fulfillment after a successful reservation against fresh available inventory."
+      }
+    }
+  ]
+}

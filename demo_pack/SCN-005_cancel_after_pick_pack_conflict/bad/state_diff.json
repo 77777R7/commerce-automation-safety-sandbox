@@ -1,0 +1,151 @@
+{
+  "before": {
+    "fulfillments": 0,
+    "fulfillment_promises": 0,
+    "refunds": 0,
+    "approval_requests": 0,
+    "inventory_releases": 0,
+    "workflow_holds": 0,
+    "warehouse_cancellation_requests": 0,
+    "warehouse_jobs": [
+      {
+        "warehouse_job_id": "wh_job_5001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "quantity": 1,
+        "status": "picked",
+        "cancellation_requested": false,
+        "hold_status": null,
+        "continued_after_cancel": false
+      }
+    ],
+    "orders": {
+      "order_5001": {
+        "order_id": "order_5001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_pickpack_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "submitted_to_warehouse",
+        "shipment_status": "not_shipped",
+        "refund_status": "none",
+        "captured_amount": 80.0,
+        "cancel_requested": false
+      }
+    },
+    "refund_amount_issued": 0,
+    "reserved_inventory": {
+      "sku_pickpack_1": 1
+    }
+  },
+  "after": {
+    "fulfillments": 0,
+    "fulfillment_promises": 0,
+    "refunds": 1,
+    "approval_requests": 0,
+    "inventory_releases": 1,
+    "workflow_holds": 0,
+    "warehouse_cancellation_requests": 0,
+    "refund_amount_issued": 80.0,
+    "reserved_inventory": {
+      "sku_pickpack_1": 0
+    },
+    "reservations": [],
+    "fulfillments_detail": [],
+    "fulfillment_promises_detail": [],
+    "refunds_detail": [
+      {
+        "refund_id": "refund_001",
+        "order_id": "order_5001",
+        "amount": 80.0,
+        "reason": "buyer_cancelled",
+        "created_by": "bad_runner",
+        "source_event_id": "cancel_req_5001",
+        "approval_id": null,
+        "approved_by": null,
+        "order_fulfillment_status_at_issue": "submitted_to_warehouse",
+        "shipment_status_at_issue": "not_shipped"
+      }
+    ],
+    "approval_requests_detail": [],
+    "warehouse_jobs": [
+      {
+        "warehouse_job_id": "wh_job_5001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "quantity": 1,
+        "status": "shipped",
+        "cancellation_requested": false,
+        "hold_status": null,
+        "continued_after_cancel": true
+      }
+    ],
+    "inventory_releases_detail": [
+      {
+        "release_id": "release_001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "source_event_id": "cancel_req_5001",
+        "warehouse_status_at_release": "picked",
+        "order_status_at_release": "cancelled"
+      }
+    ],
+    "workflow_holds_detail": [],
+    "warehouse_cancellation_requests_detail": [],
+    "orders": {
+      "order_5001": {
+        "order_id": "order_5001",
+        "payment_status": "paid",
+        "order_status": "cancelled",
+        "line_items": [
+          {
+            "sku": "sku_pickpack_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "shipped",
+        "shipment_status": "shipped",
+        "refund_status": "issued",
+        "captured_amount": 80.0,
+        "cancel_requested": true
+      }
+    }
+  },
+  "delta": {
+    "fulfillments_added": 0,
+    "fulfillment_promises_added": 0,
+    "refunds_added": 1,
+    "approval_requests_added": 0,
+    "inventory_releases_added": 1,
+    "workflow_holds_added": 0,
+    "warehouse_cancellation_requests_added": 0,
+    "refund_amount_delta": 80.0,
+    "reservations_added": 0,
+    "reserved_inventory_delta": {
+      "sku_pickpack_1": -1
+    }
+  },
+  "expected": {
+    "reserved_inventory": {
+      "sku_pickpack_1": 1
+    }
+  },
+  "accident_signals": {
+    "duplicate_fulfillment": false,
+    "duplicated_reserved_inventory": false,
+    "excess_reserved_inventory": {},
+    "unreserved_fulfillment_promise": false,
+    "oversell_risk": false,
+    "post_shipment_refund_without_approval": false,
+    "high_value_refund_without_approval": false,
+    "warehouse_conflict_without_hold": true,
+    "ship_after_cancel": true,
+    "refund_and_inventory_release_while_warehouse_continued": true
+  }
+}

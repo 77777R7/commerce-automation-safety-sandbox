@@ -1,0 +1,351 @@
+{
+  "run_id": "run_20260529T053022709212Z_duplicate_webhook_bad_runner",
+  "scenario_id": "duplicate_webhook",
+  "scenario_name": "Duplicate webhook creates duplicate fulfillment",
+  "runner": "bad_runner",
+  "status": "failed",
+  "generated_at": "2026-05-29T05:30:22.709366+00:00",
+  "initial_state": {
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_widget_1": {
+        "sku": "sku_widget_1",
+        "on_hand": 1,
+        "reserved": 0,
+        "available": 1,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_widget_1": 0
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_widget_1": {
+        "sku": "sku_widget_1",
+        "on_hand": 1,
+        "reserved": 2,
+        "available": 1,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [
+      {
+        "reservation_id": "res_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001"
+      },
+      {
+        "reservation_id": "res_002",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    ],
+    "fulfillments": [
+      {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": null,
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      },
+      {
+        "fulfillment_id": "ful_002",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": null,
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    ],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 2,
+      "reservations": 2,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_widget_1": 2
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "webhook_received",
+      "message": "Webhook wh_paid_001 received for order order_1001.",
+      "details": {
+        "type": "webhook",
+        "id": "wh_paid_001",
+        "topic": "order_paid",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 2,
+      "actor": "bad_runner",
+      "event": "webhook_processing_started",
+      "message": "bad_runner starts processing webhook wh_paid_001 without dedupe.",
+      "details": {
+        "webhook_id": "wh_paid_001",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 3,
+      "actor": "bad_runner",
+      "event": "inventory_reserved",
+      "message": "bad_runner reserves 1 unit(s) of sku_widget_1; reserved inventory is now 1.",
+      "details": {
+        "reservation_id": "res_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "bad_runner",
+      "event": "fulfillment_created",
+      "message": "bad_runner creates fulfillment ful_001 for order order_1001, sku sku_widget_1.",
+      "details": {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": null,
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 5,
+      "actor": "scenario",
+      "event": "webhook_received",
+      "message": "Webhook wh_paid_001 received for order order_1001.",
+      "details": {
+        "type": "webhook",
+        "id": "wh_paid_001",
+        "topic": "order_paid",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 6,
+      "actor": "bad_runner",
+      "event": "webhook_processing_started",
+      "message": "bad_runner starts processing webhook wh_paid_001 without dedupe.",
+      "details": {
+        "webhook_id": "wh_paid_001",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 7,
+      "actor": "bad_runner",
+      "event": "inventory_reserved",
+      "message": "bad_runner reserves 1 unit(s) of sku_widget_1; reserved inventory is now 2.",
+      "details": {
+        "reservation_id": "res_002",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 8,
+      "actor": "bad_runner",
+      "event": "fulfillment_created",
+      "message": "bad_runner creates fulfillment ful_002 for order order_1001, sku sku_widget_1.",
+      "details": {
+        "fulfillment_id": "ful_002",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "bad_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": null,
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 9,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: no_duplicate_fulfillment (critical).",
+      "details": {
+        "policy_id": "no_duplicate_fulfillment",
+        "severity": "critical",
+        "status": "failed",
+        "evidence": {
+          "order_id": "order_1001",
+          "sku": "sku_widget_1",
+          "ordered_quantity": 1,
+          "fulfilled_quantity": 2,
+          "fulfillment_count": 2,
+          "fulfillment_ids": [
+            "ful_001",
+            "ful_002"
+          ],
+          "webhook_ids": [
+            "wh_paid_001",
+            "wh_paid_001"
+          ],
+          "source_event_ids": [
+            "wh_paid_001",
+            "wh_paid_001"
+          ],
+          "idempotency_keys": [
+            null,
+            null
+          ]
+        },
+        "business_impact": "The automation created more fulfillment than the order requires, creating duplicate shipment and inventory loss risk.",
+        "recommendation": "Check existing fulfillment state before creating another fulfillment, and use a stable dedupe or idempotency key for repeated delivery or retry paths."
+      }
+    },
+    {
+      "step": 10,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: webhook_dedup_required (critical).",
+      "details": {
+        "policy_id": "webhook_dedup_required",
+        "severity": "critical",
+        "status": "failed",
+        "evidence": {
+          "webhook_id": "wh_paid_001",
+          "times_received": 2,
+          "side_effect_count": 4,
+          "side_effects_from_same_webhook": [
+            {
+              "type": "reservation",
+              "id": "res_001",
+              "order_id": "order_1001",
+              "sku": "sku_widget_1",
+              "quantity": 1
+            },
+            {
+              "type": "reservation",
+              "id": "res_002",
+              "order_id": "order_1001",
+              "sku": "sku_widget_1",
+              "quantity": 1
+            },
+            {
+              "type": "fulfillment",
+              "id": "ful_001",
+              "order_id": "order_1001",
+              "sku": "sku_widget_1",
+              "quantity": 1
+            },
+            {
+              "type": "fulfillment",
+              "id": "ful_002",
+              "order_id": "order_1001",
+              "sku": "sku_widget_1",
+              "quantity": 1
+            }
+          ],
+          "dedupe_signal": "missing"
+        },
+        "business_impact": "The duplicate webhook was processed as a new business event, so retries from the platform can trigger repeated state-changing work such as inventory reservation, refunds, or fulfillment.",
+        "recommendation": "Store processed webhook IDs and skip repeat deliveries before performing mutating actions."
+      }
+    }
+  ]
+}

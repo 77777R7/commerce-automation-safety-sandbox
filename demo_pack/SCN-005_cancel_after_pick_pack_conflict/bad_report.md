@@ -1,0 +1,161 @@
+# SCN-005 Cancel After Pick/Pack Warehouse Conflict - bad_runner
+
+- Run ID: `run_20260529T053022750334Z_SCN-005_bad_runner`
+- Status: `failed`
+- Runner: `bad_runner`
+- Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
+
+## 这次运行证明了什么
+
+坏流程取消订单、释放库存、退款，但仓库继续把已 picked 包裹发出。
+
+## Accident Signals
+
+- `warehouse_conflict_without_hold`: `True`
+- `ship_after_cancel`: `True`
+- `refund_and_inventory_release_while_warehouse_continued`: `True`
+
+## Timeline
+
+1. Cancel request cancel_req_5001 received for order order_5001.
+2. bad_runner treats cancel request cancel_req_5001 as a simple order cancellation despite warehouse progress.
+3. bad_runner marks order order_5001 as cancelled.
+4. bad_runner releases 1 unit(s) of sku_pickpack_1; reserved inventory is now 0.
+5. bad_runner issues refund refund_001 for order order_5001 without blocking platform mutation.
+6. Warehouse continues job wh_job_5001 for cancelled order order_5001; status is now shipped.
+7. Policy violation detected: warehouse_conflict_requires_hold (critical).
+8. Policy violation detected: no_ship_after_cancel (critical).
+9. Policy violation detected: no_double_refund_or_inventory_release (high).
+
+## 原始系统报告
+
+# Commerce Safety Report: cancel_after_pick_pack_conflict
+
+- Run ID: `run_20260529T053022750334Z_SCN-005_bad_runner`
+- Runner: `bad_runner`
+- Status: `failed`
+
+## Executive Summary
+
+The automation created a critical warehouse cancellation conflict.
+It cancelled the order, released inventory, and issued a refund while the warehouse continued shipping the already-picked parcel.
+
+## State Change
+
+- Fulfillments before: `0`
+- Fulfillments after: `0`
+- Fulfillment promises before: `0`
+- Fulfillment promises after: `0`
+- Refunds before: `0`
+- Refunds after: `1`
+- Approval requests before: `0`
+- Approval requests after: `0`
+- Inventory releases before: `0`
+- Inventory releases after: `1`
+- Workflow holds before: `0`
+- Workflow holds after: `0`
+- Warehouse cancellation requests before: `0`
+- Warehouse cancellation requests after: `0`
+- Refund amount issued before: `0`
+- Refund amount issued after: `80.0`
+- Reserved inventory before: `{'sku_pickpack_1': 1}`
+- Reserved inventory after: `{'sku_pickpack_1': 0}`
+- Expected reserved inventory: `{'sku_pickpack_1': 1}`
+
+## Findings
+
+### warehouse_conflict_requires_hold
+
+- Severity: `critical`
+- Status: `failed`
+- Business impact: The automation handled a picked or packed warehouse order as if cancellation were still simple. That can produce a refund, inventory release, and outbound parcel for the same order.
+- Recommendation: When warehouse status is picked, packed, label-created, carrier-scanned, or shipped, place the order on hold and submit a warehouse cancellation request before refunding or releasing inventory.
+
+Evidence:
+
+```json
+{
+  "cancel_request_id": "cancel_req_5001",
+  "order_id": "order_5001",
+  "warehouse_jobs_at_request": [
+    {
+      "warehouse_job_id": "wh_job_5001",
+      "order_id": "order_5001",
+      "sku": "sku_pickpack_1",
+      "quantity": 1,
+      "status": "picked",
+      "cancellation_requested": false,
+      "hold_status": null,
+      "continued_after_cancel": false
+    }
+  ],
+  "order_status_after": "cancelled",
+  "inventory_release_ids": [
+    "release_001"
+  ],
+  "refund_ids": [
+    "refund_001"
+  ],
+  "continued_warehouse_jobs": [
+    "wh_job_5001"
+  ],
+  "hold_ids": [],
+  "warehouse_cancellation_request_ids": []
+}
+```
+
+### no_ship_after_cancel
+
+- Severity: `critical`
+- Status: `failed`
+- Business impact: The warehouse continued fulfillment after the order was marked cancelled, creating wrong-shipment and customer support recovery risk.
+- Recommendation: Do not mark the order cancelled or clear downstream actions until the warehouse confirms the pick/pack job has been stopped.
+
+Evidence:
+
+```json
+{
+  "order_id": "order_5001",
+  "warehouse_job_id": "wh_job_5001",
+  "warehouse_status_after": "shipped",
+  "continued_after_cancel": true,
+  "order_status_after": "cancelled",
+  "shipment_status_after": "shipped"
+}
+```
+
+### no_double_refund_or_inventory_release
+
+- Severity: `high`
+- Status: `failed`
+- Business impact: The automation refunded the buyer and released inventory while the warehouse still shipped the goods. This creates money loss plus inventory ledger mismatch.
+- Recommendation: Keep refund and inventory release pending until warehouse cancellation is confirmed. Resolve the warehouse state first, then perform the financial and inventory actions.
+
+Evidence:
+
+```json
+{
+  "order_id": "order_5001",
+  "inventory_release_ids": [
+    "release_001"
+  ],
+  "refund_ids": [
+    "refund_001"
+  ],
+  "continued_warehouse_jobs": [
+    "wh_job_5001"
+  ],
+  "warehouse_statuses_after": [
+    "shipped"
+  ]
+}
+```
+
+## How To Fix
+
+Treat picked, packed, label-created, carrier-scanned, and shipped warehouse states as conflict states. Put the order on hold, submit a warehouse cancellation request, and wait for warehouse confirmation before issuing a refund or releasing reserved inventory.
+
+
+## Replay
+
+Run `commerce-safety replay runs/run_20260529T053022750334Z_SCN-005_bad_runner` to print the recorded timeline from `trace.json`.

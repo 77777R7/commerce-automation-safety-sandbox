@@ -1,0 +1,221 @@
+{
+  "run_id": "run_20260529T053022722480Z_SCN-002_good_runner",
+  "scenario_id": "SCN-002",
+  "scenario_name": "timeout_after_commit_retry",
+  "runner": "good_runner",
+  "status": "passed",
+  "generated_at": "2026-05-29T05:30:22.722558+00:00",
+  "initial_state": {
+    "orders": {
+      "order_2001": {
+        "order_id": "order_2001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_retry_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_retry_1": {
+        "sku": "sku_retry_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 0,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_retry_1": 1
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_2001": {
+        "order_id": "order_2001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_retry_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_retry_1": {
+        "sku": "sku_retry_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 0,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [
+      {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_2001",
+        "sku": "sku_retry_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": null,
+        "idempotency_key": "fulfillment:order_2001:sku_retry_1:create",
+        "request_id": "task_fulfill_2001:attempt_1",
+        "source_event_id": "task_fulfill_2001"
+      }
+    ],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 1,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_retry_1": 1
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "fulfillment_task_received",
+      "message": "Fulfillment task task_fulfill_2001 received for order order_2001 with fault timeout_after_commit.",
+      "details": {
+        "type": "fulfillment_task",
+        "id": "task_fulfill_2001",
+        "order_id": "order_2001",
+        "fault": {
+          "type": "timeout_after_commit",
+          "action": "create_fulfillment"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "actor": "good_runner",
+      "event": "fulfillment_task_processing_started",
+      "message": "good_runner starts task task_fulfill_2001 with stable idempotency key.",
+      "details": {
+        "task_id": "task_fulfill_2001",
+        "order_id": "order_2001",
+        "idempotency_key": "fulfillment:order_2001:sku_retry_1:create"
+      }
+    },
+    {
+      "step": 3,
+      "actor": "good_runner",
+      "event": "fulfillment_created",
+      "message": "good_runner creates fulfillment ful_001 for order order_2001, sku sku_retry_1.",
+      "details": {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_2001",
+        "sku": "sku_retry_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": null,
+        "idempotency_key": "fulfillment:order_2001:sku_retry_1:create",
+        "request_id": "task_fulfill_2001:attempt_1",
+        "source_event_id": "task_fulfill_2001"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "commerce_twin",
+      "event": "fault_injected",
+      "message": "Twin committed fulfillment ful_001, then returned timeout_after_commit.",
+      "details": {
+        "type": "timeout_after_commit",
+        "action": "create_fulfillment",
+        "fulfillment_id": "ful_001",
+        "order_id": "order_2001",
+        "sku": "sku_retry_1",
+        "idempotency_key": "fulfillment:order_2001:sku_retry_1:create",
+        "request_id": "task_fulfill_2001:attempt_1",
+        "source_event_id": "task_fulfill_2001"
+      }
+    },
+    {
+      "step": 5,
+      "actor": "good_runner",
+      "event": "timeout_received",
+      "message": "good_runner receives timeout_after_commit and checks existing fulfillment state before retrying.",
+      "details": {
+        "task_id": "task_fulfill_2001",
+        "retry_strategy": "query_before_retry"
+      }
+    },
+    {
+      "step": 6,
+      "actor": "good_runner",
+      "event": "existing_fulfillment_confirmed",
+      "message": "good_runner confirms fulfillment ful_001 already committed.",
+      "details": {
+        "task_id": "task_fulfill_2001",
+        "fulfillment_id": "ful_001",
+        "idempotency_key": "fulfillment:order_2001:sku_retry_1:create"
+      }
+    },
+    {
+      "step": 7,
+      "actor": "policy_engine",
+      "event": "policy_check_passed",
+      "message": "Policy check passed with no violations.",
+      "details": {
+        "status": "passed"
+      }
+    }
+  ]
+}

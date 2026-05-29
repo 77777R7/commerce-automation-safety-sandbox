@@ -1,0 +1,42 @@
+{
+  "run_id": "run_20260529T053022739025Z_SCN-004_bad_runner",
+  "scenario_id": "SCN-004",
+  "runner": "bad_runner",
+  "status": "failed",
+  "findings": [
+    {
+      "policy_id": "no_refund_after_shipment_without_approval",
+      "severity": "critical",
+      "status": "failed",
+      "evidence": {
+        "refund_id": "refund_001",
+        "order_id": "order_4001",
+        "amount": 120.0,
+        "reason": "buyer_changed_mind",
+        "fulfillment_status_at_issue": "shipped",
+        "shipment_status_at_issue": "carrier_scanned",
+        "approval_id": null,
+        "approved_by": null,
+        "source_event_id": "refund_req_4001"
+      },
+      "business_impact": "The automation issued a refund after the shipment had already left the controllable fulfillment stage. This can create money-plus-goods loss and manual recovery work.",
+      "recommendation": "When an order is shipped or carrier-scanned, create an approval request and hold the refund until a reviewer confirms the correct after-shipment action."
+    },
+    {
+      "policy_id": "high_value_refund_requires_approval",
+      "severity": "high",
+      "status": "failed",
+      "evidence": {
+        "refund_id": "refund_001",
+        "order_id": "order_4001",
+        "amount": 120.0,
+        "threshold": 100.0,
+        "approval_id": null,
+        "approved_by": null,
+        "source_event_id": "refund_req_4001"
+      },
+      "business_impact": "The automation issued a high-value refund without approval, increasing avoidable cash-loss and fraud risk.",
+      "recommendation": "Route refunds at or above the high-value threshold into an approval workflow before issuing money back to the buyer."
+    }
+  ]
+}

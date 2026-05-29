@@ -1,0 +1,227 @@
+{
+  "run_id": "run_20260529T053022712725Z_duplicate_webhook_good_runner",
+  "scenario_id": "duplicate_webhook",
+  "scenario_name": "Duplicate webhook creates duplicate fulfillment",
+  "runner": "good_runner",
+  "status": "passed",
+  "generated_at": "2026-05-29T05:30:22.712806+00:00",
+  "initial_state": {
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_widget_1": {
+        "sku": "sku_widget_1",
+        "on_hand": 1,
+        "reserved": 0,
+        "available": 1,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_widget_1": 0
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_widget_1": {
+        "sku": "sku_widget_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 1,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [
+      {
+        "reservation_id": "res_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    ],
+    "fulfillments": [
+      {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": "fulfillment:order_1001:sku_widget_1",
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    ],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 1,
+      "reservations": 1,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_widget_1": 1
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "webhook_received",
+      "message": "Webhook wh_paid_001 received for order order_1001.",
+      "details": {
+        "type": "webhook",
+        "id": "wh_paid_001",
+        "topic": "order_paid",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 2,
+      "actor": "good_runner",
+      "event": "webhook_processing_started",
+      "message": "good_runner starts processing webhook wh_paid_001 with dedupe.",
+      "details": {
+        "webhook_id": "wh_paid_001",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 3,
+      "actor": "good_runner",
+      "event": "inventory_reserved",
+      "message": "good_runner reserves 1 unit(s) of sku_widget_1; reserved inventory is now 1.",
+      "details": {
+        "reservation_id": "res_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "good_runner",
+      "event": "fulfillment_created",
+      "message": "good_runner creates fulfillment ful_001 for order order_1001, sku sku_widget_1.",
+      "details": {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": "fulfillment:order_1001:sku_widget_1",
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    },
+    {
+      "step": 5,
+      "actor": "scenario",
+      "event": "webhook_received",
+      "message": "Webhook wh_paid_001 received for order order_1001.",
+      "details": {
+        "type": "webhook",
+        "id": "wh_paid_001",
+        "topic": "order_paid",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 6,
+      "actor": "good_runner",
+      "event": "duplicate_webhook_skipped",
+      "message": "good_runner skips duplicate webhook wh_paid_001.",
+      "details": {
+        "type": "webhook",
+        "id": "wh_paid_001",
+        "topic": "order_paid",
+        "order_id": "order_1001"
+      }
+    },
+    {
+      "step": 7,
+      "actor": "policy_engine",
+      "event": "policy_check_passed",
+      "message": "Policy check passed with no violations.",
+      "details": {
+        "status": "passed"
+      }
+    }
+  ]
+}

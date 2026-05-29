@@ -1,0 +1,62 @@
+id: P1-D
+name: bundle_component_mapping_drift_causes_wrong_ship_count
+priority: P1
+status: backlog_spec
+source_records:
+  - FI-P0-006
+description: >
+  A bundle or kitted SKU mapping changes, but the automation uses a stale
+  component mapping to reserve inventory or release work to the warehouse. The
+  warehouse ships the wrong count or wrong component set.
+initial_state:
+  order:
+    order_id: order_bundle_1001
+    order_status: paid
+    line_items:
+      - sku: bundle_parent_1
+        quantity: 1
+  bundle_mapping:
+    parent_sku: bundle_parent_1
+    current_version: v2
+    automation_version: v1
+    components_current:
+      - sku: component_a
+        quantity: 2
+      - sku: component_b
+        quantity: 1
+    components_used_by_automation:
+      - sku: component_a
+        quantity: 1
+      - sku: component_b
+        quantity: 1
+  warehouse:
+    status: not_released
+faults:
+  - type: client_component_mapping_changed
+  - type: stale_bundle_mapping_in_automation
+bad_runner_expected:
+  - reserve_parent_without_component_validation
+  - release_wrong_component_count_to_warehouse
+good_runner_expected:
+  - validate_bundle_mapping_version
+  - reserve_components_atomically
+  - block_warehouse_release_on_mapping_change
+policies:
+  primary:
+    - bundle_mapping_must_match_current_version
+  secondary:
+    - bundle_component_reservation_required
+    - mapping_change_requires_test_run
+required_twins:
+  - OrderTwin
+  - InventoryTwin
+  - BundleMappingTwin
+  - WarehouseTwin
+report:
+  failed_summary:
+    - The automation created a bundle mapping incident.
+    - It released a bundle order to warehouse using a stale component mapping.
+  fix: >
+    Validate the current bundle mapping version before reservation or warehouse
+    release, then reserve components atomically.
+

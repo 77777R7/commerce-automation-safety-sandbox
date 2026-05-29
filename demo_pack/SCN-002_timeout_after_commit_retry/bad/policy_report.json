@@ -1,0 +1,65 @@
+{
+  "run_id": "run_20260529T053022718698Z_SCN-002_bad_runner",
+  "scenario_id": "SCN-002",
+  "runner": "bad_runner",
+  "status": "failed",
+  "findings": [
+    {
+      "policy_id": "idempotency_required_for_mutating_retries",
+      "severity": "critical",
+      "status": "failed",
+      "evidence": {
+        "source_event_id": "task_fulfill_2001",
+        "fault": "timeout_after_commit",
+        "action": "create_fulfillment",
+        "order_id": "order_2001",
+        "sku": "sku_retry_1",
+        "fulfillment_ids": [
+          "ful_001",
+          "ful_002"
+        ],
+        "request_ids": [
+          "task_fulfill_2001:attempt_1",
+          "task_fulfill_2001:attempt_2"
+        ],
+        "idempotency_keys": [
+          null,
+          null
+        ],
+        "missing_idempotency_key": true
+      },
+      "business_impact": "The first fulfillment committed, but the automation received a timeout and retried as a new mutation. This can create duplicate fulfillment when the system was actually successful.",
+      "recommendation": "Use a stable idempotency key for mutating fulfillment requests and, after timeout, query existing fulfillment state before retrying."
+    },
+    {
+      "policy_id": "no_duplicate_fulfillment",
+      "severity": "critical",
+      "status": "failed",
+      "evidence": {
+        "order_id": "order_2001",
+        "sku": "sku_retry_1",
+        "ordered_quantity": 1,
+        "fulfilled_quantity": 2,
+        "fulfillment_count": 2,
+        "fulfillment_ids": [
+          "ful_001",
+          "ful_002"
+        ],
+        "webhook_ids": [
+          null,
+          null
+        ],
+        "source_event_ids": [
+          "task_fulfill_2001",
+          "task_fulfill_2001"
+        ],
+        "idempotency_keys": [
+          null,
+          null
+        ]
+      },
+      "business_impact": "The automation created more fulfillment than the order requires, creating duplicate shipment and inventory loss risk.",
+      "recommendation": "Check existing fulfillment state before creating another fulfillment, and use a stable dedupe or idempotency key for repeated delivery or retry paths."
+    }
+  ]
+}

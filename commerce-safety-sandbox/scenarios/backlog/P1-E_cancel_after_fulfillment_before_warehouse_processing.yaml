@@ -1,0 +1,52 @@
+id: P1-E
+name: cancel_after_fulfillment_before_warehouse_processing
+priority: P1
+status: backlog_spec
+source_records:
+  - FI-P0-003
+description: >
+  A buyer cancellation arrives after fulfillment submission or label creation
+  but before the warehouse physically picks the order. Unsafe automation treats
+  the cancellation as either safely stopped or safely shipped instead of
+  honoring the recoverable warehouse cutoff window.
+initial_state:
+  order:
+    order_id: order_cancel_window_1001
+    payment_status: paid
+    order_status: open
+    fulfillment_status: label_created
+    cancel_requested: true
+  warehouse:
+    job_id: wh_cancel_window_1001
+    status: not_picked
+  inventory:
+    - sku: sku_cancel_window_1
+      reserved: 1
+      available: 0
+faults:
+  - type: cancel_event_after_label_before_pick
+bad_runner_expected:
+  - assume_cancel_succeeded_without_warehouse_confirmation
+  - release_inventory_or_refund_too_early
+good_runner_expected:
+  - detect_recoverable_cancel_window
+  - place_order_on_hold
+  - submit_warehouse_cancel_request
+  - wait_for_warehouse_outcome
+policies:
+  primary:
+    - cancel_during_label_created_requires_hold
+  secondary:
+    - warehouse_cancel_cutoff_must_be_checked
+required_twins:
+  - OrderTwin
+  - FulfillmentTwin
+  - WarehouseTwin
+  - EventSimulator
+report:
+  failed_summary:
+    - The automation created a cancellation window incident.
+    - It moved money or inventory state before the warehouse confirmed whether the parcel could still be stopped.
+  fix: >
+    Treat label-created/not-picked as a recoverable but unsafe window. Hold the
+    order and wait for warehouse cancellation outcome before refund or inventory release.

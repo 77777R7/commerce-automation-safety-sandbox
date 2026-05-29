@@ -1,0 +1,7 @@
+{
+  "run_id": "run_20260529T053022712725Z_duplicate_webhook_good_runner",
+  "scenario_id": "duplicate_webhook",
+  "runner": "good_runner",
+  "status": "passed",
+  "findings": []
+}

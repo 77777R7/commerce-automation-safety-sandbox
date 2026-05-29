@@ -1,0 +1,26 @@
+orders:
+  order_id: Order ID
+  buyer_id: Buyer Email
+  sku: SKU
+  quantity: Qty
+  payment_status: Payment
+  order_status: Order Status
+  created_at: Created At
+inventory:
+  sku: SKU
+  on_hand: On Hand
+  reserved: Reserved
+  warehouse: Warehouse
+fulfillments:
+  order_id: Order ID
+  sku: SKU
+  quantity: Qty
+  fulfillment_status: Fulfillment Status
+  tracking_number: Tracking
+  warehouse_status: Warehouse Status
+refunds:
+  order_id: Order ID
+  amount: Amount
+  refund_status: Refund Status
+  reason: Reason
+  approved_by: Approved By

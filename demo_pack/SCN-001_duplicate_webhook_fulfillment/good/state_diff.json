@@ -1,0 +1,126 @@
+{
+  "before": {
+    "fulfillments": 0,
+    "fulfillment_promises": 0,
+    "refunds": 0,
+    "approval_requests": 0,
+    "inventory_releases": 0,
+    "workflow_holds": 0,
+    "warehouse_cancellation_requests": 0,
+    "warehouse_jobs": [],
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "refund_amount_issued": 0,
+    "reserved_inventory": {
+      "sku_widget_1": 0
+    }
+  },
+  "after": {
+    "fulfillments": 1,
+    "fulfillment_promises": 0,
+    "refunds": 0,
+    "approval_requests": 0,
+    "inventory_releases": 0,
+    "workflow_holds": 0,
+    "warehouse_cancellation_requests": 0,
+    "refund_amount_issued": 0,
+    "reserved_inventory": {
+      "sku_widget_1": 1
+    },
+    "reservations": [
+      {
+        "reservation_id": "res_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001"
+      }
+    ],
+    "fulfillments_detail": [
+      {
+        "fulfillment_id": "ful_001",
+        "order_id": "order_1001",
+        "sku": "sku_widget_1",
+        "quantity": 1,
+        "created_by": "good_runner",
+        "webhook_id": "wh_paid_001",
+        "idempotency_key": "fulfillment:order_1001:sku_widget_1",
+        "request_id": null,
+        "source_event_id": "wh_paid_001"
+      }
+    ],
+    "fulfillment_promises_detail": [],
+    "refunds_detail": [],
+    "approval_requests_detail": [],
+    "warehouse_jobs": [],
+    "inventory_releases_detail": [],
+    "workflow_holds_detail": [],
+    "warehouse_cancellation_requests_detail": [],
+    "orders": {
+      "order_1001": {
+        "order_id": "order_1001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_widget_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    }
+  },
+  "delta": {
+    "fulfillments_added": 1,
+    "fulfillment_promises_added": 0,
+    "refunds_added": 0,
+    "approval_requests_added": 0,
+    "inventory_releases_added": 0,
+    "workflow_holds_added": 0,
+    "warehouse_cancellation_requests_added": 0,
+    "refund_amount_delta": 0,
+    "reservations_added": 1,
+    "reserved_inventory_delta": {
+      "sku_widget_1": 1
+    }
+  },
+  "expected": {
+    "reserved_inventory": {
+      "sku_widget_1": 1
+    }
+  },
+  "accident_signals": {
+    "duplicate_fulfillment": false,
+    "duplicated_reserved_inventory": false,
+    "excess_reserved_inventory": {},
+    "unreserved_fulfillment_promise": false,
+    "oversell_risk": false,
+    "post_shipment_refund_without_approval": false,
+    "high_value_refund_without_approval": false,
+    "warehouse_conflict_without_hold": false,
+    "ship_after_cancel": false,
+    "refund_and_inventory_release_while_warehouse_continued": false
+  }
+}

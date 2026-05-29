@@ -1,0 +1,26 @@
+id: duplicate_webhook
+name: Duplicate webhook creates duplicate fulfillment
+description: >
+  The same paid-order webhook is delivered twice. Unsafe automation processes
+  both deliveries and creates duplicate fulfillment.
+initial_state:
+  order:
+    order_id: order_1001
+    payment_status: paid
+    order_status: open
+    line_items:
+      - sku: sku_widget_1
+        quantity: 1
+  inventory:
+    - sku: sku_widget_1
+      on_hand: 1
+      reserved: 0
+events:
+  - type: webhook
+    id: wh_paid_001
+    topic: order_paid
+    order_id: order_1001
+  - type: webhook
+    id: wh_paid_001
+    topic: order_paid
+    order_id: order_1001

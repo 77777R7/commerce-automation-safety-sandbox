@@ -1,0 +1,252 @@
+{
+  "run_id": "run_20260529T053022755031Z_SCN-005_good_runner",
+  "scenario_id": "SCN-005",
+  "scenario_name": "cancel_after_pick_pack_conflict",
+  "runner": "good_runner",
+  "status": "passed",
+  "generated_at": "2026-05-29T05:30:22.755104+00:00",
+  "initial_state": {
+    "orders": {
+      "order_5001": {
+        "order_id": "order_5001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_pickpack_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "submitted_to_warehouse",
+        "shipment_status": "not_shipped",
+        "refund_status": "none",
+        "captured_amount": 80.0,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_pickpack_1": {
+        "sku": "sku_pickpack_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 0,
+        "committed": 1,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [
+      {
+        "warehouse_job_id": "wh_job_5001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "quantity": 1,
+        "status": "picked",
+        "cancellation_requested": false,
+        "hold_status": null,
+        "continued_after_cancel": false
+      }
+    ],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 1,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_pickpack_1": 1
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_5001": {
+        "order_id": "order_5001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_pickpack_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "submitted_to_warehouse",
+        "shipment_status": "not_shipped",
+        "refund_status": "none",
+        "captured_amount": 80.0,
+        "cancel_requested": true
+      }
+    },
+    "inventory": {
+      "sku_pickpack_1": {
+        "sku": "sku_pickpack_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 0,
+        "committed": 1,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [
+      {
+        "warehouse_job_id": "wh_job_5001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "quantity": 1,
+        "status": "picked",
+        "cancellation_requested": true,
+        "hold_status": "held_for_review",
+        "continued_after_cancel": false
+      }
+    ],
+    "inventory_releases": [],
+    "workflow_holds": [
+      {
+        "hold_id": "hold_001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "reason": "warehouse_pick_pack_conflict",
+        "created_by": "good_runner",
+        "source_event_id": "cancel_req_5001",
+        "warehouse_status_at_hold": "picked"
+      }
+    ],
+    "warehouse_cancellation_requests": [
+      {
+        "cancellation_request_id": "wh_cancel_001",
+        "order_id": "order_5001",
+        "warehouse_job_id": "wh_job_5001",
+        "created_by": "good_runner",
+        "source_event_id": "cancel_req_5001",
+        "status": "requested",
+        "warehouse_status_at_request": "picked"
+      }
+    ],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 1,
+      "inventory_releases": 0,
+      "workflow_holds": 1,
+      "warehouse_cancellation_requests": 1,
+      "reserved_inventory": {
+        "sku_pickpack_1": 1
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "cancel_request_received",
+      "message": "Cancel request cancel_req_5001 received for order order_5001.",
+      "details": {
+        "type": "cancel_request",
+        "id": "cancel_req_5001",
+        "order_id": "order_5001",
+        "amount": 80,
+        "reason": "buyer_cancelled",
+        "warehouse_jobs_at_request": [
+          {
+            "warehouse_job_id": "wh_job_5001",
+            "order_id": "order_5001",
+            "sku": "sku_pickpack_1",
+            "quantity": 1,
+            "status": "picked",
+            "cancellation_requested": false,
+            "hold_status": null,
+            "continued_after_cancel": false
+          }
+        ]
+      }
+    },
+    {
+      "step": 2,
+      "actor": "good_runner",
+      "event": "cancel_request_processing_started",
+      "message": "good_runner checks warehouse progress before resolving cancel request cancel_req_5001.",
+      "details": {
+        "request_id": "cancel_req_5001",
+        "order_id": "order_5001",
+        "warehouse_jobs_at_request": []
+      }
+    },
+    {
+      "step": 3,
+      "actor": "good_runner",
+      "event": "workflow_hold_created",
+      "message": "good_runner places order order_5001 on hold for warehouse_pick_pack_conflict.",
+      "details": {
+        "hold_id": "hold_001",
+        "order_id": "order_5001",
+        "sku": "sku_pickpack_1",
+        "reason": "warehouse_pick_pack_conflict",
+        "created_by": "good_runner",
+        "source_event_id": "cancel_req_5001",
+        "warehouse_status_at_hold": "picked"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "good_runner",
+      "event": "warehouse_cancellation_requested",
+      "message": "good_runner asks warehouse to cancel job wh_job_5001 while status is picked.",
+      "details": {
+        "cancellation_request_id": "wh_cancel_001",
+        "order_id": "order_5001",
+        "warehouse_job_id": "wh_job_5001",
+        "created_by": "good_runner",
+        "source_event_id": "cancel_req_5001",
+        "status": "requested",
+        "warehouse_status_at_request": "picked"
+      }
+    },
+    {
+      "step": 5,
+      "actor": "good_runner",
+      "event": "cancel_resolution_held",
+      "message": "good_runner does not refund, release inventory, or mark order order_5001 cancelled until warehouse confirms the stop.",
+      "details": {
+        "request_id": "cancel_req_5001",
+        "order_id": "order_5001",
+        "held_actions": [
+          "cancel_order",
+          "release_inventory",
+          "issue_refund"
+        ]
+      }
+    },
+    {
+      "step": 6,
+      "actor": "policy_engine",
+      "event": "policy_check_passed",
+      "message": "Policy check passed with no violations.",
+      "details": {
+        "status": "passed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+id: SCN-005
+name: cancel_after_pick_pack_conflict
+risk_level: critical
+description: >
+  A buyer cancellation arrives after the warehouse has already picked the order.
+  Unsafe automation treats cancellation as simple, releases inventory, issues a
+  refund, and the warehouse still ships the parcel.
+approval_rules:
+  high_value_refund_threshold: 100
+initial_state:
+  order:
+    order_id: order_5001
+    payment_status: paid
+    order_status: open
+    fulfillment_status: submitted_to_warehouse
+    shipment_status: not_shipped
+    refund_status: none
+    cancel_requested: false
+    captured_amount: 80
+    line_items:
+      - sku: sku_pickpack_1
+        quantity: 1
+  inventory:
+    - sku: sku_pickpack_1
+      on_hand: 1
+      reserved: 1
+      available: 0
+      committed: 1
+  warehouse:
+    - warehouse_job_id: wh_job_5001
+      order_id: order_5001
+      sku: sku_pickpack_1
+      quantity: 1
+      status: picked
+events:
+  - type: cancel_request
+    id: cancel_req_5001
+    order_id: order_5001
+    amount: 80
+    reason: buyer_cancelled
+bad_runner_expected:
+  - cancel_order
+  - release_inventory
+  - issue_refund
+  - warehouse_continues_fulfillment
+good_runner_expected:
+  - detect_warehouse_conflict
+  - place_hold_or_manual_review
+  - submit_cancellation_request_to_warehouse
+  - do_not_release_inventory_until_resolution
+policies:
+  primary:
+    - warehouse_conflict_requires_hold
+  secondary:
+    - no_ship_after_cancel
+    - no_double_refund_or_inventory_release
+report:
+  failed_summary:
+    - The automation created a critical warehouse cancellation conflict.
+    - It cancelled the order, released inventory, and issued a refund while the warehouse continued shipping the already-picked parcel.
+  passed_summary:
+    - The automation avoided the warehouse cancellation conflict.
+    - It detected that the warehouse had already picked the order, placed the case on hold, and asked the warehouse to cancel before touching refund or inventory state.
+  fix: >
+    Treat picked, packed, label-created, carrier-scanned, and shipped warehouse
+    states as conflict states. Put the order on hold, submit a warehouse
+    cancellation request, and wait for warehouse confirmation before issuing a
+    refund or releasing reserved inventory.
+  what_worked: >
+    The automation recognized that cancellation was no longer a simple order
+    update, held the workflow, and avoided refunding or releasing inventory
+    while warehouse resolution was still pending.

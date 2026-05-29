@@ -1,0 +1,62 @@
+id: P1-C
+name: multichannel_inventory_authority
+priority: P1
+status: backlog_spec
+source_records:
+  - FI-P0-004
+  - FI-P0-007
+description: >
+  Shopify, Amazon, TikTok Shop, eBay, or another sales channel shares the same
+  stock pool, but the automation has no single inventory authority. During peak
+  demand, stale polling or conflicting channel updates allow overselling.
+initial_state:
+  inventory_authority: ambiguous
+  channels:
+    - name: Shopify
+      reported_available: 10
+      sync_mode: polling
+    - name: TikTok
+      reported_available: 10
+      sync_mode: polling
+  true_inventory:
+    sku_multi_1:
+      on_hand: 10
+      reserved: 0
+      available: 10
+  conflict_rule: null
+  safety_stock_buffer: 0
+faults:
+  - type: scheduled_polling_lag
+  - type: simultaneous_channel_order
+  - type: conflicting_channel_update
+bad_runner_expected:
+  - treat_multiple_channels_as_inventory_truth
+  - accept_orders_from_stale_channel_stock
+  - miss_sync_conflict
+good_runner_expected:
+  - use_single_inventory_authority
+  - apply_safety_stock_buffer
+  - detect_sync_conflict
+  - fail_closed_or_alert
+policies:
+  primary:
+    - single_inventory_authority_required
+  secondary:
+    - no_oversell_from_stale_inventory
+    - inventory_conflict_rule_required
+    - sync_failure_alert_required
+    - safety_stock_required_for_peak_skus
+required_twins:
+  - InventoryTwin
+  - ChannelInventoryTwin
+  - MarketplaceChannelTwin
+  - ConflictResolutionTwin
+  - AlertTwin
+report:
+  failed_summary:
+    - The automation created a multichannel inventory authority incident.
+    - Multiple channels acted as stock truth, so stale or conflicting quantities caused oversell risk.
+  fix: >
+    Declare one inventory authority, push sellable stock outward, add safety
+    buffers for high-risk SKUs, and alert/fail closed on sync conflicts.
+

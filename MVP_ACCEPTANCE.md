@@ -1,0 +1,460 @@
+# MVP Acceptance Contract
+
+This document defines the non-negotiable behavior for the current Week 1 MVP.
+
+## Hard Rules
+
+1. CLI-first only.
+2. The twin is permissive: bad actions must be allowed to mutate state.
+3. Policy Engine detects incidents after the twin records state changes.
+4. Policy findings must make `commerce-safety run` exit non-zero by default.
+5. The same scenario must exercise both safe and unsafe automation.
+6. Replay reads from `trace.json`; it must not rerun the scenario.
+7. Every run writes:
+   - `trace.json`
+   - `policy_report.json`
+   - `state_diff.json`
+   - `report.md`
+8. `PolicyFinding` must include:
+   - `policy_id`
+   - `severity`
+   - `status`
+   - `evidence`
+   - `business_impact`
+   - `recommendation`
+9. Inventory accident signals must compare actual reserved inventory to expected
+   order quantity, not use a naive `reserved > 1` check.
+10. Duplicate webhook detection should track duplicate side effects generally.
+    The current slice must at least include reservations and fulfillments.
+
+## Current Baseline Scenario
+
+Scenario:
+
+```txt
+commerce-safety-sandbox/scenarios/duplicate_webhook.yaml
+```
+
+Risk:
+
+```txt
+duplicate_webhook -> duplicate_fulfillment
+```
+
+Expected bad path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner bad_runner
+```
+
+Acceptance:
+
+- Command exits `1`.
+- Status is `failed`.
+- `policy_report.json` includes:
+  - `no_duplicate_fulfillment`
+  - `webhook_dedup_required`
+- `state_diff.json` shows:
+  - before fulfillments: `0`
+  - after fulfillments: `2`
+  - expected reserved inventory for `sku_widget_1`: `1`
+  - actual reserved inventory for `sku_widget_1`: `2`
+  - `duplicated_reserved_inventory: true`
+- `webhook_dedup_required.evidence.side_effects_from_same_webhook` includes
+  both reservation and fulfillment side effects.
+
+Expected good path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner good_runner
+```
+
+Acceptance:
+
+- Command exits `0`.
+- Status is `passed`.
+- `policy_report.json` contains no findings.
+- Replay shows the duplicate webhook was skipped.
+
+Replay acceptance:
+
+```bash
+./commerce-safety replay runs/<run_id>
+```
+
+Acceptance:
+
+- Output starts with `Replay from trace.json`.
+- Output includes the recorded timeline.
+- It does not execute the scenario again.
+
+## Smoke Gate
+
+The current MVP is considered intact when this passes:
+
+```bash
+./tools/smoke_week1.sh
+```
+
+The full Demo/POC readiness gate is:
+
+```bash
+./tools/smoke_all.sh
+```
+
+It runs the P0 scenario gates, regression capture, Offline Audit CSV/XLSX
+checks, clean audit check, and demo pack verification.
+
+## Stage 3 Regression Scenario Library Acceptance
+
+Command:
+
+```bash
+./commerce-safety save-regression runs/<run_id> --name <name>
+```
+
+Acceptance:
+
+- Only failed runs with policy findings can be saved.
+- Each new run also captures its source `scenario.yaml`.
+- Saved regression directory includes:
+  - `scenario.yaml`
+  - `trace.json`
+  - `policy_report.json`
+  - `state_diff.json`
+  - `summary.md`
+- `summary.md` explains:
+  - source run id
+  - scenario id and name
+  - runner
+  - policy findings
+  - business impact
+  - recommendation
+  - future regression gate
+- Replay can read the saved regression directory directly:
+
+```bash
+./commerce-safety replay regressions/<name>
+```
+
+Smoke gate:
+
+```bash
+./tools/smoke_stage3_regression.sh
+```
+
+## Stage 4 Offline Fulfillment Automation Audit Acceptance
+
+Command:
+
+```bash
+./commerce-safety offline-audit \
+  --orders orders.csv \
+  --inventory inventory.csv \
+  --fulfillments fulfillments.csv \
+  --refunds refunds.csv \
+  --mapping mapping.yaml
+```
+
+Current v0 acceptance:
+
+- CLI-first only; no UI, API server, GitHub, MCP, or Offline Audit database.
+- CSV and XLSX importer with optional YAML schema mapping.
+- XLSX inputs can select worksheets per dataset.
+- PII redaction must remove raw buyer identifiers from saved audit inputs.
+- Audit output directory includes:
+  - `manifest.json`
+  - `data_quality.json`
+  - `state_reconstruction.json`
+  - `policy_report.json`
+  - `report.md`
+  - `redacted_inputs/orders.csv`
+  - `redacted_inputs/inventory.csv`
+  - `redacted_inputs/fulfillments.csv`
+  - `redacted_inputs/refunds.csv`
+- `data_quality.json` reports row counts, missing headers/values, duplicate
+  order lines, orphan fulfillments/refunds, unknown inventory SKUs, and negative
+  inventory rows.
+- `state_reconstruction.json` reconstructs orders, inventory, fulfillments,
+  refunds, and ordered/fulfilled/refunded aggregates.
+- `policy_report.json` uses structured findings with:
+  - `policy_id`
+  - `severity`
+  - `status`
+  - `evidence`
+  - `business_impact`
+  - `recommendation`
+- `report.md` must be readable by operators and explain risk score, top
+  findings, business impact, and recommended fixes.
+- The command exits non-zero when policy findings exist so Offline Audit can
+  later become a gate.
+
+Smoke gate:
+
+```bash
+./tools/smoke_stage4_offline_audit.sh
+./tools/smoke_stage4_offline_audit_xlsx.sh
+./tools/smoke_stage4_offline_audit_clean.sh
+```
+
+## P0 Scenario Library Acceptance
+
+The P0 library has exactly five flagship scenarios:
+
+1. `SCN-001 duplicate_webhook_fulfillment`
+2. `SCN-002 timeout_after_commit_retry`
+3. `SCN-003 stale_inventory_oversell`
+4. `SCN-004 refund_after_shipment_bypass`
+5. `SCN-005 cancel_after_pick_pack_conflict`
+
+Acceptance rules for every P0 scenario:
+
+- Do not add a sixth P0 scenario.
+- Each scenario tells one main accident.
+- Same scenario YAML drives both `bad_runner` and `good_runner`.
+- `bad_runner` fails with a policy finding and non-zero exit.
+- `good_runner` passes with zero exit.
+- The twin permits unsafe state mutation before policy evaluation.
+- `trace.json`, `policy_report.json`, `state_diff.json`, and `report.md`
+  are written.
+- Report narrative keeps one primary policy clear; secondary findings can
+  support the main story but should not blur it.
+
+Deferred P1 examples:
+
+- Tracking uploaded before first carrier scan.
+- SKU mapping mismatch.
+- Timezone cutoff errors.
+- Null discount or price edge cases.
+
+## SCN-002 Timeout After Commit Retry
+
+Scenario:
+
+```txt
+commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml
+```
+
+Risk:
+
+```txt
+timeout_after_commit -> unsafe_retry -> duplicate_fulfillment
+```
+
+Expected bad path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml --runner bad_runner
+```
+
+Acceptance:
+
+- Command exits `1`.
+- Status is `failed`.
+- `policy_report.json` includes:
+  - `idempotency_required_for_mutating_retries`
+  - `no_duplicate_fulfillment`
+- Trace shows the twin committed the first fulfillment, then returned
+  `timeout_after_commit`.
+- Trace shows `bad_runner` created a second fulfillment after timeout.
+- `state_diff.json` shows:
+  - before fulfillments: `0`
+  - after fulfillments: `2`
+  - `duplicate_fulfillment: true`
+  - `duplicated_reserved_inventory: false`
+
+Expected good path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml --runner good_runner
+```
+
+Acceptance:
+
+- Command exits `0`.
+- Status is `passed`.
+- `policy_report.json` contains no findings.
+- Trace shows `good_runner` checks existing fulfillment state after timeout and
+  confirms the already-committed fulfillment.
+
+Smoke gate:
+
+```bash
+./tools/smoke_scn002.sh
+```
+
+## SCN-003 Stale Inventory Oversell
+
+Scenario:
+
+```txt
+commerce-safety-sandbox/scenarios/SCN-003_stale_inventory_oversell.yaml
+```
+
+Risk:
+
+```txt
+stale_inventory -> promise_without_reservation -> oversell
+```
+
+Expected bad path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-003_stale_inventory_oversell.yaml --runner bad_runner
+```
+
+Acceptance:
+
+- Command exits `1`.
+- Status is `failed`.
+- `policy_report.json` includes:
+  - `reservation_required_before_promise`
+  - `no_inventory_commit_from_stale_snapshot`
+  - `no_oversell`
+- Trace shows `bad_runner` reads stale local inventory and promises fulfillment.
+- `state_diff.json` shows:
+  - before fulfillment promises: `0`
+  - after fulfillment promises: `1`
+  - `unreserved_fulfillment_promise: true`
+  - `oversell_risk: true`
+
+Expected good path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-003_stale_inventory_oversell.yaml --runner good_runner
+```
+
+Acceptance:
+
+- Command exits `0`.
+- Status is `passed`.
+- `policy_report.json` contains no findings.
+- Trace shows `good_runner` refreshes inventory and routes the order to manual review.
+- No fulfillment promise is created.
+
+Smoke gate:
+
+```bash
+./tools/smoke_scn003.sh
+```
+
+## SCN-004 Refund After Shipment Approval Bypass
+
+Scenario:
+
+```txt
+commerce-safety-sandbox/scenarios/SCN-004_refund_after_shipment_bypass.yaml
+```
+
+Risk:
+
+```txt
+shipped_order -> refund_without_approval -> money_plus_goods_loss
+```
+
+Expected bad path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-004_refund_after_shipment_bypass.yaml --runner bad_runner
+```
+
+Acceptance:
+
+- Command exits `1`.
+- Status is `failed`.
+- `policy_report.json` includes:
+  - `no_refund_after_shipment_without_approval`
+  - `high_value_refund_requires_approval`
+- Trace shows `bad_runner` receives the refund request and issues the refund
+  despite shipped/carrier-scanned state.
+- `state_diff.json` shows:
+  - before refunds: `0`
+  - after refunds: `1`
+  - after approval requests: `0`
+  - refund amount issued: `120.0`
+  - `post_shipment_refund_without_approval: true`
+  - `high_value_refund_without_approval: true`
+
+Expected good path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-004_refund_after_shipment_bypass.yaml --runner good_runner
+```
+
+Acceptance:
+
+- Command exits `0`.
+- Status is `passed`.
+- `policy_report.json` contains no findings.
+- Trace shows `good_runner` checks shipment state, creates an approval request,
+  and holds the refund until review.
+- No refund is issued.
+
+Smoke gate:
+
+```bash
+./tools/smoke_scn004.sh
+```
+
+## SCN-005 Cancel After Pick/Pack Warehouse Conflict
+
+Scenario:
+
+```txt
+commerce-safety-sandbox/scenarios/SCN-005_cancel_after_pick_pack_conflict.yaml
+```
+
+Risk:
+
+```txt
+cancel_after_pick -> cancel_refund_release -> warehouse_still_ships
+```
+
+Expected bad path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-005_cancel_after_pick_pack_conflict.yaml --runner bad_runner
+```
+
+Acceptance:
+
+- Command exits `1`.
+- Status is `failed`.
+- `policy_report.json` includes:
+  - `warehouse_conflict_requires_hold`
+  - `no_ship_after_cancel`
+  - `no_double_refund_or_inventory_release`
+- Trace shows `bad_runner` marks the order cancelled, releases inventory,
+  issues a refund, and warehouse still ships.
+- `state_diff.json` shows:
+  - before reserved inventory for `sku_pickpack_1`: `1`
+  - after reserved inventory for `sku_pickpack_1`: `0`
+  - after refunds: `1`
+  - after inventory releases: `1`
+  - after workflow holds: `0`
+  - after warehouse cancellation requests: `0`
+  - `warehouse_conflict_without_hold: true`
+  - `ship_after_cancel: true`
+  - `refund_and_inventory_release_while_warehouse_continued: true`
+
+Expected good path:
+
+```bash
+./commerce-safety run commerce-safety-sandbox/scenarios/SCN-005_cancel_after_pick_pack_conflict.yaml --runner good_runner
+```
+
+Acceptance:
+
+- Command exits `0`.
+- Status is `passed`.
+- `policy_report.json` contains no findings.
+- Trace shows `good_runner` checks warehouse progress, creates a workflow hold,
+  submits a warehouse cancellation request, and does not refund or release
+  inventory yet.
+- Order remains open while warehouse resolution is pending.
+
+Smoke gate:
+
+```bash
+./tools/smoke_scn005.sh
+```

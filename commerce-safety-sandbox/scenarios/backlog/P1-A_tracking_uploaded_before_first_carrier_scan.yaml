@@ -1,0 +1,52 @@
+id: P1-A
+name: tracking_uploaded_before_first_carrier_scan
+priority: P1
+status: backlog_spec
+source_records:
+  - FI-P0-002
+description: >
+  Automation uploads tracking to Shopify immediately after label creation,
+  before the carrier has a visible first scan. The customer receives a tracking
+  notification, clicks the carrier link, sees "label created" or no carrier
+  record, and opens a support ticket.
+initial_state:
+  order:
+    order_id: order_tracking_1001
+    payment_status: paid
+    order_status: open
+    fulfillment_status: label_created
+    shipment_status: label_created_not_scanned
+    tracking_uploaded: false
+  carrier:
+    carrier_status: label_created_not_scanned
+    first_scan_seen: false
+  customer_notification:
+    sent: false
+faults:
+  - type: carrier_first_scan_delay
+    delay_hours: 6
+bad_runner_expected:
+  - upload_tracking_before_first_scan
+  - send_customer_tracking_notification
+good_runner_expected:
+  - wait_for_carrier_visibility
+  - upload_tracking_after_first_scan
+  - avoid_false_shipped_claim
+policies:
+  primary:
+    - customer_notification_requires_carrier_visibility
+  secondary:
+    - no_tracking_claim_before_first_carrier_scan
+required_twins:
+  - ShipmentTwin
+  - TrackingTwin
+  - CarrierTwin
+  - CustomerNotificationTwin
+report:
+  failed_summary:
+    - The automation created a tracking visibility incident.
+    - It told the customer tracking was ready before the carrier had a visible scan.
+  fix: >
+    Wait for first carrier scan or an explicit carrier visibility signal before
+    uploading tracking or sending customer-facing shipment notifications.
+

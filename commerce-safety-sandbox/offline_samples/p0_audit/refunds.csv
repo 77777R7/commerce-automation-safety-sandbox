@@ -1,0 +1,3 @@
+Order ID,Amount,Refund Status,Reason,Approved By
+order_9003,120,refunded,buyer_request,
+order_9004,80,refunded,cancel_after_pick,

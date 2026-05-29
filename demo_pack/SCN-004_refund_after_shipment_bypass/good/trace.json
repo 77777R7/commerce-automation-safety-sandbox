@@ -1,0 +1,194 @@
+{
+  "run_id": "run_20260529T053022743048Z_SCN-004_good_runner",
+  "scenario_id": "SCN-004",
+  "scenario_name": "refund_after_shipment_bypass",
+  "runner": "good_runner",
+  "status": "passed",
+  "generated_at": "2026-05-29T05:30:22.743136+00:00",
+  "initial_state": {
+    "orders": {
+      "order_4001": {
+        "order_id": "order_4001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_shipped_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "shipped",
+        "shipment_status": "carrier_scanned",
+        "refund_status": "none",
+        "captured_amount": 120.0,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_shipped_1": {
+        "sku": "sku_shipped_1",
+        "on_hand": 0,
+        "reserved": 0,
+        "available": 0,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_shipped_1": 0
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_4001": {
+        "order_id": "order_4001",
+        "payment_status": "paid",
+        "order_status": "open",
+        "line_items": [
+          {
+            "sku": "sku_shipped_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": "shipped",
+        "shipment_status": "carrier_scanned",
+        "refund_status": "approval_pending",
+        "captured_amount": 120.0,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_shipped_1": {
+        "sku": "sku_shipped_1",
+        "on_hand": 0,
+        "reserved": 0,
+        "available": 0,
+        "committed": 0,
+        "true_available": null,
+        "source_version": null,
+        "last_synced_at": null
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [
+      {
+        "approval_id": "approval_001",
+        "order_id": "order_4001",
+        "amount": 120.0,
+        "reason": "buyer_changed_mind",
+        "created_by": "good_runner",
+        "source_event_id": "refund_req_4001",
+        "status": "pending",
+        "required_policy": "no_refund_after_shipment_without_approval"
+      }
+    ],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 1,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_shipped_1": 0
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "refund_request_received",
+      "message": "Refund request refund_req_4001 received for order order_4001 in the amount of 120.",
+      "details": {
+        "type": "refund_request",
+        "id": "refund_req_4001",
+        "order_id": "order_4001",
+        "amount": 120,
+        "reason": "buyer_changed_mind"
+      }
+    },
+    {
+      "step": 2,
+      "actor": "good_runner",
+      "event": "refund_request_processing_started",
+      "message": "good_runner checks shipment state before refunding order order_4001.",
+      "details": {
+        "request_id": "refund_req_4001",
+        "order_id": "order_4001",
+        "fulfillment_status": "shipped",
+        "shipment_status": "carrier_scanned",
+        "amount": 120
+      }
+    },
+    {
+      "step": 3,
+      "actor": "good_runner",
+      "event": "approval_request_created",
+      "message": "good_runner creates approval request approval_001 before refunding order order_4001.",
+      "details": {
+        "approval_id": "approval_001",
+        "order_id": "order_4001",
+        "amount": 120.0,
+        "reason": "buyer_changed_mind",
+        "created_by": "good_runner",
+        "source_event_id": "refund_req_4001",
+        "status": "pending",
+        "required_policy": "no_refund_after_shipment_without_approval"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "good_runner",
+      "event": "refund_held_for_review",
+      "message": "good_runner holds refund request refund_req_4001 until approval request approval_001 is reviewed.",
+      "details": {
+        "request_id": "refund_req_4001",
+        "approval_id": "approval_001",
+        "order_id": "order_4001",
+        "required_policy": "no_refund_after_shipment_without_approval"
+      }
+    },
+    {
+      "step": 5,
+      "actor": "policy_engine",
+      "event": "policy_check_passed",
+      "message": "Policy check passed with no violations.",
+      "details": {
+        "status": "passed"
+      }
+    }
+  ]
+}

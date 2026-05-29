@@ -1,0 +1,5 @@
+SKU,On Hand,Reserved,Warehouse
+sku_widget,5,1,wh_us_1
+sku_over,1,2,wh_us_1
+sku_refund,1,1,wh_us_2
+sku_cancel,1,1,wh_us_2

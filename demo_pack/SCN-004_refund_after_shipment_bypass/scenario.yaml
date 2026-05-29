@@ -1,0 +1,58 @@
+id: SCN-004
+name: refund_after_shipment_bypass
+risk_level: high
+description: >
+  A buyer asks for a refund after the order has shipped and the carrier has
+  scanned the parcel. Unsafe automation issues the refund directly without an
+  approval step.
+approval_rules:
+  high_value_refund_threshold: 100
+initial_state:
+  order:
+    order_id: order_4001
+    payment_status: paid
+    order_status: open
+    fulfillment_status: shipped
+    shipment_status: carrier_scanned
+    refund_status: none
+    captured_amount: 120
+    line_items:
+      - sku: sku_shipped_1
+        quantity: 1
+  inventory:
+    - sku: sku_shipped_1
+      on_hand: 0
+      reserved: 0
+      available: 0
+      committed: 0
+events:
+  - type: refund_request
+    id: refund_req_4001
+    order_id: order_4001
+    amount: 120
+    reason: buyer_changed_mind
+bad_runner_expected:
+  - issue_refund_without_approval
+good_runner_expected:
+  - detect_shipped_status
+  - create_approval_request
+  - hold_refund_until_review
+policies:
+  primary:
+    - no_refund_after_shipment_without_approval
+  secondary:
+    - high_value_refund_requires_approval
+report:
+  failed_summary:
+    - The automation created a high-risk post-shipment refund incident.
+    - It issued money back after the parcel had already been carrier-scanned, without requiring approval.
+  passed_summary:
+    - The automation avoided the post-shipment refund accident.
+    - It detected that the order was already shipped, created an approval request, and held the refund for review.
+  fix: >
+    Treat shipped or carrier-scanned orders as approval-required before issuing
+    refunds. Create a review task, keep the refund pending, and only issue money
+    after an authorized reviewer confirms the right after-shipment action.
+  what_worked: >
+    The automation checked shipment state first, created an approval request,
+    and avoided issuing a refund while the goods were already in transit.

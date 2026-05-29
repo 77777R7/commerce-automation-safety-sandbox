@@ -1,0 +1,183 @@
+{
+  "run_id": "run_20260529T053022732737Z_SCN-003_good_runner",
+  "scenario_id": "SCN-003",
+  "scenario_name": "stale_inventory_oversell",
+  "runner": "good_runner",
+  "status": "passed",
+  "generated_at": "2026-05-29T05:30:22.732810+00:00",
+  "initial_state": {
+    "orders": {
+      "order_3001": {
+        "order_id": "order_3001",
+        "payment_status": "paid",
+        "order_status": "pending_promise",
+        "line_items": [
+          {
+            "sku": "sku_stale_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_stale_1": {
+        "sku": "sku_stale_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 1,
+        "committed": 1,
+        "true_available": 0,
+        "source_version": "stale",
+        "last_synced_at": "stale"
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_stale_1": 1
+      }
+    }
+  },
+  "final_state": {
+    "orders": {
+      "order_3001": {
+        "order_id": "order_3001",
+        "payment_status": "paid",
+        "order_status": "pending_promise",
+        "line_items": [
+          {
+            "sku": "sku_stale_1",
+            "quantity": 1
+          }
+        ],
+        "fulfillment_status": null,
+        "shipment_status": null,
+        "refund_status": null,
+        "captured_amount": null,
+        "cancel_requested": false
+      }
+    },
+    "inventory": {
+      "sku_stale_1": {
+        "sku": "sku_stale_1",
+        "on_hand": 1,
+        "reserved": 1,
+        "available": 0,
+        "committed": 1,
+        "true_available": 0,
+        "source_version": "refreshed",
+        "last_synced_at": "fresh"
+      }
+    },
+    "reservations": [],
+    "fulfillments": [],
+    "fulfillment_promises": [],
+    "refunds": [],
+    "approval_requests": [],
+    "warehouse_jobs": [],
+    "inventory_releases": [],
+    "workflow_holds": [],
+    "warehouse_cancellation_requests": [],
+    "counts": {
+      "fulfillments": 0,
+      "reservations": 0,
+      "fulfillment_promises": 0,
+      "refunds": 0,
+      "approval_requests": 0,
+      "warehouse_jobs": 0,
+      "inventory_releases": 0,
+      "workflow_holds": 0,
+      "warehouse_cancellation_requests": 0,
+      "reserved_inventory": {
+        "sku_stale_1": 1
+      }
+    }
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "inventory_promise_task_received",
+      "message": "Inventory promise task task_promise_3001 received for order order_3001 with fault stale_inventory_snapshot.",
+      "details": {
+        "type": "inventory_promise_task",
+        "id": "task_promise_3001",
+        "order_id": "order_3001",
+        "fault": {
+          "type": "stale_inventory_snapshot"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "actor": "good_runner",
+      "event": "inventory_refreshed",
+      "message": "good_runner refreshes inventory for sku_stale_1; available is now 0.",
+      "details": {
+        "before": {
+          "sku": "sku_stale_1",
+          "on_hand": 1,
+          "reserved": 1,
+          "available": 1,
+          "committed": 1,
+          "true_available": 0,
+          "source_version": "stale",
+          "last_synced_at": "stale"
+        },
+        "after": {
+          "sku": "sku_stale_1",
+          "on_hand": 1,
+          "reserved": 1,
+          "available": 0,
+          "committed": 1,
+          "true_available": 0,
+          "source_version": "refreshed",
+          "last_synced_at": "fresh"
+        }
+      }
+    },
+    {
+      "step": 3,
+      "actor": "good_runner",
+      "event": "manual_review_routed",
+      "message": "good_runner routes order order_3001, sku sku_stale_1 to manual review.",
+      "details": {
+        "order_id": "order_3001",
+        "sku": "sku_stale_1",
+        "reason": "fresh_inventory_unavailable",
+        "source_event_id": "task_promise_3001"
+      }
+    },
+    {
+      "step": 4,
+      "actor": "policy_engine",
+      "event": "policy_check_passed",
+      "message": "Policy check passed with no violations.",
+      "details": {
+        "status": "passed"
+      }
+    }
+  ]
+}

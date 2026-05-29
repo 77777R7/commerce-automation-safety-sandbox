@@ -1,0 +1,51 @@
+id: SCN-002
+name: timeout_after_commit_retry
+risk_level: critical
+description: >
+  The twin commits create_fulfillment, then returns a timeout. Unsafe automation
+  retries as a new mutation and creates duplicate fulfillment.
+initial_state:
+  order:
+    order_id: order_2001
+    payment_status: paid
+    order_status: open
+    line_items:
+      - sku: sku_retry_1
+        quantity: 1
+  inventory:
+    - sku: sku_retry_1
+      on_hand: 1
+      reserved: 1
+events:
+  - type: fulfillment_task
+    id: task_fulfill_2001
+    order_id: order_2001
+    fault:
+      type: timeout_after_commit
+      action: create_fulfillment
+bad_runner_expected:
+  - retry_without_idempotency_key
+  - duplicate_fulfillment_attempt
+good_runner_expected:
+  - reuse_idempotency_key
+  - query_existing_fulfillment_before_retry
+policies:
+  primary:
+    - idempotency_required_for_mutating_retries
+  secondary:
+    - no_duplicate_fulfillment
+report:
+  failed_summary:
+    - The automation created a critical retry incident.
+    - The first fulfillment committed inside the twin, but the runner saw a timeout and created a second fulfillment as if the first one had failed.
+  passed_summary:
+    - The automation handled timeout-after-commit without creating a duplicate fulfillment.
+    - It used a stable idempotency key and confirmed the already-committed fulfillment before retrying.
+  fix: >
+    Use a stable idempotency key for mutating fulfillment actions. If a timeout
+    happens after a mutation request, query existing fulfillment state or retry
+    with the same idempotency key before creating another fulfillment.
+  what_worked: >
+    The automation treated timeout-after-commit as an uncertain state, reused a
+    stable idempotency key, and confirmed the committed fulfillment instead of
+    creating another one.

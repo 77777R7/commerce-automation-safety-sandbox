@@ -1,0 +1,56 @@
+id: SCN-003
+name: stale_inventory_oversell
+risk_level: critical
+description: >
+  Automation sees a stale local inventory snapshot with one unit available,
+  while true availability is zero. Unsafe automation promises fulfillment
+  without reserving fresh inventory.
+initial_state:
+  order:
+    order_id: order_3001
+    payment_status: paid
+    order_status: pending_promise
+    line_items:
+      - sku: sku_stale_1
+        quantity: 1
+  inventory:
+    - sku: sku_stale_1
+      on_hand: 1
+      reserved: 1
+      available: 1
+      committed: 1
+      true_available: 0
+      source_version: stale
+      last_synced_at: stale
+events:
+  - type: inventory_promise_task
+    id: task_promise_3001
+    order_id: order_3001
+    fault:
+      type: stale_inventory_snapshot
+bad_runner_expected:
+  - promise_fulfillment_without_reservation
+good_runner_expected:
+  - refresh_inventory
+  - reserve_inventory_before_promise
+  - route_to_manual_review_if_stale
+policies:
+  primary:
+    - reservation_required_before_promise
+  secondary:
+    - no_inventory_commit_from_stale_snapshot
+    - no_oversell
+report:
+  failed_summary:
+    - The automation created a critical oversell risk.
+    - It trusted a stale inventory snapshot showing one unit available, then promised fulfillment even though true availability was zero.
+  passed_summary:
+    - The automation avoided the stale inventory oversell.
+    - It refreshed inventory first, saw no fresh availability, and routed the order to manual review instead of promising fulfillment.
+  fix: >
+    Refresh inventory before making customer-facing fulfillment promises. Only
+    promise fulfillment after a successful reservation against fresh available
+    stock; otherwise route the order to manual review.
+  what_worked: >
+    The automation treated stale inventory as unsafe, refreshed the snapshot,
+    and avoided promising fulfillment when true availability was zero.

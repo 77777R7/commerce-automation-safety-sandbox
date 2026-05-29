@@ -1,0 +1,51 @@
+id: P1-B
+name: webhook_delivery_failure_requires_reconciliation
+priority: P1
+status: backlog_spec
+source_records:
+  - FI-P0-005
+description: >
+  A critical order or fulfillment webhook is missed or dropped. Unsafe
+  automation treats webhooks as the only source of truth and never backfills the
+  missing event, causing silent order, inventory, or fulfillment divergence.
+initial_state:
+  webhook_subscription:
+    status: active
+    expected_order_events: 10
+    received_order_events: 8
+    reconciliation_enabled: false
+  orders:
+    created: 10
+    synced_to_automation: 8
+faults:
+  - type: webhook_delivery_failure
+    missing_events: 2
+  - type: webhook_subscription_removed_after_retries
+bad_runner_expected:
+  - rely_only_on_webhooks
+  - miss_order_events
+  - skip_reconciliation
+good_runner_expected:
+  - log_webhook_delivery
+  - detect_event_gap
+  - run_order_reconciliation
+  - alert_on_subscription_health
+policies:
+  primary:
+    - critical_system_must_not_rely_only_on_webhook
+  secondary:
+    - missing_webhook_requires_reconciliation
+    - webhook_subscription_health_alert_required
+required_twins:
+  - WebhookTwin
+  - OrderTwin
+  - FulfillmentTwin
+  - ReconciliationTwin
+report:
+  failed_summary:
+    - The automation created a silent webhook reliability gap.
+    - Missing events were never reconciled, so order and fulfillment state drifted.
+  fix: >
+    Add delivery logging, sequence/time-window gap checks, periodic backfill,
+    and subscription health alerts for critical commerce events.
+

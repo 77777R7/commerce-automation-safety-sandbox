@@ -1,0 +1,13 @@
+.DS_Store
+.codex_spreadsheets/
+.skill_build/
+.pycache_tmp/
+__pycache__/
+*.pyc
+.venv/
+.venv312/
+runs/
+offline_audits/
+regressions/
+demo_pack/_generated_runs/
+outputs/

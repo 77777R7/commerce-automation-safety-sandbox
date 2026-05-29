@@ -1,0 +1,5 @@
+Order ID,SKU,Qty,Fulfillment Status,Tracking,Warehouse Status
+order_9001,sku_widget,1,shipped,TRACK9001A,shipped
+order_9001,sku_widget,1,shipped,TRACK9001B,shipped
+order_9003,sku_refund,1,shipped,TRACK9003,carrier_scanned
+order_9004,sku_cancel,1,processing,,picked
