@@ -113,6 +113,16 @@ def cmd_offline_audit(args: argparse.Namespace) -> int:
     return 1 if result["findings"] else 0
 
 
+def cmd_live_serve(args: argparse.Namespace) -> int:
+    from .live.http_api import serve_live_http
+
+    return serve_live_http(
+        host=args.host,
+        port=args.port,
+        runs_dir=Path(args.runs_dir),
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="commerce-safety",
@@ -218,6 +228,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory where offline audit artifacts are written.",
     )
     audit_parser.set_defaults(func=cmd_offline_audit)
+
+    live_parser = subparsers.add_parser(
+        "live",
+        help="Run Live Agent Sandbox commands.",
+    )
+    live_subparsers = live_parser.add_subparsers(
+        dest="live_command",
+        required=True,
+    )
+    serve_parser = live_subparsers.add_parser(
+        "serve",
+        help="Start the local HTTP Twin API server.",
+    )
+    serve_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host interface for the local live server.",
+    )
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="Port for the local live server.",
+    )
+    serve_parser.set_defaults(func=cmd_live_serve)
     return parser
 
 

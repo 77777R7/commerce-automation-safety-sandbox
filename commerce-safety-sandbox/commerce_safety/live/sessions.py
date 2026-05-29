@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,6 +28,7 @@ class LiveSession:
     status: str = "open"
     created_at: str = ""
     completed_at: str | None = None
+    next_event_index: int = 0
 
 
 class SessionManager:
@@ -73,6 +75,17 @@ class SessionManager:
             }
             for session in self._sessions.values()
         ]
+
+    def get_next_task(self, session_id: str) -> dict[str, Any] | None:
+        session = self.get_session(session_id)
+        events = session.scenario.get("events", [])
+        if session.next_event_index >= len(events):
+            return None
+
+        event = deepcopy(events[session.next_event_index])
+        session.next_event_index += 1
+        self._record_scenario_event(session, event)
+        return event
 
     def complete_session(
         self,
@@ -172,3 +185,22 @@ class SessionManager:
             "status": status,
             "findings": findings,
         }
+
+    def _record_scenario_event(
+        self,
+        session: LiveSession,
+        event: dict[str, Any],
+    ) -> None:
+        event_type = event["type"]
+        if event_type == "webhook":
+            session.twin.receive_webhook(event)
+        elif event_type == "fulfillment_task":
+            session.twin.receive_fulfillment_task(event)
+        elif event_type == "inventory_promise_task":
+            session.twin.receive_inventory_promise_task(event)
+        elif event_type == "refund_request":
+            session.twin.receive_refund_request(event)
+        elif event_type == "cancel_request":
+            session.twin.receive_cancel_request(event)
+        else:
+            raise ValueError(f"Unsupported event type: {event_type}")
