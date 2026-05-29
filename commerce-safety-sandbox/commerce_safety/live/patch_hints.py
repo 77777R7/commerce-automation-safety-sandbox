@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 
@@ -122,6 +123,8 @@ def build_patch_hints(
         "scenario_id": scenario["id"],
         "scenario_name": scenario.get("name", scenario["id"]),
         "status": status,
+        "replay_command": f"commerce-safety replay runs/{run_id}",
+        "likely_guardrails": _likely_guardrails(hints),
         "hints": hints,
     }
 
@@ -157,3 +160,102 @@ def build_patch_hints_markdown(patch_hints: dict[str, Any]) -> str:
             lines.append(f"  - {guardrail}")
         lines.append("")
     return "\n".join(lines)
+
+
+def build_agent_summary_markdown(
+    *,
+    patch_hints: dict[str, Any],
+    findings: list[dict[str, Any]],
+) -> str:
+    lines = [
+        f"# Agent Summary: {patch_hints['scenario_name']}",
+        "",
+        f"- Run ID: `{patch_hints['run_id']}`",
+        f"- Status: `{patch_hints['status']}`",
+        f"- Replay: `{patch_hints['replay_command']}`",
+        "",
+    ]
+    if not findings:
+        lines.extend(
+            [
+                "No policy findings were detected. Keep these guardrails in place.",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    first = findings[0]
+    lines.extend(
+        [
+            "## Failure",
+            "",
+            f"- Primary policy: `{first['policy_id']}`",
+            f"- Severity: `{first['severity']}`",
+            f"- Business impact: {first['business_impact']}",
+            "",
+            "## Likely Guardrails",
+            "",
+        ]
+    )
+    for guardrail in patch_hints["likely_guardrails"]:
+        lines.append(f"- {guardrail}")
+    lines.extend(["", "## Evidence", "", "```json"])
+    lines.append(json.dumps(first.get("evidence", {}), indent=2, ensure_ascii=False))
+    lines.extend(["```", ""])
+    return "\n".join(lines)
+
+
+def build_failure_explain_markdown(
+    *,
+    patch_hints: dict[str, Any],
+    findings: list[dict[str, Any]],
+    trace: dict[str, Any],
+    state_diff: dict[str, Any],
+) -> str:
+    lines = [
+        f"# Failure Explain: {patch_hints['scenario_name']}",
+        "",
+        f"- Run ID: `{patch_hints['run_id']}`",
+        f"- Replay: `{patch_hints['replay_command']}`",
+        "",
+        "## Root Cause",
+        "",
+    ]
+    if findings:
+        for hint in patch_hints["hints"]:
+            lines.append(f"- `{hint['policy_id']}`: {hint['root_cause']}")
+    else:
+        lines.append("- No root cause detected; the run passed policy evaluation.")
+
+    lines.extend(["", "## Timeline", ""])
+    for event in trace["timeline"]:
+        lines.append(f"- Step {event['step']}: {event['message']}")
+        details = event.get("details") or {}
+        if details:
+            lines.append("  ```json")
+            lines.append(json.dumps(details, indent=2, ensure_ascii=False))
+            lines.append("  ```")
+
+    lines.extend(
+        [
+            "",
+            "## State Diff Signals",
+            "",
+            "```json",
+            json.dumps(state_diff.get("accident_signals", {}), indent=2, ensure_ascii=False),
+            "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _likely_guardrails(hints: list[dict[str, Any]]) -> list[str]:
+    guardrails: list[str] = []
+    seen: set[str] = set()
+    for hint in hints:
+        for guardrail in hint["guardrails"]:
+            if guardrail not in seen:
+                seen.add(guardrail)
+                guardrails.append(guardrail)
+    return guardrails

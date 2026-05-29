@@ -12,7 +12,12 @@ from ..models import to_plain
 from ..policies import PolicyEngine, findings_to_plain
 from ..reporting import build_markdown_report, build_state_diff
 from ..twin import CommerceTwin
-from .patch_hints import build_patch_hints, build_patch_hints_markdown
+from .patch_hints import (
+    build_agent_summary_markdown,
+    build_failure_explain_markdown,
+    build_patch_hints,
+    build_patch_hints_markdown,
+)
 
 
 @dataclass
@@ -176,6 +181,22 @@ class SessionManager:
         write_text(
             session.output_path / "patch_hints.md",
             build_patch_hints_markdown(patch_hints),
+        )
+        write_text(
+            session.output_path / "agent_summary.md",
+            build_agent_summary_markdown(
+                patch_hints=patch_hints,
+                findings=findings,
+            ),
+        )
+        write_text(
+            session.output_path / "failure_explain.md",
+            build_failure_explain_markdown(
+                patch_hints=patch_hints,
+                findings=findings,
+                trace=trace,
+                state_diff=state_diff,
+            ),
         )
 
         return {
