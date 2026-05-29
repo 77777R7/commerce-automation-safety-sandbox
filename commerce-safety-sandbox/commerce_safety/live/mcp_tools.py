@@ -24,6 +24,22 @@ class CommerceMCPTools:
             "commerce.get_task": self._get_task,
             "commerce.create_fulfillment": self._create_fulfillment,
             "commerce.find_fulfillment": self._find_fulfillment,
+            "commerce.reserve_inventory": self._reserve_inventory,
+            "commerce.promise_fulfillment": self._promise_fulfillment,
+            "commerce.refresh_inventory": self._refresh_inventory,
+            "commerce.route_manual_review": self._route_manual_review,
+            "commerce.create_refund": self._create_refund,
+            "commerce.create_approval_request": self._create_approval_request,
+            "commerce.cancel_order": self._cancel_order,
+            "commerce.release_inventory": self._release_inventory,
+            "commerce.place_workflow_hold": self._place_workflow_hold,
+            "commerce.submit_warehouse_cancellation_request": (
+                self._submit_warehouse_cancellation_request
+            ),
+            "commerce.warehouse_continue_fulfillment": (
+                self._warehouse_continue_fulfillment
+            ),
+            "commerce.skip_duplicate_webhook": self._skip_duplicate_webhook,
             "commerce.complete_session": self._complete_session,
             "commerce.get_trace": self._get_trace,
             "commerce.get_policy_report": self._get_policy_report,
@@ -104,6 +120,173 @@ class CommerceMCPTools:
             "fulfillment": to_plain(fulfillment) if fulfillment else None,
         }
 
+    def _reserve_inventory(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        reservation = session.twin.reserve_inventory(
+            order_id=arguments["order_id"],
+            sku=arguments["sku"],
+            quantity=int(arguments.get("quantity", 1)),
+            actor=arguments.get("actor", "mcp_agent"),
+            webhook_id=arguments.get("webhook_id"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "reservation": to_plain(reservation),
+        }
+
+    def _promise_fulfillment(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        promise = session.twin.promise_fulfillment(
+            order_id=arguments["order_id"],
+            sku=arguments["sku"],
+            quantity=int(arguments.get("quantity", 1)),
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+            reservation_id=arguments.get("reservation_id"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "promise": to_plain(promise),
+        }
+
+    def _refresh_inventory(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        inventory = session.twin.refresh_inventory_snapshot(
+            sku=arguments["sku"],
+            actor=arguments.get("actor", "mcp_agent"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "inventory": to_plain(inventory),
+        }
+
+    def _route_manual_review(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        session.twin.route_manual_review(
+            order_id=arguments["order_id"],
+            sku=arguments["sku"],
+            actor=arguments.get("actor", "mcp_agent"),
+            reason=arguments.get("reason", "manual_review_required"),
+            source_event_id=arguments.get("source_event_id"),
+        )
+        return {"ok": True, "session_id": session.session_id}
+
+    def _create_refund(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        refund = session.twin.create_refund(
+            order_id=arguments["order_id"],
+            amount=float(arguments["amount"]),
+            reason=arguments.get("reason", "buyer_request"),
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+            approval_id=arguments.get("approval_id"),
+            approved_by=arguments.get("approved_by"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "refund": to_plain(refund),
+        }
+
+    def _create_approval_request(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        approval = session.twin.create_approval_request(
+            order_id=arguments["order_id"],
+            amount=float(arguments["amount"]),
+            reason=arguments.get("reason", "buyer_request"),
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+            required_policy=arguments["required_policy"],
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "approval_request": to_plain(approval),
+        }
+
+    def _cancel_order(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        session.twin.cancel_order(
+            order_id=arguments["order_id"],
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+        )
+        return {"ok": True, "session_id": session.session_id}
+
+    def _release_inventory(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        release = session.twin.release_inventory(
+            order_id=arguments["order_id"],
+            sku=arguments["sku"],
+            quantity=int(arguments.get("quantity", 1)),
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "inventory_release": to_plain(release),
+        }
+
+    def _place_workflow_hold(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        hold = session.twin.place_workflow_hold(
+            order_id=arguments["order_id"],
+            sku=arguments.get("sku"),
+            actor=arguments.get("actor", "mcp_agent"),
+            reason=arguments.get("reason", "workflow_hold_required"),
+            source_event_id=arguments.get("source_event_id"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "workflow_hold": to_plain(hold),
+        }
+
+    def _submit_warehouse_cancellation_request(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        request = session.twin.submit_warehouse_cancellation_request(
+            order_id=arguments["order_id"],
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "warehouse_cancellation_request": to_plain(request),
+        }
+
+    def _warehouse_continue_fulfillment(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        job = session.twin.warehouse_continue_fulfillment(
+            order_id=arguments["order_id"],
+            actor=arguments.get("actor", "mcp_agent"),
+            source_event_id=arguments.get("source_event_id"),
+            new_status=arguments.get("new_status", "shipped"),
+        )
+        return {
+            "ok": True,
+            "session_id": session.session_id,
+            "warehouse_job": to_plain(job),
+        }
+
+    def _skip_duplicate_webhook(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        session.twin.mark_duplicate_skipped(
+            actor=arguments.get("actor", "mcp_agent"),
+            webhook=arguments["webhook"],
+        )
+        return {"ok": True, "session_id": session.session_id}
+
     def _complete_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
         return {
             "ok": True,
@@ -143,6 +326,22 @@ class CommerceMCPTools:
             "commerce.get_task": "Return the next seeded scenario task.",
             "commerce.create_fulfillment": "Create fulfillment in the permissive twin.",
             "commerce.find_fulfillment": "Find an existing fulfillment by order, sku, or key.",
+            "commerce.reserve_inventory": "Reserve inventory in the permissive twin.",
+            "commerce.promise_fulfillment": "Record a customer-facing fulfillment promise.",
+            "commerce.refresh_inventory": "Refresh inventory from true availability.",
+            "commerce.route_manual_review": "Route an order line to manual review.",
+            "commerce.create_refund": "Issue a refund in the permissive twin.",
+            "commerce.create_approval_request": "Create an approval request before risky action.",
+            "commerce.cancel_order": "Mark an order cancelled in the permissive twin.",
+            "commerce.release_inventory": "Release reserved inventory.",
+            "commerce.place_workflow_hold": "Place a workflow hold for review.",
+            "commerce.submit_warehouse_cancellation_request": (
+                "Request warehouse cancellation for an active job."
+            ),
+            "commerce.warehouse_continue_fulfillment": (
+                "Advance warehouse fulfillment despite cancellation."
+            ),
+            "commerce.skip_duplicate_webhook": "Record that a repeated webhook was skipped.",
             "commerce.complete_session": "Evaluate policies and write artifacts.",
             "commerce.get_trace": "Read the live trace timeline.",
             "commerce.get_policy_report": "Read structured policy findings.",
