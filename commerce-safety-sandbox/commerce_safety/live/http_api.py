@@ -7,6 +7,12 @@ from typing import Any
 from urllib.parse import urlparse
 
 from ..models import to_plain
+from ..platform_skins.shopify import (
+    ShopifyGraphQLRouter,
+    ShopifyPlatformBinding,
+    load_shopify_coverage,
+)
+from ..platform_skins.shopify.webhook_mapper import map_shopify_webhook
 from ..twin import TimeoutAfterCommit
 from .mcp_tools import CommerceMCPTools
 from .sessions import SessionManager
@@ -16,6 +22,8 @@ class LiveAPI:
     def __init__(self, runs_dir: Path | str = Path("runs")):
         self.tools = CommerceMCPTools(runs_dir=runs_dir)
         self.manager: SessionManager = self.tools.manager
+        self.shopify_graphql = ShopifyGraphQLRouter(self.tools)
+        self.shopify_coverage = load_shopify_coverage()
         self.twin_action_tools = {
             "reserve_inventory",
             "promise_fulfillment",
@@ -38,11 +46,13 @@ class LiveAPI:
         method: str,
         path: str,
         body: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> tuple[int, dict[str, Any]]:
         try:
             method = method.upper()
             parts = self._path_parts(path)
             payload = body or {}
+            request_headers = headers or {}
 
             if method == "POST" and parts == ["sessions"]:
                 return self._create_session(payload)
@@ -64,6 +74,42 @@ class LiveAPI:
                 return self._create_fulfillment(parts[1], payload)
             if method == "POST" and self._matches(parts, "sessions", "*", "twin", "*"):
                 return self._call_twin_action(parts[1], parts[3], payload)
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "shopify",
+                "webhooks",
+                "skip_duplicate",
+            ):
+                return self._skip_shopify_webhook(parts[1], payload, request_headers)
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "shopify",
+                "webhooks",
+            ):
+                return self._receive_shopify_webhook(parts[1], payload, request_headers)
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "shopify",
+                "admin",
+                "api",
+                "*",
+                "graphql.json",
+            ):
+                return self._shopify_graphql(parts[1], payload)
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "shopify",
+                "coverage",
+            ):
+                return self._shopify_coverage(parts[1])
             if method == "GET" and self._matches(parts, "sessions", "*", "trace"):
                 return self._get_trace(parts[1])
             if method == "POST" and self._matches(parts, "sessions", "*", "complete"):
@@ -137,6 +183,70 @@ class LiveAPI:
         payload = {"session_id": session_id, **body}
         return 200, self.tools.call_tool(f"commerce.{action}", payload)
 
+    def _receive_shopify_webhook(
+        self,
+        session_id: str,
+        body: dict[str, Any],
+        headers: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session = self.manager.get_session(session_id)
+        binding = ShopifyPlatformBinding.from_twin(session.twin)
+        event = map_shopify_webhook(headers, body, binding.order_ids)
+        session.twin.receive_webhook(event)
+        return 202, {
+            "ok": True,
+            "session_id": session_id,
+            "event": event,
+        }
+
+    def _skip_shopify_webhook(
+        self,
+        session_id: str,
+        body: dict[str, Any],
+        headers: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session = self.manager.get_session(session_id)
+        binding = ShopifyPlatformBinding.from_twin(session.twin)
+        event = map_shopify_webhook(headers, body, binding.order_ids)
+        session.twin.mark_duplicate_skipped(
+            actor=body.get("actor", "shopify_like_agent"),
+            webhook=event,
+        )
+        return 200, {
+            "ok": True,
+            "session_id": session_id,
+            "event": "duplicate_webhook_skipped",
+            "webhook": event,
+        }
+
+    def _shopify_graphql(
+        self,
+        session_id: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session = self.manager.get_session(session_id)
+        binding = ShopifyPlatformBinding.from_twin(session.twin)
+        extensions = body.get("extensions") or {}
+        actor = (
+            extensions.get("actor", "shopify_like_agent")
+            if isinstance(extensions, dict)
+            else "shopify_like_agent"
+        )
+        return self.shopify_graphql.handle(
+            session_id=session_id,
+            body=body,
+            actor=actor,
+            binding=binding,
+        )
+
+    def _shopify_coverage(self, session_id: str) -> tuple[int, dict[str, Any]]:
+        self.manager.get_session(session_id)
+        return 200, {
+            "ok": True,
+            "session_id": session_id,
+            "coverage": self.shopify_coverage.as_dict(),
+        }
+
     def _get_trace(self, session_id: str) -> tuple[int, dict[str, Any]]:
         session = self.manager.get_session(session_id)
         return 200, {
@@ -196,6 +306,7 @@ class LiveHTTPRequestHandler(BaseHTTPRequestHandler):
             "POST",
             self.path,
             self._read_json(),
+            headers=dict(self.headers.items()),
         )
         self._send_json(status, payload)
 
@@ -204,6 +315,7 @@ class LiveHTTPRequestHandler(BaseHTTPRequestHandler):
             "GET",
             self.path,
             {},
+            headers=dict(self.headers.items()),
         )
         self._send_json(status, payload)
 

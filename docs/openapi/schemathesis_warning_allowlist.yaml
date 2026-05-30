@@ -23,3 +23,7 @@ session_bound_paths:
   - /sessions/{session_id}/twin/submit_warehouse_cancellation_request
   - /sessions/{session_id}/twin/warehouse_continue_fulfillment
   - /sessions/{session_id}/twin/skip_duplicate_webhook
+  - /sessions/{session_id}/shopify/webhooks
+  - /sessions/{session_id}/shopify/webhooks/skip_duplicate
+  - /sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json
+  - /sessions/{session_id}/shopify/coverage

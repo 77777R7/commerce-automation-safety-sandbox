@@ -106,7 +106,8 @@ V3.5 live sandbox gate:
 ```
 
 Stage 9-11 real MCP/API hardening gates require Python 3.10+ because the
-official MCP SDK and Schemathesis gates run there:
+official MCP SDK and Schemathesis gates run there. Stage 12 adds the
+Shopify-like skin V0 HTTP gate:
 
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
@@ -114,6 +115,7 @@ PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
 PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+./tools/smoke_stage12_shopify_skin_v0.sh
 ```
 
 ## Demo And POC Materials
@@ -126,6 +128,8 @@ PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 - [Demo/POC readiness](docs/DEMO_POC_READINESS.md)
 - [MCP server setup](docs/MCP_SERVER_SETUP.md)
 - [Live Twin OpenAPI spec](docs/openapi/live_twin_api.yaml)
+- [Shopify-like skin V0](docs/SHOPIFY_LIKE_SKIN_V0.md)
+- [Stage 12 PR readiness](docs/STAGE12_PR_READINESS.md)
 - [Offline Audit POC playbook](docs/OFFLINE_AUDIT_POC_PLAYBOOK.md)
 - [POC input templates](poc_templates/)
 
@@ -144,8 +148,8 @@ open demo_viewer/index.html
 - PII redaction currently applies only to the canonical `buyer_id` field.
 - Customers should not provide email, phone, address, customer name, shipping
   address, billing address, or free-form customer notes in the first POC.
-- The current repo is not a full Shopify sandbox, Amazon emulator, API server,
-  PR check platform, or buyer red-team product.
+- The current repo is not a full Shopify sandbox, Amazon emulator, hosted
+  multi-tenant API platform, PR check platform, or buyer red-team product.
 - Real MCP server and strict OpenAPI hardening support require Python 3.10+.
   The core CLI and legacy MVP tests still run under the older system Python
   used by this local workspace.

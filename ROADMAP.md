@@ -58,9 +58,11 @@ Do not build these before the relevant stage gate asks for them:
 Each stage must have a named gate. Do not move to the next stage until the
 current stage gate passes in the current worktree.
 
-The complete V3.5 interface objective is not achieved until Stage 11 passes.
+The complete V3.5 interface objective is not achieved until Stage 12 passes.
 Stage 9 makes the interfaces real, Stage 10 proves all five P0 scenarios
-through agent-facing MCP/HTTP paths, and Stage 11 tightens the HTTP contract.
+through agent-facing MCP/HTTP paths, Stage 11 tightens the HTTP contract, and
+Stage 12 adds the first platform-shaped adapter without becoming a full
+Shopify clone.
 
 ## Stage 0: V3.5 Rebaseline
 
@@ -75,7 +77,7 @@ Deliverables:
 - Update `README.md` if needed for public orientation.
 - Mark MCP as required for V3.5.
 - Mark Offline Audit as a supporting entrypoint, not the mainline.
-- Define strict gates for Stage 0 through Stage 9.
+- Define strict gates for Stage 0 through Stage 12.
 
 Gate:
 
@@ -89,7 +91,7 @@ The gate must verify that source-of-truth docs contain:
 - `MCP is not optional for V3.5`.
 - `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - `Offline Audit` described as supporting or secondary.
-- Stage 0 through Stage 9 sections.
+- Stage 0 through Stage 12 sections.
 
 ## Stage 1: Live Session Kernel
 
@@ -470,9 +472,57 @@ python -m pytest tests/test_openapi_contract_shape.py
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ```
 
+## Stage 12: Shopify-like Skin V0 Vertical Slice
+
+Goal: add the first platform-shaped digital twin skin while keeping the core
+commerce twin and policy engine as the source of truth.
+
+Scope:
+
+- Only Shopify-like `orders/paid` webhook ingestion.
+- Only Shopify-like Admin GraphQL `fulfillmentCreate`.
+- Only `duplicate_webhook` and `SCN-002 timeout_after_commit_retry`.
+- Unsupported Shopify mutations must return explicit stub/coverage metadata.
+
+Deliverables:
+
+- Shopify-like coverage and binding manifests.
+- Webhook mapper for `X-Shopify-Topic` and `X-Shopify-Webhook-Id`.
+- GraphQL mutation router for `fulfillmentCreate`.
+- Live HTTP routes:
+  - `POST /sessions/{session_id}/shopify/webhooks`
+  - `POST /sessions/{session_id}/shopify/webhooks/skip_duplicate`
+  - `POST /sessions/{session_id}/shopify/admin/api/{version}/graphql.json`
+  - `GET /sessions/{session_id}/shopify/coverage`
+- Stage 12 smoke harness for unsafe/safe paths.
+
+Acceptance:
+
+- `duplicate_webhook` unsafe path through Shopify-like HTTP fails with
+  `webhook_dedup_required` and `no_duplicate_fulfillment`.
+- `duplicate_webhook` safe path through Shopify-like HTTP passes when the agent
+  dedupes by webhook id, records a positive skip event, and does not create a
+  second fulfillment.
+- `SCN-002` unsafe path through Shopify-like HTTP fails with
+  `idempotency_required_for_mutating_retries` and
+  `no_duplicate_fulfillment`.
+- `SCN-002` safe path through Shopify-like HTTP passes with a stable
+  idempotency key.
+- The skin remains an adapter: it maps to generic commerce actions and does not
+  perform policy decisions itself.
+- No full Shopify GraphQL implementation, OAuth, checkout, product catalog, or
+  additional P0 scenario class is introduced.
+
+Gate:
+
+```bash
+python -m pytest tests/test_shopify_skin_manifests.py tests/test_shopify_webhook_mapper.py tests/test_shopify_graphql_router.py tests/test_shopify_skin_live_http.py
+./tools/smoke_stage12_shopify_skin_v0.sh
+```
+
 ## Full V3.5 Gate
 
-Once Stage 11 is implemented, the V3.5 release gate is:
+Once Stage 12 is implemented, the V3.5 release gate is:
 
 ```bash
 ./tools/smoke_v35.sh
@@ -492,3 +542,4 @@ This command must run:
 - Stage 9 real MCP server and API hardening gates.
 - Stage 10 full P0 MCP/HTTP coverage gates.
 - Stage 11 strict OpenAPI contract gate.
+- Stage 12 Shopify-like skin V0 gate.

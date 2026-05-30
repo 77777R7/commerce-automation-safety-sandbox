@@ -35,7 +35,7 @@ BASE_URL="http://127.0.0.1:$PORT"
   >"$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 
-"$PYTHON_BIN" - "$BASE_URL" <<'PY'
+if ! "$PYTHON_BIN" - "$BASE_URL" <<'PY'
 import sys
 import time
 import urllib.error
@@ -52,6 +52,10 @@ while time.time() < deadline:
         time.sleep(0.1)
 raise SystemExit("live server did not become ready")
 PY
+then
+  cat "$LOG_FILE" >&2 || true
+  exit 1
+fi
 
 SCHEMATHESIS_BIN="${SCHEMATHESIS:-$(dirname "$PYTHON_BIN")/schemathesis}"
 if [[ ! -x "$SCHEMATHESIS_BIN" ]]; then

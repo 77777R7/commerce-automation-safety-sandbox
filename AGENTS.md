@@ -16,6 +16,7 @@ environment details.
 - `docs/OFFLINE_AUDIT_POC_PLAYBOOK.md`
 - `docs/MCP_SERVER_SETUP.md`
 - `docs/openapi/live_twin_api.yaml`
+- `docs/STAGE12_PR_READINESS.md`
 
 ## Current Product Direction
 
@@ -98,6 +99,7 @@ After Stage 0, follow `ROADMAP.md` stage by stage:
 9. Stage 9: Real MCP + API Hardening.
 10. Stage 10: Full P0 MCP/HTTP Coverage.
 11. Stage 11: Strict OpenAPI Contract Hardening.
+12. Stage 12: Shopify-like Skin V0 Vertical Slice.
 
 ## Completion Gate
 
@@ -121,4 +123,5 @@ PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
 PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+./tools/smoke_stage12_shopify_skin_v0.sh
 ```

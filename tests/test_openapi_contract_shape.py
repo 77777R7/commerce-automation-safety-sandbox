@@ -34,6 +34,15 @@ def test_openapi_has_stage10_generic_commerce_action_paths():
         assert f"/sessions/{{session_id}}/twin/{action}" in spec["paths"]
 
 
+def test_openapi_has_stage12_shopify_like_skin_paths():
+    paths = _spec()["paths"]
+
+    assert "/sessions/{session_id}/shopify/webhooks" in paths
+    assert "/sessions/{session_id}/shopify/webhooks/skip_duplicate" in paths
+    assert "/sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json" in paths
+    assert "/sessions/{session_id}/shopify/coverage" in paths
+
+
 def test_openapi_stage11_tightens_task_and_fulfillment_shapes():
     schemas = _spec()["components"]["schemas"]
 
@@ -84,4 +93,8 @@ def test_schemathesis_warning_allowlist_is_explicit_and_narrow():
         "/sessions/{session_id}/twin/submit_warehouse_cancellation_request",
         "/sessions/{session_id}/twin/warehouse_continue_fulfillment",
         "/sessions/{session_id}/twin/skip_duplicate_webhook",
+        "/sessions/{session_id}/shopify/webhooks",
+        "/sessions/{session_id}/shopify/webhooks/skip_duplicate",
+        "/sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json",
+        "/sessions/{session_id}/shopify/coverage",
     }

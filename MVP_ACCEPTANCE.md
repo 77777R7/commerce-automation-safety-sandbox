@@ -44,7 +44,7 @@ defines the mainline.
 
 ## Stage Gate Acceptance
 
-Stage 0 through Stage 11 must follow `ROADMAP.md`. The stage gates are:
+Stage 0 through Stage 12 must follow `ROADMAP.md`. The stage gates are:
 
 ```txt
 Stage 0: ./tools/smoke_stage0_rebaseline.sh
@@ -71,6 +71,8 @@ Stage 10: python -m pytest tests/test_stage10_agent_interface_coverage.py
           PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
 Stage 11: python -m pytest tests/test_openapi_contract_shape.py
           PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+Stage 12: python -m pytest tests/test_shopify_skin_manifests.py tests/test_shopify_webhook_mapper.py tests/test_shopify_graphql_router.py tests/test_shopify_skin_live_http.py
+          ./tools/smoke_stage12_shopify_skin_v0.sh
 ```
 
 No stage is considered complete without fresh gate evidence.
@@ -91,7 +93,7 @@ Acceptance:
 - Source-of-truth docs include the narrative:
   `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - Offline Audit is described as supporting or secondary.
-- `ROADMAP.md` defines Stage 0 through Stage 11 and gives each stage a gate.
+- `ROADMAP.md` defines Stage 0 through Stage 12 and gives each stage a gate.
 
 ## Stage 1 Live Session Kernel Acceptance
 
@@ -230,6 +232,26 @@ Acceptance:
 - Schemathesis examples, coverage, and stateful phases pass.
 - Any remaining schema warning is explicitly allowlisted in
   `docs/openapi/schemathesis_warning_allowlist.yaml`.
+
+## Stage 12 Shopify-like Skin V0 Acceptance
+
+Acceptance:
+
+- Shopify-like skin coverage and binding manifests exist and declare the V0
+  surface explicitly.
+- The skin supports `orders/paid` webhook ingestion and records the
+  `X-Shopify-Webhook-Id` dedupe signal.
+- The skin supports a safe duplicate delivery path that records
+  `duplicate_webhook_skipped` instead of creating a second fulfillment.
+- The skin supports Admin GraphQL-shaped `fulfillmentCreate` and maps it to the
+  generic `commerce.create_fulfillment` action.
+- Unsupported Shopify mutations return explicit `_commerce_twin_stub` coverage
+  metadata.
+- `duplicate_webhook` unsafe/safe paths run through Shopify-like HTTP.
+- `SCN-002 timeout_after_commit_retry` unsafe/safe paths run through
+  Shopify-like HTTP.
+- The adapter does not make business policy decisions; unsafe actions remain
+  permissive and are caught by `PolicyEngine` at completion.
 
 ## Current Baseline Scenario
 
