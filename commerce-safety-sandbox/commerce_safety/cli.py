@@ -124,6 +124,19 @@ def cmd_live_serve(args: argparse.Namespace) -> int:
     )
 
 
+def cmd_live_mcp(args: argparse.Namespace) -> int:
+    from .live.mcp_server import main as mcp_main
+
+    return mcp_main(
+        [
+            "--runs-dir",
+            args.runs_dir,
+            "--transport",
+            args.transport,
+        ]
+    )
+
+
 def _print_gate_result(result: dict, *, as_json: bool) -> None:
     if as_json:
         print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -300,6 +313,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Port for the local live server.",
     )
     serve_parser.set_defaults(func=cmd_live_serve)
+
+    mcp_parser = live_subparsers.add_parser(
+        "mcp",
+        help="Start the real MCP server using modelcontextprotocol/python-sdk.",
+    )
+    mcp_parser.add_argument(
+        "--transport",
+        default="stdio",
+        choices=["stdio", "streamable-http"],
+        help="MCP transport to run.",
+    )
+    mcp_parser.set_defaults(func=cmd_live_mcp)
 
     action_log_parser = live_subparsers.add_parser(
         "from-action-log",

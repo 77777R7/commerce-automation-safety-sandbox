@@ -1,0 +1,379 @@
+openapi: 3.0.3
+info:
+  title: Commerce Safety Live Twin API
+  version: 0.9.0
+  description: |
+    HTTP vertical slice for V3.5 Live Agent Sandbox.
+
+    The API intentionally keeps the twin permissive: mutating calls are allowed
+    to create unsafe commerce state, then `complete` evaluates the Policy
+    Oracle and writes trace, policy, state diff, report, and patch-hint
+    artifacts.
+servers:
+  - url: http://127.0.0.1:8765
+paths:
+  /sessions:
+    post:
+      operationId: startSession
+      summary: Start a live validation session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartSessionRequest"
+            examples:
+              scn002:
+                value:
+                  scenario_path: commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreated"
+          links:
+            GetNextTask:
+              operationId: getNextTask
+              parameters:
+                session_id: $response.body#/session_id
+            GetTrace:
+              operationId: getTrace
+              parameters:
+                session_id: $response.body#/session_id
+            CompleteSession:
+              operationId: completeSession
+              parameters:
+                session_id: $response.body#/session_id
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{session_id}/tasks/next:
+    get:
+      operationId: getNextTask
+      summary: Get the next seeded task
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Next task or done marker
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          description: Unknown session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{session_id}/twin/create_fulfillment:
+    post:
+      operationId: createFulfillment
+      summary: Create fulfillment in the permissive twin
+      description: |
+        This endpoint does not block unsafe commerce actions. For example, an
+        unsafe retry may create a second fulfillment. The resulting state is
+        evaluated later by `completeSession`.
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFulfillmentRequest"
+            examples:
+              normal_fulfillment:
+                value:
+                  order_id: order_2001
+                  sku: sku_retry_1
+                  quantity: 1
+                  actor: external_agent
+                  request_id: http_req_1
+                  source_event_id: task_fulfill_2001
+      responses:
+        "200":
+          description: Fulfillment created or replayed through idempotency
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Timeout after the twin committed the mutation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeoutAfterCommitResponse"
+  /sessions/{session_id}/trace:
+    get:
+      operationId: getTrace
+      summary: Read current trace state
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Live trace timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TraceResponse"
+        "400":
+          description: Unknown session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /sessions/{session_id}/complete:
+    post:
+      operationId: completeSession
+      summary: Evaluate policies and write artifacts
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompleteSessionRequest"
+            examples:
+              external_agent:
+                value:
+                  runner_name: external_bad_agent
+      responses:
+        "200":
+          description: Policy evaluation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompleteSessionResponse"
+        "400":
+          description: Unknown session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  parameters:
+    session_id:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+      example: sess_20260530T000000000000Z_SCN-002_demo
+  schemas:
+    StartSessionRequest:
+      type: object
+      required:
+        - scenario_path
+      properties:
+        scenario_path:
+          type: string
+          minLength: 1
+    SessionCreated:
+      type: object
+      required:
+        - ok
+        - session_id
+        - scenario_id
+        - scenario_name
+        - status
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        scenario_id:
+          type: string
+        scenario_name:
+          type: string
+        status:
+          type: string
+          enum: [open, passed, failed]
+    TaskResponse:
+      type: object
+      required:
+        - ok
+        - session_id
+        - done
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        done:
+          type: boolean
+        task:
+          nullable: true
+          type: object
+          additionalProperties: true
+    CreateFulfillmentRequest:
+      type: object
+      required:
+        - order_id
+        - sku
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+        actor:
+          type: string
+          default: external_agent
+        webhook_id:
+          type: string
+          nullable: true
+        idempotency_key:
+          type: string
+          nullable: true
+        request_id:
+          type: string
+          nullable: true
+        source_event_id:
+          type: string
+          nullable: true
+        fault_type:
+          type: string
+          nullable: true
+          enum: [timeout_after_commit, null]
+    FulfillmentResponse:
+      type: object
+      required:
+        - ok
+        - session_id
+        - fulfillment
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        fulfillment:
+          type: object
+          additionalProperties: true
+    TimeoutAfterCommitResponse:
+      type: object
+      required:
+        - ok
+        - error
+        - message
+        - fulfillment_id
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string
+          enum: [timeout_after_commit]
+        message:
+          type: string
+        fulfillment_id:
+          type: string
+    CompleteSessionRequest:
+      type: object
+      properties:
+        runner_name:
+          type: string
+          default: external_agent
+    CompleteSessionResponse:
+      type: object
+      required:
+        - ok
+        - run_id
+        - session_id
+        - run_path
+        - status
+        - findings
+      properties:
+        ok:
+          type: boolean
+        run_id:
+          type: string
+        session_id:
+          type: string
+        run_path:
+          type: string
+        status:
+          type: string
+          enum: [passed, failed]
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyFinding"
+    TraceResponse:
+      type: object
+      required:
+        - ok
+        - session_id
+        - scenario_id
+        - status
+        - timeline
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        scenario_id:
+          type: string
+        status:
+          type: string
+        initial_state:
+          type: object
+          additionalProperties: true
+        current_state:
+          type: object
+          additionalProperties: true
+        timeline:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    PolicyFinding:
+      type: object
+      required:
+        - policy_id
+        - severity
+        - status
+        - evidence
+        - business_impact
+        - recommendation
+      properties:
+        policy_id:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+          enum: [failed]
+        evidence:
+          type: object
+          additionalProperties: true
+        business_impact:
+          type: string
+        recommendation:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - ok
+        - error
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        error:
+          type: string

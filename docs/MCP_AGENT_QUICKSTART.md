@@ -1,8 +1,9 @@
 # MCP Agent Quickstart
 
-The Stage 3 MCP MVP exposes tool semantics for AI agents. The transport can be
-wrapped later, but the tool names and payloads are already stable enough for the
-V3.5 demo.
+The Stage 9 MCP server uses `modelcontextprotocol/python-sdk` and can be called
+by real MCP clients over stdio. The older Stage 3 semantic wrapper remains as
+the internal tool implementation, but external agents should use the real server
+entrypoint in [MCP_SERVER_SETUP.md](MCP_SERVER_SETUP.md).
 
 Required flow:
 
@@ -20,6 +21,19 @@ External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hin
 - `commerce.get_trace`
 - `commerce.get_policy_report`
 - `commerce.get_patch_hints`
+
+## Start The Server
+
+```bash
+PYTHONPATH="$PWD/commerce-safety-sandbox" \
+python -m commerce_safety.live.mcp_server --runs-dir runs
+```
+
+For local verification:
+
+```bash
+PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+```
 
 ## SCN-002 Unsafe Agent
 

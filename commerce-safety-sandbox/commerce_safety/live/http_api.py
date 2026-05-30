@@ -49,7 +49,7 @@ class LiveAPI:
             if method == "POST" and self._matches(parts, "sessions", "*", "complete"):
                 return self._complete_session(parts[1], payload)
             return 404, {"ok": False, "error": "not_found"}
-        except (KeyError, ValueError) as error:
+        except (FileNotFoundError, KeyError, ValueError) as error:
             return 400, {"ok": False, "error": str(error)}
 
     def _create_session(self, body: dict[str, Any]) -> tuple[int, dict[str, Any]]:

@@ -49,7 +49,7 @@ Do not build these before the relevant stage gate asks for them:
 - Hosted multi-tenant control plane.
 - Agent container, egress proxy, browser runner, or microVM runtime.
 - Buyer simulator or autonomous red-team buyer.
-- GitHub App / PR check before Stage 8.
+- GitHub App / PR check before Stage 10.
 - Decorative dashboard polish before the live agent sandbox core works.
 - New P0 scenario classes.
 
@@ -58,8 +58,9 @@ Do not build these before the relevant stage gate asks for them:
 Each stage must have a named gate. Do not move to the next stage until the
 current stage gate passes in the current worktree.
 
-The complete V3.5 objective is not achieved until Stage 7 passes. Stage 8 is
-the Arga-style next layer after the live agent sandbox is real.
+The complete V3.5 objective is not achieved until Stage 9 passes. Stage 8 is
+the Arga-style next-layer plan; Stage 9 hardens the real MCP and HTTP agent
+interfaces.
 
 ## Stage 0: V3.5 Rebaseline
 
@@ -74,7 +75,7 @@ Deliverables:
 - Update `README.md` if needed for public orientation.
 - Mark MCP as required for V3.5.
 - Mark Offline Audit as a supporting entrypoint, not the mainline.
-- Define strict gates for Stage 0 through Stage 8.
+- Define strict gates for Stage 0 through Stage 9.
 
 Gate:
 
@@ -88,7 +89,7 @@ The gate must verify that source-of-truth docs contain:
 - `MCP is not optional for V3.5`.
 - `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - `Offline Audit` described as supporting or secondary.
-- Stage 0 through Stage 8 sections.
+- Stage 0 through Stage 9 sections.
 
 ## Stage 1: Live Session Kernel
 
@@ -350,9 +351,56 @@ Gate:
 The Stage 8 gate must include all earlier stage gates plus any new developer
 workflow checks introduced in Stage 8.
 
+## Stage 9: Real MCP + API Hardening
+
+Goal: turn the V3.5 interfaces from internal demo surfaces into real agent and
+API contracts that can be called by external agent runtimes and tested by API
+property tools.
+
+Deliverables:
+
+- Real MCP server using `modelcontextprotocol/python-sdk`.
+- Eight core MCP tools:
+  - `commerce.start_session`
+  - `commerce.get_task`
+  - `commerce.create_fulfillment`
+  - `commerce.find_fulfillment`
+  - `commerce.complete_session`
+  - `commerce.get_trace`
+  - `commerce.get_policy_report`
+  - `commerce.get_patch_hints`
+- `docs/MCP_SERVER_SETUP.md`.
+- Real MCP smoke through official SDK client calls for `SCN-002` unsafe and safe
+  paths.
+- OpenAPI spec for the HTTP Twin API.
+- Schemathesis API hardening gate for the HTTP vertical slice plus deterministic
+  unsafe/safe state sequence.
+
+Non-goals:
+
+- Sandbox0.
+- Firecracker or gVisor.
+- Shopify/Amazon full API clones.
+- Microcks full integration.
+- Buyer simulator.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage9_contracts.py
+PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+```
+
+Stage 9 keeps the core product principle:
+
+```txt
+Permissive Twin + Policy Check
+```
+
 ## Full V3.5 Gate
 
-Once Stage 7 is implemented, the V3.5 release gate is:
+Once Stage 9 is implemented, the V3.5 release gate is:
 
 ```bash
 ./tools/smoke_v35.sh
@@ -369,3 +417,4 @@ This command must run:
 - Stage 5 action-log/CI gate.
 - Stage 6 repair artifacts.
 - Stage 7 live demo pack generation.
+- Stage 9 real MCP server and API hardening gates.

@@ -91,13 +91,13 @@ Gate:
 
 ### 8. MCP transport wrapper
 
-Wrap the Stage 3 tool semantics in a real MCP transport without changing the
-tool payload contract.
+Completed in Stage 9 as `docs/MCP_SERVER_SETUP.md` and
+`tools/smoke_stage9_real_mcp.sh`.
 
 Gate:
 
 ```bash
-./tools/smoke_mcp_transport.sh
+PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
 ```
 
 ## Non-Goals For This Branch
@@ -110,4 +110,4 @@ Gate:
 Stage 8 exists to prevent vague platform sprawl. Each next-layer item must
 become its own goal before implementation. The next goals are GitHub Actions
 gate, PR check, scenario registry, stub coverage, trace streaming, hosted
-sessions, team workspace, and MCP transport wrapper.
+sessions, team workspace, and hosted MCP deployment.

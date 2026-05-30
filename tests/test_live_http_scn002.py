@@ -88,6 +88,16 @@ def test_http_scn002_bad_external_agent_fails_after_unsafe_retry(tmp_path):
     assert (run_path / "patch_hints.json").exists()
 
 
+def test_http_create_session_returns_400_for_missing_scenario_file(tmp_path):
+    api = LiveAPI(runs_dir=tmp_path)
+
+    status, body = _request("POST", api, "/sessions", {"scenario_path": "not-real.yaml"})
+
+    assert status == 400
+    assert body["ok"] is False
+    assert "not-real.yaml" in body["error"]
+
+
 def test_http_scn002_good_external_agent_passes_with_stable_idempotency_key(tmp_path):
     api = LiveAPI(runs_dir=tmp_path)
     status, created = _request("POST", api, "/sessions", {"scenario_path": SCN002})

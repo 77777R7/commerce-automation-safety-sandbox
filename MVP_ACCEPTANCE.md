@@ -44,7 +44,7 @@ defines the mainline.
 
 ## Stage Gate Acceptance
 
-Stage 0 through Stage 8 must follow `ROADMAP.md`. The stage gates are:
+Stage 0 through Stage 9 must follow `ROADMAP.md`. The stage gates are:
 
 ```txt
 Stage 0: ./tools/smoke_stage0_rebaseline.sh
@@ -63,6 +63,9 @@ Stage 6: python -m pytest tests/test_agent_repair_artifacts.py
 Stage 7: python -m pytest tests/test_live_demo_pack.py
          ./tools/smoke_stage7_demo_pack.sh
 Stage 8: ./tools/smoke_v35.sh
+Stage 9: python -m pytest tests/test_stage9_contracts.py
+         PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+         PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
 ```
 
 No stage is considered complete without fresh gate evidence.
@@ -83,7 +86,7 @@ Acceptance:
 - Source-of-truth docs include the narrative:
   `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - Offline Audit is described as supporting or secondary.
-- `ROADMAP.md` defines Stage 0 through Stage 8 and gives each stage a gate.
+- `ROADMAP.md` defines Stage 0 through Stage 9 and gives each stage a gate.
 
 ## Stage 1 Live Session Kernel Acceptance
 
@@ -174,6 +177,28 @@ Acceptance:
 - Stage 8 is split into separate sub-goals before implementation.
 - Stage 8 does not start until Stage 7 has passed.
 - `./tools/smoke_v35.sh` includes all completed stage gates.
+
+## Stage 9 Real MCP + API Hardening Acceptance
+
+Acceptance:
+
+- A real MCP server is implemented with `modelcontextprotocol/python-sdk`.
+- The real MCP server exposes exactly the eight core commerce tools:
+  `commerce.start_session`, `commerce.get_task`,
+  `commerce.create_fulfillment`, `commerce.find_fulfillment`,
+  `commerce.complete_session`, `commerce.get_trace`,
+  `commerce.get_policy_report`, and `commerce.get_patch_hints`.
+- `docs/MCP_SERVER_SETUP.md` explains Python 3.10+ setup and keeps scope away
+  from Sandbox0, Firecracker, full Shopify/Amazon clones, Microcks, and buyer
+  simulator.
+- `docs/openapi/live_twin_api.yaml` covers the HTTP vertical slice:
+  `POST /sessions`, `GET /tasks/next`, `POST /twin/create_fulfillment`,
+  `GET /trace`, and `POST /complete`.
+- `tools/smoke_stage9_real_mcp.sh` drives SCN-002 unsafe/safe paths through the
+  official MCP SDK client, not the internal Python wrapper.
+- `tools/smoke_stage9_api_hardening.sh` runs Schemathesis against the HTTP
+  OpenAPI contract and then drives a deterministic unsafe/safe state sequence.
+- Stage 9 preserves `Permissive Twin + Policy Check`.
 
 ## Current Baseline Scenario
 
