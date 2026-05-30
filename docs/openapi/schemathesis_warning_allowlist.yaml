@@ -1,0 +1,25 @@
+allowed_warnings:
+  - schema_validation_mismatch_for_session_bound_paths
+reason: >
+  Schemathesis standalone examples and coverage phases generate arbitrary
+  session_id values for session-bound paths. The API correctly rejects unknown
+  sessions with documented 400 responses; deterministic Stage 10 smoke covers
+  valid session-created paths for every P0 scenario.
+session_bound_paths:
+  - /sessions/{session_id}/tasks/next
+  - /sessions/{session_id}/trace
+  - /sessions/{session_id}/complete
+  - /sessions/{session_id}/twin/create_fulfillment
+  - /sessions/{session_id}/twin/reserve_inventory
+  - /sessions/{session_id}/twin/promise_fulfillment
+  - /sessions/{session_id}/twin/refresh_inventory
+  - /sessions/{session_id}/twin/route_manual_review
+  - /sessions/{session_id}/twin/find_fulfillment
+  - /sessions/{session_id}/twin/create_refund
+  - /sessions/{session_id}/twin/create_approval_request
+  - /sessions/{session_id}/twin/cancel_order
+  - /sessions/{session_id}/twin/release_inventory
+  - /sessions/{session_id}/twin/place_workflow_hold
+  - /sessions/{session_id}/twin/submit_warehouse_cancellation_request
+  - /sessions/{session_id}/twin/warehouse_continue_fulfillment
+  - /sessions/{session_id}/twin/skip_duplicate_webhook

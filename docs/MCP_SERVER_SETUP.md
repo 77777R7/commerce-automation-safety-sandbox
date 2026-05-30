@@ -45,9 +45,9 @@ clients such as Codex or Claude Desktop. The server also accepts
 `--transport streamable-http` for later hosted experiments, but V3.5 does not
 turn this into a hosted platform.
 
-## Core Tools
+## Core Tools And P0 Action Tools
 
-The real MCP server intentionally exposes the eight core commerce tools:
+Stage 9 locked the eight core commerce tools:
 
 ```txt
 commerce.start_session
@@ -58,6 +58,24 @@ commerce.complete_session
 commerce.get_trace
 commerce.get_policy_report
 commerce.get_patch_hints
+```
+
+Stage 10 expands the real MCP server with the generic commerce actions needed
+to run all five P0 scenarios through agent-facing tools:
+
+```txt
+commerce.reserve_inventory
+commerce.promise_fulfillment
+commerce.refresh_inventory
+commerce.route_manual_review
+commerce.create_refund
+commerce.create_approval_request
+commerce.cancel_order
+commerce.release_inventory
+commerce.place_workflow_hold
+commerce.submit_warehouse_cancellation_request
+commerce.warehouse_continue_fulfillment
+commerce.skip_duplicate_webhook
 ```
 
 This keeps the product surface centered on the V3.5 proof:
@@ -72,13 +90,17 @@ Run:
 
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 ```
 
-The smoke starts the MCP server over stdio, calls the eight tools through the
-official SDK client, and runs SCN-002 twice:
+The Stage 9 smoke starts the MCP server over stdio, calls the eight core tools
+through the official SDK client, and runs SCN-002 twice:
 
 - unsafe agent: timeout after commit, blind retry, policy failure
 - safe agent: stable idempotency key, find existing fulfillment, pass
+
+The Stage 10 smoke uses the same real MCP server to drive unsafe and safe paths
+for all five P0 scenarios.
 
 ## Scope Boundary
 

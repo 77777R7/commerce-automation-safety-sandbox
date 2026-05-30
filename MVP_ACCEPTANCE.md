@@ -44,7 +44,7 @@ defines the mainline.
 
 ## Stage Gate Acceptance
 
-Stage 0 through Stage 9 must follow `ROADMAP.md`. The stage gates are:
+Stage 0 through Stage 11 must follow `ROADMAP.md`. The stage gates are:
 
 ```txt
 Stage 0: ./tools/smoke_stage0_rebaseline.sh
@@ -66,6 +66,11 @@ Stage 8: ./tools/smoke_v35.sh
 Stage 9: python -m pytest tests/test_stage9_contracts.py
          PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
          PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+Stage 10: python -m pytest tests/test_stage10_agent_interface_coverage.py
+          PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+          PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+Stage 11: python -m pytest tests/test_openapi_contract_shape.py
+          PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ```
 
 No stage is considered complete without fresh gate evidence.
@@ -86,7 +91,7 @@ Acceptance:
 - Source-of-truth docs include the narrative:
   `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - Offline Audit is described as supporting or secondary.
-- `ROADMAP.md` defines Stage 0 through Stage 9 and gives each stage a gate.
+- `ROADMAP.md` defines Stage 0 through Stage 11 and gives each stage a gate.
 
 ## Stage 1 Live Session Kernel Acceptance
 
@@ -183,7 +188,7 @@ Acceptance:
 Acceptance:
 
 - A real MCP server is implemented with `modelcontextprotocol/python-sdk`.
-- The real MCP server exposes exactly the eight core commerce tools:
+- The Stage 9 core MCP contract tracks the eight core commerce tools:
   `commerce.start_session`, `commerce.get_task`,
   `commerce.create_fulfillment`, `commerce.find_fulfillment`,
   `commerce.complete_session`, `commerce.get_trace`,
@@ -199,6 +204,32 @@ Acceptance:
 - `tools/smoke_stage9_api_hardening.sh` runs Schemathesis against the HTTP
   OpenAPI contract and then drives a deterministic unsafe/safe state sequence.
 - Stage 9 preserves `Permissive Twin + Policy Check`.
+
+## Stage 10 Full P0 MCP/HTTP Coverage Acceptance
+
+Acceptance:
+
+- The real MCP server exposes all P0 action tools needed by the five flagship
+  scenarios.
+- HTTP Twin API exposes matching generic commerce action endpoints.
+- Every P0 scenario has:
+  - unsafe path via MCP -> failed
+  - safe path via MCP -> passed
+  - unsafe path via HTTP -> failed
+  - safe path via HTTP -> passed
+- Stage 10 does not add Shopify/Amazon clones or new P0 scenarios.
+
+## Stage 11 Strict OpenAPI Contract Acceptance
+
+Acceptance:
+
+- `TaskResponse.task` is a typed union, not a broad free-form object.
+- `FulfillmentResponse.fulfillment` references a strict `Fulfillment` schema.
+- `TraceResponse.timeline` uses a strict `TraceEvent` schema.
+- `PolicyFinding.evidence` uses a structured evidence union.
+- Schemathesis examples, coverage, and stateful phases pass.
+- Any remaining schema warning is explicitly allowlisted in
+  `docs/openapi/schemathesis_warning_allowlist.yaml`.
 
 ## Current Baseline Scenario
 

@@ -105,12 +105,15 @@ V3.5 live sandbox gate:
 ./tools/smoke_v35.sh
 ```
 
-Stage 9 real MCP/API hardening gates require Python 3.10+ because the official
-MCP SDK requires it:
+Stage 9-11 real MCP/API hardening gates require Python 3.10+ because the
+official MCP SDK and Schemathesis gates run there:
 
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
 PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ```
 
 ## Demo And POC Materials
@@ -143,8 +146,9 @@ open demo_viewer/index.html
   address, billing address, or free-form customer notes in the first POC.
 - The current repo is not a full Shopify sandbox, Amazon emulator, API server,
   PR check platform, or buyer red-team product.
-- Real MCP server support requires Python 3.10+. The core CLI and legacy MVP
-  tests still run under the older system Python used by this local workspace.
+- Real MCP server and strict OpenAPI hardening support require Python 3.10+.
+  The core CLI and legacy MVP tests still run under the older system Python
+  used by this local workspace.
 - V3.5 now has live HTTP, real MCP, action-log, and repair-artifact gates; see
   [ROADMAP.md](ROADMAP.md) for the staged boundaries.
 

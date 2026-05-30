@@ -96,6 +96,8 @@ After Stage 0, follow `ROADMAP.md` stage by stage:
 7. Stage 7: V3.5 Demo Pack.
 8. Stage 8: Arga-style Next Layer.
 9. Stage 9: Real MCP + API Hardening.
+10. Stage 10: Full P0 MCP/HTTP Coverage.
+11. Stage 11: Strict OpenAPI Contract Hardening.
 
 ## Completion Gate
 
@@ -116,4 +118,7 @@ Stage 9 MCP/API gates require Python 3.10+:
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
 PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ```

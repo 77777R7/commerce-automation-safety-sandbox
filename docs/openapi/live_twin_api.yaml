@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
   title: Commerce Safety Live Twin API
-  version: 0.9.0
+  version: 0.11.0
   description: |
-    HTTP vertical slice for V3.5 Live Agent Sandbox.
+    Agent-facing HTTP API for the V3.5 Live Agent Sandbox.
 
     The API intentionally keeps the twin permissive: mutating calls are allowed
-    to create unsafe commerce state, then `complete` evaluates the Policy
+    to create unsafe commerce state, then `completeSession` evaluates the Policy
     Oracle and writes trace, policy, state diff, report, and patch-hint
     artifacts.
 servers:
@@ -23,7 +23,7 @@ paths:
             schema:
               $ref: "#/components/schemas/StartSessionRequest"
             examples:
-              scn002:
+              timeout_after_commit:
                 value:
                   scenario_path: commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml
       responses:
@@ -47,15 +47,16 @@ paths:
               parameters:
                 session_id: $response.body#/session_id
         "400":
-          description: Invalid request
+          description: Invalid scenario path
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /sessions/{session_id}/tasks/next:
     get:
       operationId: getNextTask
-      summary: Get the next seeded task
+      summary: Get the next seeded scenario task
       parameters:
         - $ref: "#/components/parameters/session_id"
       responses:
@@ -65,12 +66,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TaskResponse"
+              examples:
+                fulfillment_task:
+                  value:
+                    ok: true
+                    session_id: sess_demo_SCN-002
+                    done: false
+                    task:
+                      type: fulfillment_task
+                      id: task_fulfill_2001
+                      order_id: order_2001
+                      fault:
+                        type: timeout_after_commit
+                        action: create_fulfillment
         "400":
           description: Unknown session
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /sessions/{session_id}/twin/create_fulfillment:
     post:
       operationId: createFulfillment
@@ -88,7 +103,7 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateFulfillmentRequest"
             examples:
-              normal_fulfillment:
+              timeout_after_commit:
                 value:
                   order_id: order_2001
                   sku: sku_retry_1
@@ -96,6 +111,7 @@ paths:
                   actor: external_agent
                   request_id: http_req_1
                   source_event_id: task_fulfill_2001
+                  fault_type: timeout_after_commit
       responses:
         "200":
           description: Fulfillment created or replayed through idempotency
@@ -104,7 +120,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/FulfillmentResponse"
         "400":
-          description: Invalid request
+          description: Invalid request or unknown session
           content:
             application/json:
               schema:
@@ -115,6 +131,389 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TimeoutAfterCommitResponse"
+
+  /sessions/{session_id}/twin/reserve_inventory:
+    post:
+      operationId: reserveInventory
+      summary: Reserve inventory in the permissive twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReserveInventoryRequest"
+            examples:
+              reserve_for_webhook:
+                value:
+                  order_id: order_1001
+                  sku: sku_widget_1
+                  quantity: 1
+                  actor: external_agent
+                  webhook_id: wh_paid_001
+      responses:
+        "200":
+          description: Reservation recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/promise_fulfillment:
+    post:
+      operationId: promiseFulfillment
+      summary: Record a customer-facing fulfillment promise
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PromiseFulfillmentRequest"
+            examples:
+              stale_promise:
+                value:
+                  order_id: order_3001
+                  sku: sku_stale_1
+                  quantity: 1
+                  actor: external_agent
+                  source_event_id: task_promise_3001
+      responses:
+        "200":
+          description: Promise recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PromiseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/refresh_inventory:
+    post:
+      operationId: refreshInventory
+      summary: Refresh inventory from true availability
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshInventoryRequest"
+            examples:
+              refresh_stale_inventory:
+                value:
+                  sku: sku_stale_1
+                  actor: safe_agent
+      responses:
+        "200":
+          description: Inventory snapshot refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/route_manual_review:
+    post:
+      operationId: routeManualReview
+      summary: Route risky state to manual review
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RouteManualReviewRequest"
+            examples:
+              stale_inventory_review:
+                value:
+                  order_id: order_3001
+                  sku: sku_stale_1
+                  actor: safe_agent
+                  reason: fresh_inventory_unavailable
+                  source_event_id: task_promise_3001
+      responses:
+        "200":
+          description: Manual review route recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/find_fulfillment:
+    post:
+      operationId: findFulfillment
+      summary: Find an existing fulfillment by order, SKU, and optional idempotency key
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindFulfillmentRequest"
+            examples:
+              after_timeout:
+                value:
+                  order_id: order_2001
+                  sku: sku_retry_1
+                  idempotency_key: fulfillment:order_2001:sku_retry_1:create
+      responses:
+        "200":
+          description: Existing fulfillment or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindFulfillmentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/create_refund:
+    post:
+      operationId: createRefund
+      summary: Issue a refund in the permissive twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRefundRequest"
+            examples:
+              shipped_refund:
+                value:
+                  order_id: order_4001
+                  amount: 120
+                  reason: buyer_changed_mind
+                  actor: external_agent
+                  source_event_id: refund_req_4001
+      responses:
+        "200":
+          description: Refund issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefundResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/create_approval_request:
+    post:
+      operationId: createApprovalRequest
+      summary: Create an approval request before risky action
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApprovalRequest"
+            examples:
+              refund_approval:
+                value:
+                  order_id: order_4001
+                  amount: 120
+                  reason: buyer_changed_mind
+                  actor: safe_agent
+                  source_event_id: refund_req_4001
+                  required_policy: no_refund_after_shipment_without_approval
+      responses:
+        "200":
+          description: Approval request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/cancel_order:
+    post:
+      operationId: cancelOrder
+      summary: Mark an order cancelled
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderActionRequest"
+            examples:
+              cancel_after_pick:
+                value:
+                  order_id: order_5001
+                  actor: unsafe_agent
+                  source_event_id: cancel_req_5001
+      responses:
+        "200":
+          description: Order cancellation recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/release_inventory:
+    post:
+      operationId: releaseInventory
+      summary: Release reserved inventory
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReleaseInventoryRequest"
+            examples:
+              unsafe_release:
+                value:
+                  order_id: order_5001
+                  sku: sku_pickpack_1
+                  quantity: 1
+                  actor: unsafe_agent
+                  source_event_id: cancel_req_5001
+      responses:
+        "200":
+          description: Inventory release recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryReleaseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/place_workflow_hold:
+    post:
+      operationId: placeWorkflowHold
+      summary: Place a workflow hold for review
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlaceWorkflowHoldRequest"
+            examples:
+              warehouse_conflict_hold:
+                value:
+                  order_id: order_5001
+                  sku: sku_pickpack_1
+                  reason: warehouse_pick_pack_conflict
+                  actor: safe_agent
+                  source_event_id: cancel_req_5001
+      responses:
+        "200":
+          description: Hold recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkflowHoldResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/submit_warehouse_cancellation_request:
+    post:
+      operationId: submitWarehouseCancellationRequest
+      summary: Request cancellation from the warehouse
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderActionRequest"
+            examples:
+              request_cancel:
+                value:
+                  order_id: order_5001
+                  actor: safe_agent
+                  source_event_id: cancel_req_5001
+      responses:
+        "200":
+          description: Warehouse cancellation request recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseCancellationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/warehouse_continue_fulfillment:
+    post:
+      operationId: warehouseContinueFulfillment
+      summary: Advance warehouse fulfillment after cancellation to model a conflict
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WarehouseContinueRequest"
+            examples:
+              unsafe_ship_after_cancel:
+                value:
+                  order_id: order_5001
+                  actor: unsafe_agent
+                  source_event_id: cancel_req_5001
+                  new_status: shipped
+      responses:
+        "200":
+          description: Warehouse job advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WarehouseJobResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/twin/skip_duplicate_webhook:
+    post:
+      operationId: skipDuplicateWebhook
+      summary: Record duplicate webhook detection
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkipDuplicateWebhookRequest"
+            examples:
+              duplicate_paid_webhook:
+                value:
+                  actor: safe_agent
+                  webhook:
+                    type: webhook
+                    id: wh_paid_001
+                    topic: order_paid
+                    order_id: order_1001
+      responses:
+        "200":
+          description: Duplicate skip recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkSessionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /sessions/{session_id}/trace:
     get:
       operationId: getTrace
@@ -134,6 +533,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /sessions/{session_id}/complete:
     post:
       operationId: completeSession
@@ -163,6 +563,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
 components:
   parameters:
     session_id:
@@ -172,23 +573,25 @@ components:
       schema:
         type: string
       example: sess_20260530T000000000000Z_SCN-002_demo
+  responses:
+    BadRequest:
+      description: Invalid request or unknown session
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     StartSessionRequest:
       type: object
-      required:
-        - scenario_path
+      required: [scenario_path]
       properties:
         scenario_path:
           type: string
           minLength: 1
+      additionalProperties: false
     SessionCreated:
       type: object
-      required:
-        - ok
-        - session_id
-        - scenario_id
-        - scenario_name
-        - status
+      required: [ok, session_id, scenario_id, scenario_name, status]
       properties:
         ok:
           type: boolean
@@ -201,12 +604,10 @@ components:
         status:
           type: string
           enum: [open, passed, failed]
+      additionalProperties: false
     TaskResponse:
       type: object
-      required:
-        - ok
-        - session_id
-        - done
+      required: [ok, session_id, done]
       properties:
         ok:
           type: boolean
@@ -216,13 +617,120 @@ components:
           type: boolean
         task:
           nullable: true
-          type: object
-          additionalProperties: true
+          oneOf:
+            - $ref: "#/components/schemas/WebhookTask"
+            - $ref: "#/components/schemas/FulfillmentTask"
+            - $ref: "#/components/schemas/InventoryPromiseTask"
+            - $ref: "#/components/schemas/RefundRequestTask"
+            - $ref: "#/components/schemas/CancelRequestTask"
+      additionalProperties: false
+    WebhookTask:
+      type: object
+      required: [type, id, topic, order_id]
+      properties:
+        type:
+          type: string
+          enum: [webhook]
+        id:
+          type: string
+        topic:
+          type: string
+        order_id:
+          type: string
+      additionalProperties: false
+    FulfillmentTask:
+      type: object
+      required: [type, id, order_id]
+      properties:
+        type:
+          type: string
+          enum: [fulfillment_task]
+        id:
+          type: string
+        order_id:
+          type: string
+        fault:
+          $ref: "#/components/schemas/Fault"
+      additionalProperties: false
+    InventoryPromiseTask:
+      type: object
+      required: [type, id, order_id]
+      properties:
+        type:
+          type: string
+          enum: [inventory_promise_task]
+        id:
+          type: string
+        order_id:
+          type: string
+        fault:
+          $ref: "#/components/schemas/Fault"
+      additionalProperties: false
+    RefundRequestTask:
+      type: object
+      required: [type, id, order_id, amount, reason]
+      properties:
+        type:
+          type: string
+          enum: [refund_request]
+        id:
+          type: string
+        order_id:
+          type: string
+        amount:
+          type: number
+        reason:
+          type: string
+      additionalProperties: false
+    CancelRequestTask:
+      type: object
+      required: [type, id, order_id, amount, reason]
+      properties:
+        type:
+          type: string
+          enum: [cancel_request]
+        id:
+          type: string
+        order_id:
+          type: string
+        amount:
+          type: number
+        reason:
+          type: string
+      additionalProperties: false
+    Fault:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [timeout_after_commit, stale_inventory_snapshot]
+        action:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    Actor:
+      type: string
+      minLength: 1
+      default: external_agent
+    NullableString:
+      type: string
+      nullable: true
+    OrderActionRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
     CreateFulfillmentRequest:
       type: object
-      required:
-        - order_id
-        - sku
+      required: [order_id, sku]
       properties:
         order_id:
           type: string
@@ -233,45 +741,325 @@ components:
           minimum: 1
           default: 1
         actor:
-          type: string
-          default: external_agent
+          $ref: "#/components/schemas/Actor"
         webhook_id:
-          type: string
-          nullable: true
+          $ref: "#/components/schemas/NullableString"
         idempotency_key:
-          type: string
-          nullable: true
+          $ref: "#/components/schemas/NullableString"
         request_id:
-          type: string
-          nullable: true
+          $ref: "#/components/schemas/NullableString"
         source_event_id:
-          type: string
-          nullable: true
+          $ref: "#/components/schemas/NullableString"
         fault_type:
           type: string
           nullable: true
           enum: [timeout_after_commit, null]
+      additionalProperties: false
+    ReserveInventoryRequest:
+      type: object
+      required: [order_id, sku]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+        webhook_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    PromiseFulfillmentRequest:
+      type: object
+      required: [order_id, sku]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+        reservation_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    RefreshInventoryRequest:
+      type: object
+      required: [sku]
+      properties:
+        sku:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    RouteManualReviewRequest:
+      type: object
+      required: [order_id, sku]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Actor"
+        reason:
+          type: string
+          default: manual_review_required
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    FindFulfillmentRequest:
+      type: object
+      required: [order_id, sku]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        idempotency_key:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    CreateRefundRequest:
+      type: object
+      required: [order_id, amount]
+      properties:
+        order_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+        reason:
+          type: string
+          default: buyer_request
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+        approval_id:
+          $ref: "#/components/schemas/NullableString"
+        approved_by:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    CreateApprovalRequest:
+      type: object
+      required: [order_id, amount, required_policy]
+      properties:
+        order_id:
+          type: string
+        amount:
+          type: number
+          minimum: 0
+        required_policy:
+          type: string
+        reason:
+          type: string
+          default: buyer_request
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    ReleaseInventoryRequest:
+      type: object
+      required: [order_id, sku]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    PlaceWorkflowHoldRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          default: workflow_hold_required
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    WarehouseContinueRequest:
+      type: object
+      required: [order_id]
+      properties:
+        order_id:
+          type: string
+        new_status:
+          type: string
+          default: shipped
+        actor:
+          $ref: "#/components/schemas/Actor"
+        source_event_id:
+          $ref: "#/components/schemas/NullableString"
+      additionalProperties: false
+    SkipDuplicateWebhookRequest:
+      type: object
+      required: [webhook]
+      properties:
+        actor:
+          $ref: "#/components/schemas/Actor"
+        webhook:
+          $ref: "#/components/schemas/WebhookTask"
+      additionalProperties: false
+
+    OkSessionResponse:
+      type: object
+      required: [ok, session_id]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+      additionalProperties: false
     FulfillmentResponse:
       type: object
-      required:
-        - ok
-        - session_id
-        - fulfillment
+      required: [ok, session_id, fulfillment]
       properties:
         ok:
           type: boolean
         session_id:
           type: string
         fulfillment:
-          type: object
-          additionalProperties: true
+          $ref: "#/components/schemas/Fulfillment"
+      additionalProperties: false
+    FindFulfillmentResponse:
+      type: object
+      required: [ok, session_id, fulfillment]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        fulfillment:
+          nullable: true
+          oneOf:
+            - $ref: "#/components/schemas/Fulfillment"
+      additionalProperties: false
+    ReservationResponse:
+      type: object
+      required: [ok, session_id, reservation]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        reservation:
+          $ref: "#/components/schemas/Reservation"
+      additionalProperties: false
+    PromiseResponse:
+      type: object
+      required: [ok, session_id, promise]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        promise:
+          $ref: "#/components/schemas/FulfillmentPromise"
+      additionalProperties: false
+    InventoryResponse:
+      type: object
+      required: [ok, session_id, inventory]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        inventory:
+          $ref: "#/components/schemas/Inventory"
+      additionalProperties: false
+    RefundResponse:
+      type: object
+      required: [ok, session_id, refund]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        refund:
+          $ref: "#/components/schemas/Refund"
+      additionalProperties: false
+    ApprovalResponse:
+      type: object
+      required: [ok, session_id, approval_request]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        approval_request:
+          $ref: "#/components/schemas/ApprovalRequest"
+      additionalProperties: false
+    InventoryReleaseResponse:
+      type: object
+      required: [ok, session_id, inventory_release]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        inventory_release:
+          $ref: "#/components/schemas/InventoryRelease"
+      additionalProperties: false
+    WorkflowHoldResponse:
+      type: object
+      required: [ok, session_id, workflow_hold]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        workflow_hold:
+          $ref: "#/components/schemas/WorkflowHold"
+      additionalProperties: false
+    WarehouseCancellationResponse:
+      type: object
+      required: [ok, session_id, warehouse_cancellation_request]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        warehouse_cancellation_request:
+          $ref: "#/components/schemas/WarehouseCancellationRequest"
+      additionalProperties: false
+    WarehouseJobResponse:
+      type: object
+      required: [ok, session_id, warehouse_job]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        warehouse_job:
+          $ref: "#/components/schemas/WarehouseJob"
+      additionalProperties: false
     TimeoutAfterCommitResponse:
       type: object
-      required:
-        - ok
-        - error
-        - message
-        - fulfillment_id
+      required: [ok, error, message, fulfillment_id]
       properties:
         ok:
           type: boolean
@@ -283,21 +1071,17 @@ components:
           type: string
         fulfillment_id:
           type: string
+      additionalProperties: false
     CompleteSessionRequest:
       type: object
       properties:
         runner_name:
           type: string
           default: external_agent
+      additionalProperties: false
     CompleteSessionResponse:
       type: object
-      required:
-        - ok
-        - run_id
-        - session_id
-        - run_path
-        - status
-        - findings
+      required: [ok, run_id, session_id, run_path, status, findings]
       properties:
         ok:
           type: boolean
@@ -314,14 +1098,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PolicyFinding"
+      additionalProperties: false
     TraceResponse:
       type: object
-      required:
-        - ok
-        - session_id
-        - scenario_id
-        - status
-        - timeline
+      required: [ok, session_id, scenario_id, status, timeline]
       properties:
         ok:
           type: boolean
@@ -331,17 +1111,290 @@ components:
           type: string
         status:
           type: string
+          enum: [open, passed, failed]
         initial_state:
-          type: object
-          additionalProperties: true
+          $ref: "#/components/schemas/StateSnapshot"
         current_state:
-          type: object
-          additionalProperties: true
+          $ref: "#/components/schemas/StateSnapshot"
         timeline:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            $ref: "#/components/schemas/TraceEvent"
+      additionalProperties: false
+    TraceEvent:
+      type: object
+      required: [step, actor, event, message, details]
+      properties:
+        step:
+          type: integer
+        actor:
+          type: string
+        event:
+          type: string
+        message:
+          type: string
+        details:
+          $ref: "#/components/schemas/TraceEventDetails"
+    TraceEventDetails:
+      type: object
+      additionalProperties: true
+    StateSnapshot:
+      type: object
+      additionalProperties: true
+
+    Fulfillment:
+      type: object
+      required:
+        - fulfillment_id
+        - order_id
+        - sku
+        - quantity
+        - created_by
+      properties:
+        fulfillment_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        created_by:
+          type: string
+        webhook_id:
+          type: string
+          nullable: true
+        idempotency_key:
+          type: string
+          nullable: true
+        request_id:
+          type: string
+          nullable: true
+        source_event_id:
+          type: string
+          nullable: true
+    Reservation:
+      type: object
+      required: [reservation_id, order_id, sku, quantity, created_by]
+      properties:
+        reservation_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        created_by:
+          type: string
+        webhook_id:
+          type: string
+          nullable: true
+    FulfillmentPromise:
+      type: object
+      required: [promise_id, order_id, sku, quantity, created_by]
+      properties:
+        promise_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        based_on_available:
+          type: integer
+          nullable: true
+        true_available_at_commit:
+          type: integer
+          nullable: true
+        snapshot_version:
+          type: string
+          nullable: true
+        last_synced_at:
+          type: string
+          nullable: true
+        reservation_id:
+          type: string
+          nullable: true
+    Inventory:
+      type: object
+      required: [sku, on_hand, reserved, committed]
+      properties:
+        sku:
+          type: string
+        on_hand:
+          type: integer
+        reserved:
+          type: integer
+        available:
+          type: integer
+          nullable: true
+        committed:
+          type: integer
+        true_available:
+          type: integer
+          nullable: true
+        source_version:
+          type: string
+          nullable: true
+        last_synced_at:
+          type: string
+          nullable: true
+    Refund:
+      type: object
+      required: [refund_id, order_id, amount, reason, created_by]
+      properties:
+        refund_id:
+          type: string
+        order_id:
+          type: string
+        amount:
+          type: number
+        reason:
+          type: string
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        approval_id:
+          type: string
+          nullable: true
+        approved_by:
+          type: string
+          nullable: true
+        order_fulfillment_status_at_issue:
+          type: string
+          nullable: true
+        shipment_status_at_issue:
+          type: string
+          nullable: true
+    ApprovalRequest:
+      type: object
+      required: [approval_id, order_id, amount, reason, created_by, status]
+      properties:
+        approval_id:
+          type: string
+        order_id:
+          type: string
+        amount:
+          type: number
+        reason:
+          type: string
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        status:
+          type: string
+        required_policy:
+          type: string
+          nullable: true
+    InventoryRelease:
+      type: object
+      required: [release_id, order_id, sku, quantity, created_by]
+      properties:
+        release_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        warehouse_status_at_release:
+          type: string
+          nullable: true
+        order_status_at_release:
+          type: string
+          nullable: true
+    WorkflowHold:
+      type: object
+      required: [hold_id, order_id, reason, created_by]
+      properties:
+        hold_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+          nullable: true
+        reason:
+          type: string
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        warehouse_status_at_hold:
+          type: string
+          nullable: true
+    WarehouseCancellationRequest:
+      type: object
+      required:
+        - cancellation_request_id
+        - order_id
+        - warehouse_job_id
+        - created_by
+        - status
+      properties:
+        cancellation_request_id:
+          type: string
+        order_id:
+          type: string
+        warehouse_job_id:
+          type: string
+        created_by:
+          type: string
+        source_event_id:
+          type: string
+          nullable: true
+        status:
+          type: string
+        warehouse_status_at_request:
+          type: string
+          nullable: true
+    WarehouseJob:
+      type: object
+      required:
+        - warehouse_job_id
+        - order_id
+        - sku
+        - quantity
+        - status
+        - cancellation_requested
+        - continued_after_cancel
+      properties:
+        warehouse_job_id:
+          type: string
+        order_id:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        status:
+          type: string
+        cancellation_requested:
+          type: boolean
+        hold_status:
+          type: string
+          nullable: true
+        continued_after_cancel:
+          type: boolean
+
     PolicyFinding:
       type: object
       required:
@@ -356,24 +1409,130 @@ components:
           type: string
         severity:
           type: string
+          enum: [info, low, medium, high, critical]
         status:
           type: string
           enum: [failed]
         evidence:
-          type: object
-          additionalProperties: true
+          oneOf:
+            - $ref: "#/components/schemas/DuplicateFulfillmentEvidence"
+            - $ref: "#/components/schemas/WebhookDedupEvidence"
+            - $ref: "#/components/schemas/IdempotencyRetryEvidence"
+            - $ref: "#/components/schemas/InventoryPromiseEvidence"
+            - $ref: "#/components/schemas/RefundApprovalEvidence"
+            - $ref: "#/components/schemas/WarehouseConflictEvidence"
+            - $ref: "#/components/schemas/GenericPolicyEvidence"
         business_impact:
           type: string
         recommendation:
           type: string
+      additionalProperties: false
+    DuplicateFulfillmentEvidence:
+      type: object
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        fulfillments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Fulfillment"
+        fulfillment_count:
+          type: integer
+      additionalProperties: true
+    WebhookDedupEvidence:
+      type: object
+      properties:
+        webhook_id:
+          type: string
+        processed_count:
+          type: integer
+        duplicate_events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceEvent"
+      additionalProperties: true
+    IdempotencyRetryEvidence:
+      type: object
+      properties:
+        action:
+          type: string
+        retry_without_idempotency_key:
+          type: boolean
+        request_ids:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+    InventoryPromiseEvidence:
+      type: object
+      properties:
+        order_id:
+          type: string
+        sku:
+          type: string
+        promised_quantity:
+          type: integer
+        based_on_available:
+          type: integer
+          nullable: true
+        true_available_at_commit:
+          type: integer
+          nullable: true
+        reservation_id:
+          type: string
+          nullable: true
+      additionalProperties: true
+    RefundApprovalEvidence:
+      type: object
+      properties:
+        order_id:
+          type: string
+        refund_id:
+          type: string
+        amount:
+          type: number
+        shipment_status_at_issue:
+          type: string
+          nullable: true
+        approval_id:
+          type: string
+          nullable: true
+      additionalProperties: true
+    WarehouseConflictEvidence:
+      type: object
+      properties:
+        order_id:
+          type: string
+        warehouse_status:
+          type: string
+        release_id:
+          type: string
+          nullable: true
+        refund_id:
+          type: string
+          nullable: true
+        hold_id:
+          type: string
+          nullable: true
+        cancellation_request_id:
+          type: string
+          nullable: true
+      additionalProperties: true
+    GenericPolicyEvidence:
+      type: object
+      properties:
+        summary:
+          type: string
+      additionalProperties: true
     ErrorResponse:
       type: object
-      required:
-        - ok
-        - error
+      required: [ok, error]
       properties:
         ok:
           type: boolean
           enum: [false]
         error:
           type: string
+      additionalProperties: false

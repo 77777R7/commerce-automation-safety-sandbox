@@ -8,12 +8,30 @@ from urllib.parse import urlparse
 
 from ..models import to_plain
 from ..twin import TimeoutAfterCommit
+from .mcp_tools import CommerceMCPTools
 from .sessions import SessionManager
 
 
 class LiveAPI:
     def __init__(self, runs_dir: Path | str = Path("runs")):
-        self.manager = SessionManager(runs_dir=runs_dir)
+        self.tools = CommerceMCPTools(runs_dir=runs_dir)
+        self.manager: SessionManager = self.tools.manager
+        self.twin_action_tools = {
+            "reserve_inventory",
+            "promise_fulfillment",
+            "refresh_inventory",
+            "route_manual_review",
+            "create_fulfillment",
+            "find_fulfillment",
+            "create_refund",
+            "create_approval_request",
+            "cancel_order",
+            "release_inventory",
+            "place_workflow_hold",
+            "submit_warehouse_cancellation_request",
+            "warehouse_continue_fulfillment",
+            "skip_duplicate_webhook",
+        }
 
     def handle(
         self,
@@ -44,6 +62,8 @@ class LiveAPI:
                 "create_fulfillment",
             ):
                 return self._create_fulfillment(parts[1], payload)
+            if method == "POST" and self._matches(parts, "sessions", "*", "twin", "*"):
+                return self._call_twin_action(parts[1], parts[3], payload)
             if method == "GET" and self._matches(parts, "sessions", "*", "trace"):
                 return self._get_trace(parts[1])
             if method == "POST" and self._matches(parts, "sessions", "*", "complete"):
@@ -105,6 +125,17 @@ class LiveAPI:
             "session_id": session_id,
             "fulfillment": to_plain(fulfillment),
         }
+
+    def _call_twin_action(
+        self,
+        session_id: str,
+        action: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        if action not in self.twin_action_tools:
+            return 404, {"ok": False, "error": "not_found"}
+        payload = {"session_id": session_id, **body}
+        return 200, self.tools.call_tool(f"commerce.{action}", payload)
 
     def _get_trace(self, session_id: str) -> tuple[int, dict[str, Any]]:
         session = self.manager.get_session(session_id)

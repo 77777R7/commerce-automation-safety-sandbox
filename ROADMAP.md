@@ -58,9 +58,9 @@ Do not build these before the relevant stage gate asks for them:
 Each stage must have a named gate. Do not move to the next stage until the
 current stage gate passes in the current worktree.
 
-The complete V3.5 objective is not achieved until Stage 9 passes. Stage 8 is
-the Arga-style next-layer plan; Stage 9 hardens the real MCP and HTTP agent
-interfaces.
+The complete V3.5 interface objective is not achieved until Stage 11 passes.
+Stage 9 makes the interfaces real, Stage 10 proves all five P0 scenarios
+through agent-facing MCP/HTTP paths, and Stage 11 tightens the HTTP contract.
 
 ## Stage 0: V3.5 Rebaseline
 
@@ -398,9 +398,81 @@ Stage 9 keeps the core product principle:
 Permissive Twin + Policy Check
 ```
 
+## Stage 10: Full P0 MCP/HTTP Coverage
+
+Goal: prove the five P0 scenarios run through real agent-facing interfaces, not
+only through internal live tool calls.
+
+Deliverables:
+
+- MCP tools for the full P0 action surface:
+  - `commerce.reserve_inventory`
+  - `commerce.promise_fulfillment`
+  - `commerce.refresh_inventory`
+  - `commerce.route_manual_review`
+  - `commerce.create_refund`
+  - `commerce.create_approval_request`
+  - `commerce.cancel_order`
+  - `commerce.release_inventory`
+  - `commerce.place_workflow_hold`
+  - `commerce.submit_warehouse_cancellation_request`
+  - `commerce.warehouse_continue_fulfillment`
+  - `commerce.skip_duplicate_webhook`
+- HTTP Twin API endpoints for the same generic commerce actions.
+- `tools/smoke_stage10_mcp_p0_all.sh`.
+- `tools/smoke_stage10_http_p0_all.sh`.
+
+Acceptance:
+
+- For every P0 scenario:
+  - unsafe path via MCP fails with expected policy findings
+  - safe path via MCP passes with zero findings
+  - unsafe path via HTTP fails with expected policy findings
+  - safe path via HTTP passes with zero findings
+- No Shopify/Amazon clone is introduced; these remain generic commerce actions.
+- `Permissive Twin + Policy Check` remains intact.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage10_agent_interface_coverage.py
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+```
+
+## Stage 11: Strict OpenAPI Contract Hardening
+
+Goal: make the HTTP OpenAPI contract describe the real agent-facing API instead
+of hiding important shapes behind broad objects.
+
+Deliverables:
+
+- Tight `TaskResponse.task` union.
+- Tight `FulfillmentResponse.fulfillment`.
+- Tight `TraceResponse.timeline`.
+- Structured `PolicyFinding.evidence` union.
+- Request and response examples for all agent-facing endpoints.
+- Explicit Schemathesis warning allowlist for session-bound generated data.
+- `tests/test_openapi_contract_shape.py`.
+- `tools/smoke_stage11_openapi_contract.sh`.
+
+Acceptance:
+
+- Schemathesis examples, coverage, and stateful phases pass.
+- `response_schema_conformance` passes.
+- Any remaining schema warning is explicit, narrow, and covered by
+  `docs/openapi/schemathesis_warning_allowlist.yaml`.
+
+Gate:
+
+```bash
+python -m pytest tests/test_openapi_contract_shape.py
+PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+```
+
 ## Full V3.5 Gate
 
-Once Stage 9 is implemented, the V3.5 release gate is:
+Once Stage 11 is implemented, the V3.5 release gate is:
 
 ```bash
 ./tools/smoke_v35.sh
@@ -418,3 +490,5 @@ This command must run:
 - Stage 6 repair artifacts.
 - Stage 7 live demo pack generation.
 - Stage 9 real MCP server and API hardening gates.
+- Stage 10 full P0 MCP/HTTP coverage gates.
+- Stage 11 strict OpenAPI contract gate.

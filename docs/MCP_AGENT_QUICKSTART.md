@@ -22,6 +22,24 @@ External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hin
 - `commerce.get_policy_report`
 - `commerce.get_patch_hints`
 
+## P0 Commerce Action Tools
+
+Stage 10 adds the action surface needed to run all five flagship scenarios
+through real MCP calls:
+
+- `commerce.reserve_inventory`
+- `commerce.promise_fulfillment`
+- `commerce.refresh_inventory`
+- `commerce.route_manual_review`
+- `commerce.create_refund`
+- `commerce.create_approval_request`
+- `commerce.cancel_order`
+- `commerce.release_inventory`
+- `commerce.place_workflow_hold`
+- `commerce.submit_warehouse_cancellation_request`
+- `commerce.warehouse_continue_fulfillment`
+- `commerce.skip_duplicate_webhook`
+
 ## Start The Server
 
 ```bash
@@ -33,6 +51,7 @@ For local verification:
 
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 ```
 
 ## SCN-002 Unsafe Agent

@@ -31,3 +31,12 @@ warehouse, webhook, and retry state collide.
 dangerous. The first fulfillment commits, the caller receives a timeout, and an
 unsafe retry creates duplicate fulfillment. The repair package explains the
 guardrail: stable idempotency key plus existing-state check before retry.
+
+Stage 10 extends this proof to all five P0 scenarios through real MCP and HTTP
+interfaces:
+
+- duplicate webhook fulfillment
+- timeout after commit unsafe retry
+- stale inventory oversell
+- refund after shipment approval bypass
+- cancel after pick/pack warehouse conflict
