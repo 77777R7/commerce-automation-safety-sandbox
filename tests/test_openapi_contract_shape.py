@@ -43,6 +43,21 @@ def test_openapi_has_stage12_shopify_like_skin_paths():
     assert "/sessions/{session_id}/shopify/coverage" in paths
 
 
+def test_openapi_has_stage13_amazon_seller_ops_skin_paths():
+    paths = _spec()["paths"]
+
+    assert "/sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds" in paths
+    assert "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}" in paths
+    assert "/sessions/{session_id}/amazon/notifications" in paths
+    assert "/sessions/{session_id}/amazon/actions/{amazon_action}" in paths
+    assert "/sessions/{session_id}/amazon/coverage" in paths
+
+
 def test_openapi_stage11_tightens_task_and_fulfillment_shapes():
     schemas = _spec()["components"]["schemas"]
 
@@ -97,4 +112,14 @@ def test_schemathesis_warning_allowlist_is_explicit_and_narrow():
         "/sessions/{session_id}/shopify/webhooks/skip_duplicate",
         "/sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json",
         "/sessions/{session_id}/shopify/coverage",
+        "/sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries",
+        "/sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}",
+        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}",
+        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems",
+        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation",
+        "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds",
+        "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}",
+        "/sessions/{session_id}/amazon/notifications",
+        "/sessions/{session_id}/amazon/actions/{amazon_action}",
+        "/sessions/{session_id}/amazon/coverage",
     }

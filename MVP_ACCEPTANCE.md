@@ -44,7 +44,7 @@ defines the mainline.
 
 ## Stage Gate Acceptance
 
-Stage 0 through Stage 12 must follow `ROADMAP.md`. The stage gates are:
+Stage 0 through Stage 13 must follow `ROADMAP.md`. The stage gates are:
 
 ```txt
 Stage 0: ./tools/smoke_stage0_rebaseline.sh
@@ -73,6 +73,9 @@ Stage 11: python -m pytest tests/test_openapi_contract_shape.py
           PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 Stage 12: python -m pytest tests/test_shopify_skin_manifests.py tests/test_shopify_webhook_mapper.py tests/test_shopify_graphql_router.py tests/test_shopify_skin_live_http.py
           ./tools/smoke_stage12_shopify_skin_v0.sh
+Stage 13: python -m pytest tests/test_amazon_mcp_server_contract.py tests/test_amazon_skin_manifests.py tests/test_amazon_binding.py tests/test_amazon_skin_live_http.py tests/test_amazon_skin_mcp_tools.py
+          ./tools/smoke_stage13_amazon_skin_v0.sh
+          PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```
 
 No stage is considered complete without fresh gate evidence.
@@ -93,7 +96,7 @@ Acceptance:
 - Source-of-truth docs include the narrative:
   `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - Offline Audit is described as supporting or secondary.
-- `ROADMAP.md` defines Stage 0 through Stage 12 and gives each stage a gate.
+- `ROADMAP.md` defines Stage 0 through Stage 13 and gives each stage a gate.
 
 ## Stage 1 Live Session Kernel Acceptance
 
@@ -250,6 +253,26 @@ Acceptance:
 - `duplicate_webhook` unsafe/safe paths run through Shopify-like HTTP.
 - `SCN-002 timeout_after_commit_retry` unsafe/safe paths run through
   Shopify-like HTTP.
+- The adapter does not make business policy decisions; unsafe actions remain
+  permissive and are caught by `PolicyEngine` at completion.
+
+## Stage 13 Amazon Seller Ops Safety Skin V0 Acceptance
+
+Acceptance:
+
+- Amazon Seller Ops skin coverage and binding manifests exist and declare the
+  V0 surface explicitly.
+- The skin supports Amazon-shaped inventory summaries, listing availability,
+  feed status, order/order item reads, ORDER_CHANGE notifications, and
+  confirmShipment.
+- The skin exposes Amazon MCP tools for inventory/listing/order/feed/
+  notification/seller-ops action paths.
+- `SCN-003 stale_inventory_oversell` unsafe/safe paths run through
+  Amazon-shaped HTTP.
+- `SCN-005 cancel_after_pick_pack_conflict` unsafe/safe paths run through
+  Amazon-shaped HTTP.
+- The real MCP smoke proves Amazon tools can drive one unsafe and one safe
+  Amazon-shaped validation path.
 - The adapter does not make business policy decisions; unsafe actions remain
   permissive and are caught by `PolicyEngine` at completion.
 

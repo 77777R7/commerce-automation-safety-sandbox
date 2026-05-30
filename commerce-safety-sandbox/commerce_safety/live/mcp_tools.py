@@ -5,6 +5,7 @@ from typing import Any, Callable
 
 from ..io import read_json
 from ..models import to_plain
+from ..platform_skins.amazon import AmazonPlatformBinding, AmazonSellerOpsRouter
 from ..twin import TimeoutAfterCommit
 from .sessions import SessionManager
 
@@ -19,6 +20,7 @@ class CommerceMCPTools:
 
     def __init__(self, runs_dir: Path | str = Path("runs")):
         self.manager = SessionManager(runs_dir=runs_dir)
+        self.amazon = AmazonSellerOpsRouter(self)
         self._tools: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "commerce.start_session": self._start_session,
             "commerce.get_task": self._get_task,
@@ -44,6 +46,23 @@ class CommerceMCPTools:
             "commerce.get_trace": self._get_trace,
             "commerce.get_policy_report": self._get_policy_report,
             "commerce.get_patch_hints": self._get_patch_hints,
+            "amazon.get_inventory_summaries": self._amazon_get_inventory_summaries,
+            "amazon.get_listing_item": self._amazon_get_listing_item,
+            "amazon.patch_listing_quantity": self._amazon_patch_listing_quantity,
+            "amazon.submit_feed": self._amazon_submit_feed,
+            "amazon.get_feed_status": self._amazon_get_feed_status,
+            "amazon.get_order": self._amazon_get_order,
+            "amazon.get_order_items": self._amazon_get_order_items,
+            "amazon.confirm_shipment": self._amazon_confirm_shipment,
+            "amazon.inject_notification": self._amazon_inject_notification,
+            "amazon.promise_fulfillment": self._amazon_promise_fulfillment,
+            "amazon.route_manual_review": self._amazon_route_manual_review,
+            "amazon.cancel_order": self._amazon_cancel_order,
+            "amazon.place_workflow_hold": self._amazon_place_workflow_hold,
+            "amazon.submit_warehouse_cancellation_request": (
+                self._amazon_submit_warehouse_cancellation_request
+            ),
+            "amazon.get_coverage": self._amazon_get_coverage,
         }
 
     def list_tools(self) -> list[dict[str, str]]:
@@ -320,6 +339,159 @@ class CommerceMCPTools:
         session = self.manager.get_session(arguments["session_id"])
         return read_json(session.output_path / "patch_hints.json")
 
+    def _amazon_binding(self, session_id: str):
+        session = self.manager.get_session(session_id)
+        return session, AmazonPlatformBinding.from_twin(session.twin)
+
+    def _amazon_get_inventory_summaries(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.get_inventory_summaries(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_skus=arguments.get("sellerSkus") or arguments.get("seller_skus"),
+        )
+        return body
+
+    def _amazon_get_listing_item(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.get_listing_item(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_id=arguments.get("sellerId", "seller_123"),
+            platform_sku=arguments["sellerSku"],
+        )
+        return body
+
+    def _amazon_patch_listing_quantity(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.patch_listing_quantity(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_id=arguments.get("sellerId", "seller_123"),
+            platform_sku=arguments["sellerSku"],
+            body=arguments,
+        )
+        return body
+
+    def _amazon_submit_feed(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session, _ = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.create_feed(
+            session_id=session.session_id,
+            twin=session.twin,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_get_feed_status(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        _, body = self.amazon.get_feed(
+            session_id=session.session_id,
+            feed_id=arguments["feedId"],
+        )
+        return body
+
+    def _amazon_get_order(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.get_order(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            amazon_order_id=arguments["amazonOrderId"],
+        )
+        return body
+
+    def _amazon_get_order_items(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.get_order_items(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            amazon_order_id=arguments["amazonOrderId"],
+        )
+        return body
+
+    def _amazon_confirm_shipment(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.confirm_shipment(
+            session_id=arguments["session_id"],
+            binding=binding,
+            amazon_order_id=arguments["amazonOrderId"],
+            body=arguments,
+        )
+        return body
+
+    def _amazon_inject_notification(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.inject_notification(
+            session_id=session.session_id,
+            twin=session.twin,
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_promise_fulfillment(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.promise_fulfillment(
+            session_id=arguments["session_id"],
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_route_manual_review(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.route_manual_review(
+            session_id=arguments["session_id"],
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_cancel_order(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.cancel_order(
+            session_id=arguments["session_id"],
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_place_workflow_hold(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.place_workflow_hold(
+            session_id=arguments["session_id"],
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_submit_warehouse_cancellation_request(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        _, binding = self._amazon_binding(arguments["session_id"])
+        _, body = self.amazon.submit_warehouse_cancellation_request(
+            session_id=arguments["session_id"],
+            binding=binding,
+            body=arguments,
+        )
+        return body
+
+    def _amazon_get_coverage(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        _, body = self.amazon.coverage_response(session.session_id)
+        return body
+
     def _description_for(self, name: str) -> str:
         descriptions = {
             "commerce.start_session": "Start a live commerce validation session.",
@@ -346,5 +518,22 @@ class CommerceMCPTools:
             "commerce.get_trace": "Read the live trace timeline.",
             "commerce.get_policy_report": "Read structured policy findings.",
             "commerce.get_patch_hints": "Read agent-readable repair hints.",
+            "amazon.get_inventory_summaries": "Read Amazon-shaped FBA inventory summaries.",
+            "amazon.get_listing_item": "Read an Amazon-shaped listing item.",
+            "amazon.patch_listing_quantity": "Submit an Amazon-shaped listing quantity patch.",
+            "amazon.submit_feed": "Submit an Amazon-shaped feed.",
+            "amazon.get_feed_status": "Read Amazon-shaped feed processing status.",
+            "amazon.get_order": "Read an Amazon-shaped order.",
+            "amazon.get_order_items": "Read Amazon-shaped order items.",
+            "amazon.confirm_shipment": "Confirm shipment through an Amazon-shaped order path.",
+            "amazon.inject_notification": "Inject an Amazon-shaped notification.",
+            "amazon.promise_fulfillment": "Record a seller automation fulfillment promise.",
+            "amazon.route_manual_review": "Route an Amazon-shaped case to manual review.",
+            "amazon.cancel_order": "Cancel an order from an Amazon-shaped agent action.",
+            "amazon.place_workflow_hold": "Place a workflow hold from an Amazon-shaped action.",
+            "amazon.submit_warehouse_cancellation_request": (
+                "Request warehouse cancellation from an Amazon-shaped action."
+            ),
+            "amazon.get_coverage": "Read Amazon Seller Ops skin coverage.",
         }
         return descriptions[name]

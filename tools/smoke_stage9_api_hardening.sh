@@ -42,7 +42,7 @@ import urllib.error
 import urllib.request
 
 base_url = sys.argv[1]
-deadline = time.time() + 10
+deadline = time.time() + 30
 while time.time() < deadline:
     try:
         urllib.request.urlopen(f"{base_url}/sessions/not-real/trace", timeout=0.5)

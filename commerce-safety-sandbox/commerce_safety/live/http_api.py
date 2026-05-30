@@ -4,9 +4,10 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from ..models import to_plain
+from ..platform_skins.amazon import AmazonPlatformBinding, AmazonSellerOpsRouter
 from ..platform_skins.shopify import (
     ShopifyGraphQLRouter,
     ShopifyPlatformBinding,
@@ -24,6 +25,7 @@ class LiveAPI:
         self.manager: SessionManager = self.tools.manager
         self.shopify_graphql = ShopifyGraphQLRouter(self.tools)
         self.shopify_coverage = load_shopify_coverage()
+        self.amazon = AmazonSellerOpsRouter(self.tools)
         self.twin_action_tools = {
             "reserve_inventory",
             "promise_fulfillment",
@@ -102,6 +104,130 @@ class LiveAPI:
                 "graphql.json",
             ):
                 return self._shopify_graphql(parts[1], payload)
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "coverage",
+            ):
+                return self._amazon_coverage(parts[1])
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "fba",
+                "inventory",
+                "v1",
+                "summaries",
+            ):
+                return self._amazon_inventory_summaries(parts[1], path)
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "listings",
+                "*",
+                "items",
+                "*",
+                "*",
+            ):
+                return self._amazon_listing_item(parts[1], parts[7], parts[8])
+            if method == "PATCH" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "listings",
+                "*",
+                "items",
+                "*",
+                "*",
+            ):
+                return self._amazon_patch_listing_item(parts[1], parts[7], parts[8], payload)
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "orders",
+                "v0",
+                "orders",
+                "*",
+            ):
+                return self._amazon_get_order(parts[1], parts[7])
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "orders",
+                "v0",
+                "orders",
+                "*",
+                "orderItems",
+            ):
+                return self._amazon_get_order_items(parts[1], parts[7])
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "orders",
+                "v0",
+                "orders",
+                "*",
+                "shipmentConfirmation",
+            ):
+                return self._amazon_confirm_shipment(parts[1], parts[7], payload)
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "feeds",
+                "*",
+                "feeds",
+            ):
+                return self._amazon_create_feed(parts[1], payload)
+            if method == "GET" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "sp-api",
+                "feeds",
+                "*",
+                "feeds",
+                "*",
+            ):
+                return self._amazon_get_feed(parts[1], parts[7])
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "notifications",
+            ):
+                return self._amazon_notification(parts[1], payload)
+            if method == "POST" and self._matches(
+                parts,
+                "sessions",
+                "*",
+                "amazon",
+                "actions",
+                "*",
+            ):
+                return self._amazon_action(parts[1], parts[4], payload)
             if method == "GET" and self._matches(
                 parts,
                 "sessions",
@@ -247,6 +373,158 @@ class LiveAPI:
             "coverage": self.shopify_coverage.as_dict(),
         }
 
+    def _amazon_session_binding(self, session_id: str):
+        session = self.manager.get_session(session_id)
+        return session, AmazonPlatformBinding.from_twin(session.twin)
+
+    def _amazon_coverage(self, session_id: str) -> tuple[int, dict[str, Any]]:
+        self.manager.get_session(session_id)
+        return self.amazon.coverage_response(session_id)
+
+    def _amazon_inventory_summaries(
+        self,
+        session_id: str,
+        path: str,
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        query = parse_qs(urlparse(path).query)
+        seller_skus = query.get("sellerSkus") or query.get("sellerSku")
+        return self.amazon.get_inventory_summaries(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_skus=seller_skus,
+        )
+
+    def _amazon_listing_item(
+        self,
+        session_id: str,
+        seller_id: str,
+        sku: str,
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        return self.amazon.get_listing_item(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_id=seller_id,
+            platform_sku=sku,
+        )
+
+    def _amazon_patch_listing_item(
+        self,
+        session_id: str,
+        seller_id: str,
+        sku: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        return self.amazon.patch_listing_quantity(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            seller_id=seller_id,
+            platform_sku=sku,
+            body=body,
+        )
+
+    def _amazon_get_order(
+        self,
+        session_id: str,
+        amazon_order_id: str,
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        return self.amazon.get_order(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            amazon_order_id=amazon_order_id,
+        )
+
+    def _amazon_get_order_items(
+        self,
+        session_id: str,
+        amazon_order_id: str,
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        return self.amazon.get_order_items(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            amazon_order_id=amazon_order_id,
+        )
+
+    def _amazon_confirm_shipment(
+        self,
+        session_id: str,
+        amazon_order_id: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        _, binding = self._amazon_session_binding(session_id)
+        return self.amazon.confirm_shipment(
+            session_id=session_id,
+            binding=binding,
+            amazon_order_id=amazon_order_id,
+            body=body,
+        )
+
+    def _amazon_create_feed(
+        self,
+        session_id: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session, _ = self._amazon_session_binding(session_id)
+        return self.amazon.create_feed(
+            session_id=session_id,
+            twin=session.twin,
+            body=body,
+        )
+
+    def _amazon_get_feed(
+        self,
+        session_id: str,
+        feed_id: str,
+    ) -> tuple[int, dict[str, Any]]:
+        self.manager.get_session(session_id)
+        return self.amazon.get_feed(session_id=session_id, feed_id=feed_id)
+
+    def _amazon_notification(
+        self,
+        session_id: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        session, binding = self._amazon_session_binding(session_id)
+        return self.amazon.inject_notification(
+            session_id=session_id,
+            twin=session.twin,
+            binding=binding,
+            body=body,
+        )
+
+    def _amazon_action(
+        self,
+        session_id: str,
+        action: str,
+        body: dict[str, Any],
+    ) -> tuple[int, dict[str, Any]]:
+        _, binding = self._amazon_session_binding(session_id)
+        actions = {
+            "promise_fulfillment": self.amazon.promise_fulfillment,
+            "route_manual_review": self.amazon.route_manual_review,
+            "cancel_order": self.amazon.cancel_order,
+            "place_workflow_hold": self.amazon.place_workflow_hold,
+            "submit_warehouse_cancellation_request": (
+                self.amazon.submit_warehouse_cancellation_request
+            ),
+        }
+        if action not in actions:
+            return 404, {"ok": False, "error": "not_found"}
+        return actions[action](
+            session_id=session_id,
+            binding=binding,
+            body=body,
+        )
+
     def _get_trace(self, session_id: str) -> tuple[int, dict[str, Any]]:
         session = self.manager.get_session(session_id)
         return 200, {
@@ -315,6 +593,15 @@ class LiveHTTPRequestHandler(BaseHTTPRequestHandler):
             "GET",
             self.path,
             {},
+            headers=dict(self.headers.items()),
+        )
+        self._send_json(status, payload)
+
+    def do_PATCH(self) -> None:
+        status, payload = self.server.api.handle(
+            "PATCH",
+            self.path,
+            self._read_json(),
             headers=dict(self.headers.items()),
         )
         self._send_json(status, payload)

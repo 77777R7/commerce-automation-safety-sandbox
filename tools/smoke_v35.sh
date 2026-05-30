@@ -21,5 +21,7 @@ PYTHON="$PYTHON_BIN" ./tools/smoke_stage10_mcp_p0_all.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage10_http_p0_all.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage11_openapi_contract.sh
 ./tools/smoke_stage12_shopify_skin_v0.sh
+./tools/smoke_stage13_amazon_skin_v0.sh
+PYTHON="$PYTHON_BIN" ./tools/smoke_stage13_amazon_mcp_v0.sh
 
 echo "V3.5 live agent sandbox gate passed."

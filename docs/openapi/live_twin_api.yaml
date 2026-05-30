@@ -639,6 +639,223 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  /sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries:
+    get:
+      operationId: amazonGetInventorySummaries
+      summary: Read Amazon-shaped FBA inventory summaries
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Amazon-shaped inventory summaries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}:
+    get:
+      operationId: amazonGetListingItem
+      summary: Read Amazon-shaped listing availability
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+        - $ref: "#/components/parameters/seller_id"
+        - $ref: "#/components/parameters/sku"
+      responses:
+        "200":
+          description: Amazon-shaped listing item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    patch:
+      operationId: amazonPatchListingQuantity
+      summary: Submit Amazon-shaped listing quantity update
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+        - $ref: "#/components/parameters/seller_id"
+        - $ref: "#/components/parameters/sku"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonPatchListingRequest"
+      responses:
+        "202":
+          description: Listing update accepted by the twin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}:
+    get:
+      operationId: amazonGetOrder
+      summary: Read Amazon-shaped order
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/amazon_order_id"
+      responses:
+        "200":
+          description: Amazon-shaped order response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems:
+    get:
+      operationId: amazonGetOrderItems
+      summary: Read Amazon-shaped order items
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/amazon_order_id"
+      responses:
+        "200":
+          description: Amazon-shaped order items response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation:
+    post:
+      operationId: amazonConfirmShipment
+      summary: Confirm shipment through the Amazon-shaped Orders API
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/amazon_order_id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonConfirmShipmentRequest"
+      responses:
+        "200":
+          description: Amazon-shaped shipment confirmation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds:
+    post:
+      operationId: amazonCreateFeed
+      summary: Submit an Amazon-shaped feed
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonFeedRequest"
+      responses:
+        "202":
+          description: Amazon-shaped feed accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}:
+    get:
+      operationId: amazonGetFeed
+      summary: Read Amazon-shaped feed processing status
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+        - $ref: "#/components/parameters/feed_id"
+      responses:
+        "200":
+          description: Amazon-shaped feed status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/notifications:
+    post:
+      operationId: amazonInjectNotification
+      summary: Inject Amazon-shaped notifications
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonNotificationRequest"
+      responses:
+        "202":
+          description: Amazon-shaped notification accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/actions/{amazon_action}:
+    post:
+      operationId: amazonSellerOpsAction
+      summary: Run an Amazon-shaped seller-ops action
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/amazon_action"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AmazonActionRequest"
+      responses:
+        "200":
+          description: Amazon-shaped seller-ops action result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /sessions/{session_id}/amazon/coverage:
+    get:
+      operationId: amazonCoverage
+      summary: Read Amazon Seller Ops Skin V0 coverage metadata
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Amazon Seller Ops skin coverage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
   /sessions/{session_id}/trace:
     get:
       operationId: getTrace
@@ -704,8 +921,53 @@ components:
       required: true
       schema:
         type: string
-        pattern: "^\\d{4}-\\d{2}$"
-      example: "2026-04"
+        pattern: "^\\d{4}-\\d{2}(-\\d{2})?$"
+      example: "2021-08-01"
+    seller_id:
+      name: seller_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: seller_123
+    sku:
+      name: sku
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: sku_stale_1
+    amazon_order_id:
+      name: amazon_order_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: AMZ-5001
+    feed_id:
+      name: feed_id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      example: feed_001
+    amazon_action:
+      name: amazon_action
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+          - promise_fulfillment
+          - route_manual_review
+          - cancel_order
+          - place_workflow_hold
+          - submit_warehouse_cancellation_request
+      example: promise_fulfillment
     shopify_topic:
       name: X-Shopify-Topic
       in: header
@@ -865,6 +1127,134 @@ components:
           type: string
           nullable: true
       additionalProperties: false
+
+    AmazonGenericResponse:
+      type: object
+      required: [ok, session_id]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        coverage:
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: string
+        event:
+          type: object
+          additionalProperties: true
+        sku:
+          type: string
+        status:
+          type: string
+        promise:
+          $ref: "#/components/schemas/FulfillmentPromise"
+        manual_review:
+          type: object
+          additionalProperties: true
+        cancelled_order:
+          type: object
+          additionalProperties: true
+        workflow_hold:
+          $ref: "#/components/schemas/WorkflowHold"
+        warehouse_cancellation_request:
+          $ref: "#/components/schemas/WarehouseCancellationRequest"
+        _commerce_twin:
+          type: object
+          additionalProperties: true
+        _commerce_twin_stub:
+          type: boolean
+      additionalProperties: true
+    AmazonActionRequest:
+      type: object
+      properties:
+        amazonOrderId:
+          type: string
+        AmazonOrderId:
+          type: string
+        sellerSku:
+          type: string
+        SellerSKU:
+          type: string
+        sku:
+          type: string
+        asin:
+          type: string
+        ASIN:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+        reason:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Actor"
+        sourceEventId:
+          type: string
+        source_event_id:
+          type: string
+        reservationId:
+          type: string
+      additionalProperties: true
+    AmazonNotificationRequest:
+      type: object
+      required: [notificationType]
+      properties:
+        notificationType:
+          type: string
+          enum:
+            - ORDER_CHANGE
+            - LISTINGS_ITEM_MFN_QUANTITY_CHANGE
+        payload:
+          type: object
+          additionalProperties: true
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: true
+    AmazonConfirmShipmentRequest:
+      type: object
+      properties:
+        packageDetail:
+          type: object
+          additionalProperties: true
+        actor:
+          $ref: "#/components/schemas/Actor"
+        sourceEventId:
+          type: string
+      additionalProperties: true
+    AmazonFeedRequest:
+      type: object
+      properties:
+        feedType:
+          type: string
+          default: POST_ORDER_FULFILLMENT_DATA
+        marketplaceIds:
+          type: array
+          items:
+            type: string
+        inputFeedDocumentId:
+          type: string
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: true
+    AmazonPatchListingRequest:
+      type: object
+      properties:
+        productType:
+          type: string
+        patches:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: true
 
     Actor:
       type: string

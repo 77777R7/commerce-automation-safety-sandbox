@@ -1,0 +1,25 @@
+skin: amazon_seller_ops
+stage: 13
+surface: v0
+routes:
+  getInventorySummaries: stateful
+  getListingsItem: stateful
+  patchListingsItemQuantity: stateful
+  createFeed: stateful
+  getFeed: stateful
+  getOrder: stateful
+  getOrderItems: stateful
+  confirmShipment: stateful
+  injectNotification: stateful
+  sellerActionPromiseFulfillment: stateful
+  sellerActionRouteManualReview: stateful
+  sellerActionCancelOrder: stateful
+  sellerActionPlaceWorkflowHold: stateful
+  sellerActionSubmitWarehouseCancellationRequest: stateful
+stubs:
+  auth: explicit_non_goal
+  reports: stub
+  returns: stub
+  refunds: stub
+  inbound_fba: stub
+  real_sp_api: explicit_non_goal

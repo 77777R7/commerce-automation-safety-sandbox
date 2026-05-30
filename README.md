@@ -116,6 +116,8 @@ PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ./tools/smoke_stage12_shopify_skin_v0.sh
+./tools/smoke_stage13_amazon_skin_v0.sh
+PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```
 
 ## Demo And POC Materials
@@ -129,6 +131,7 @@ PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 - [MCP server setup](docs/MCP_SERVER_SETUP.md)
 - [Live Twin OpenAPI spec](docs/openapi/live_twin_api.yaml)
 - [Shopify-like skin V0](docs/SHOPIFY_LIKE_SKIN_V0.md)
+- [Amazon Seller Ops skin V0](docs/AMAZON_SELLER_OPS_SKIN_V0.md)
 - [Stage 12 PR readiness](docs/STAGE12_PR_READINESS.md)
 - [Offline Audit POC playbook](docs/OFFLINE_AUDIT_POC_PLAYBOOK.md)
 - [POC input templates](poc_templates/)

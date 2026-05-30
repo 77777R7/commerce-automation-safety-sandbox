@@ -17,6 +17,7 @@ environment details.
 - `docs/MCP_SERVER_SETUP.md`
 - `docs/openapi/live_twin_api.yaml`
 - `docs/STAGE12_PR_READINESS.md`
+- `docs/AMAZON_SELLER_OPS_SKIN_V0.md`
 
 ## Current Product Direction
 
@@ -100,6 +101,7 @@ After Stage 0, follow `ROADMAP.md` stage by stage:
 10. Stage 10: Full P0 MCP/HTTP Coverage.
 11. Stage 11: Strict OpenAPI Contract Hardening.
 12. Stage 12: Shopify-like Skin V0 Vertical Slice.
+13. Stage 13: Amazon Seller Ops Safety Skin V0.
 
 ## Completion Gate
 
@@ -124,4 +126,6 @@ PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ./tools/smoke_stage12_shopify_skin_v0.sh
+./tools/smoke_stage13_amazon_skin_v0.sh
+PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```

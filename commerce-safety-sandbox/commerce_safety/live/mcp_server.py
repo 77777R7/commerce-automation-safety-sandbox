@@ -39,6 +39,21 @@ AGENT_FACING_MCP_TOOL_NAMES = [
     "commerce.get_trace",
     "commerce.get_policy_report",
     "commerce.get_patch_hints",
+    "amazon.get_inventory_summaries",
+    "amazon.get_listing_item",
+    "amazon.patch_listing_quantity",
+    "amazon.submit_feed",
+    "amazon.get_feed_status",
+    "amazon.get_order",
+    "amazon.get_order_items",
+    "amazon.confirm_shipment",
+    "amazon.inject_notification",
+    "amazon.promise_fulfillment",
+    "amazon.route_manual_review",
+    "amazon.cancel_order",
+    "amazon.place_workflow_hold",
+    "amazon.submit_warehouse_cancellation_request",
+    "amazon.get_coverage",
 ]
 
 
@@ -386,6 +401,247 @@ def create_mcp_server(
                 "actor": actor,
             },
         )
+
+    @app.tool(name="amazon.get_inventory_summaries")
+    def amazon_get_inventory_summaries(
+        session_id: str,
+        sellerSkus: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Read Amazon-shaped FBA inventory summaries."""
+
+        return tools.call_tool(
+            "amazon.get_inventory_summaries",
+            {"session_id": session_id, "sellerSkus": sellerSkus},
+        )
+
+    @app.tool(name="amazon.get_listing_item")
+    def amazon_get_listing_item(
+        session_id: str,
+        sellerSku: str,
+        sellerId: str = "seller_123",
+    ) -> dict[str, Any]:
+        """Read Amazon-shaped listing item availability."""
+
+        return tools.call_tool(
+            "amazon.get_listing_item",
+            {
+                "session_id": session_id,
+                "sellerSku": sellerSku,
+                "sellerId": sellerId,
+            },
+        )
+
+    @app.tool(name="amazon.patch_listing_quantity")
+    def amazon_patch_listing_quantity(
+        session_id: str,
+        sellerSku: str,
+        quantity: int,
+        sellerId: str = "seller_123",
+        actor: str = "amazon_like_agent",
+    ) -> dict[str, Any]:
+        """Submit an Amazon-shaped listing quantity patch."""
+
+        return tools.call_tool(
+            "amazon.patch_listing_quantity",
+            {
+                "session_id": session_id,
+                "sellerSku": sellerSku,
+                "quantity": quantity,
+                "sellerId": sellerId,
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="amazon.submit_feed")
+    def amazon_submit_feed(
+        session_id: str,
+        feedType: str = "POST_ORDER_FULFILLMENT_DATA",
+        actor: str = "amazon_like_agent",
+    ) -> dict[str, Any]:
+        """Submit an Amazon-shaped feed and receive a processing status."""
+
+        return tools.call_tool(
+            "amazon.submit_feed",
+            {"session_id": session_id, "feedType": feedType, "actor": actor},
+        )
+
+    @app.tool(name="amazon.get_feed_status")
+    def amazon_get_feed_status(session_id: str, feedId: str) -> dict[str, Any]:
+        """Read Amazon-shaped feed processing status."""
+
+        return tools.call_tool(
+            "amazon.get_feed_status",
+            {"session_id": session_id, "feedId": feedId},
+        )
+
+    @app.tool(name="amazon.get_order")
+    def amazon_get_order(session_id: str, amazonOrderId: str) -> dict[str, Any]:
+        """Read an Amazon-shaped order."""
+
+        return tools.call_tool(
+            "amazon.get_order",
+            {"session_id": session_id, "amazonOrderId": amazonOrderId},
+        )
+
+    @app.tool(name="amazon.get_order_items")
+    def amazon_get_order_items(session_id: str, amazonOrderId: str) -> dict[str, Any]:
+        """Read Amazon-shaped order items."""
+
+        return tools.call_tool(
+            "amazon.get_order_items",
+            {"session_id": session_id, "amazonOrderId": amazonOrderId},
+        )
+
+    @app.tool(name="amazon.confirm_shipment")
+    def amazon_confirm_shipment(
+        session_id: str,
+        amazonOrderId: str,
+        packageDetail: dict[str, Any] | None = None,
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Confirm shipment through an Amazon-shaped Orders API path."""
+
+        return tools.call_tool(
+            "amazon.confirm_shipment",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "packageDetail": packageDetail or {},
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.inject_notification")
+    def amazon_inject_notification(
+        session_id: str,
+        notificationType: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Inject an Amazon-shaped notification such as ORDER_CHANGE."""
+
+        return tools.call_tool(
+            "amazon.inject_notification",
+            {
+                "session_id": session_id,
+                "notificationType": notificationType,
+                "payload": payload,
+            },
+        )
+
+    @app.tool(name="amazon.promise_fulfillment")
+    def amazon_promise_fulfillment(
+        session_id: str,
+        amazonOrderId: str,
+        sellerSku: str,
+        quantity: int = 1,
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Record an Amazon seller-ops fulfillment promise."""
+
+        return tools.call_tool(
+            "amazon.promise_fulfillment",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "sellerSku": sellerSku,
+                "quantity": quantity,
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.route_manual_review")
+    def amazon_route_manual_review(
+        session_id: str,
+        amazonOrderId: str,
+        sellerSku: str,
+        reason: str = "manual_review_required",
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Route an Amazon-shaped seller-ops case to manual review."""
+
+        return tools.call_tool(
+            "amazon.route_manual_review",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "sellerSku": sellerSku,
+                "reason": reason,
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.cancel_order")
+    def amazon_cancel_order(
+        session_id: str,
+        amazonOrderId: str,
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Cancel an order through an Amazon-shaped seller-ops action."""
+
+        return tools.call_tool(
+            "amazon.cancel_order",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.place_workflow_hold")
+    def amazon_place_workflow_hold(
+        session_id: str,
+        amazonOrderId: str,
+        sellerSku: str | None = None,
+        reason: str = "workflow_hold_required",
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Place a workflow hold for Amazon-shaped warehouse/order review."""
+
+        return tools.call_tool(
+            "amazon.place_workflow_hold",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "sellerSku": sellerSku,
+                "reason": reason,
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.submit_warehouse_cancellation_request")
+    def amazon_submit_warehouse_cancellation_request(
+        session_id: str,
+        amazonOrderId: str,
+        actor: str = "amazon_like_agent",
+        sourceEventId: str | None = None,
+    ) -> dict[str, Any]:
+        """Request warehouse cancellation for an Amazon-shaped order conflict."""
+
+        return tools.call_tool(
+            "amazon.submit_warehouse_cancellation_request",
+            {
+                "session_id": session_id,
+                "amazonOrderId": amazonOrderId,
+                "actor": actor,
+                "sourceEventId": sourceEventId,
+            },
+        )
+
+    @app.tool(name="amazon.get_coverage")
+    def amazon_get_coverage(session_id: str) -> dict[str, Any]:
+        """Read Amazon Seller Ops skin coverage."""
+
+        return tools.call_tool("amazon.get_coverage", {"session_id": session_id})
 
     @app.tool(name="commerce.complete_session")
     def complete_session(

@@ -27,3 +27,13 @@ session_bound_paths:
   - /sessions/{session_id}/shopify/webhooks/skip_duplicate
   - /sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json
   - /sessions/{session_id}/shopify/coverage
+  - /sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries
+  - /sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}
+  - /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}
+  - /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems
+  - /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation
+  - /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds
+  - /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}
+  - /sessions/{session_id}/amazon/notifications
+  - /sessions/{session_id}/amazon/actions/{amazon_action}
+  - /sessions/{session_id}/amazon/coverage
