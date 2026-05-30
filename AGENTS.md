@@ -14,6 +14,10 @@ environment details.
 - `MVP_ACCEPTANCE.md`
 - `docs/DEMO_POC_READINESS.md`
 - `docs/OFFLINE_AUDIT_POC_PLAYBOOK.md`
+- `docs/MCP_SERVER_SETUP.md`
+- `docs/openapi/live_twin_api.yaml`
+- `docs/STAGE12_PR_READINESS.md`
+- `docs/AMAZON_SELLER_OPS_SKIN_V0.md`
 
 ## Current Product Direction
 
@@ -93,6 +97,11 @@ After Stage 0, follow `ROADMAP.md` stage by stage:
 6. Stage 6: Agent-Readable Repair Loop.
 7. Stage 7: V3.5 Demo Pack.
 8. Stage 8: Arga-style Next Layer.
+9. Stage 9: Real MCP + API Hardening.
+10. Stage 10: Full P0 MCP/HTTP Coverage.
+11. Stage 11: Strict OpenAPI Contract Hardening.
+12. Stage 12: Shopify-like Skin V0 Vertical Slice.
+13. Stage 13: Amazon Seller Ops Safety Skin V0.
 
 ## Completion Gate
 
@@ -102,8 +111,21 @@ The current full baseline gate remains:
 ./tools/smoke_all.sh
 ```
 
-The future V3.5 release gate is:
+The V3.5 release gate is:
 
 ```bash
 ./tools/smoke_v35.sh
+```
+
+Stage 9 MCP/API gates require Python 3.10+:
+
+```bash
+PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+./tools/smoke_stage12_shopify_skin_v0.sh
+./tools/smoke_stage13_amazon_skin_v0.sh
+PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```

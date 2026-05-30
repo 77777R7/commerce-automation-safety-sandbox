@@ -44,7 +44,7 @@ defines the mainline.
 
 ## Stage Gate Acceptance
 
-Stage 0 through Stage 8 must follow `ROADMAP.md`. The stage gates are:
+Stage 0 through Stage 13 must follow `ROADMAP.md`. The stage gates are:
 
 ```txt
 Stage 0: ./tools/smoke_stage0_rebaseline.sh
@@ -63,6 +63,19 @@ Stage 6: python -m pytest tests/test_agent_repair_artifacts.py
 Stage 7: python -m pytest tests/test_live_demo_pack.py
          ./tools/smoke_stage7_demo_pack.sh
 Stage 8: ./tools/smoke_v35.sh
+Stage 9: python -m pytest tests/test_stage9_contracts.py
+         PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
+         PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+Stage 10: python -m pytest tests/test_stage10_agent_interface_coverage.py
+          PYTHON=python3.12 ./tools/smoke_stage10_mcp_p0_all.sh
+          PYTHON=python3.12 ./tools/smoke_stage10_http_p0_all.sh
+Stage 11: python -m pytest tests/test_openapi_contract_shape.py
+          PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+Stage 12: python -m pytest tests/test_shopify_skin_manifests.py tests/test_shopify_webhook_mapper.py tests/test_shopify_graphql_router.py tests/test_shopify_skin_live_http.py
+          ./tools/smoke_stage12_shopify_skin_v0.sh
+Stage 13: python -m pytest tests/test_amazon_mcp_server_contract.py tests/test_amazon_skin_manifests.py tests/test_amazon_binding.py tests/test_amazon_skin_live_http.py tests/test_amazon_skin_mcp_tools.py
+          ./tools/smoke_stage13_amazon_skin_v0.sh
+          PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```
 
 No stage is considered complete without fresh gate evidence.
@@ -83,7 +96,7 @@ Acceptance:
 - Source-of-truth docs include the narrative:
   `External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints`.
 - Offline Audit is described as supporting or secondary.
-- `ROADMAP.md` defines Stage 0 through Stage 8 and gives each stage a gate.
+- `ROADMAP.md` defines Stage 0 through Stage 13 and gives each stage a gate.
 
 ## Stage 1 Live Session Kernel Acceptance
 
@@ -174,6 +187,94 @@ Acceptance:
 - Stage 8 is split into separate sub-goals before implementation.
 - Stage 8 does not start until Stage 7 has passed.
 - `./tools/smoke_v35.sh` includes all completed stage gates.
+
+## Stage 9 Real MCP + API Hardening Acceptance
+
+Acceptance:
+
+- A real MCP server is implemented with `modelcontextprotocol/python-sdk`.
+- The Stage 9 core MCP contract tracks the eight core commerce tools:
+  `commerce.start_session`, `commerce.get_task`,
+  `commerce.create_fulfillment`, `commerce.find_fulfillment`,
+  `commerce.complete_session`, `commerce.get_trace`,
+  `commerce.get_policy_report`, and `commerce.get_patch_hints`.
+- `docs/MCP_SERVER_SETUP.md` explains Python 3.10+ setup and keeps scope away
+  from Sandbox0, Firecracker, full Shopify/Amazon clones, Microcks, and buyer
+  simulator.
+- `docs/openapi/live_twin_api.yaml` covers the HTTP vertical slice:
+  `POST /sessions`, `GET /tasks/next`, `POST /twin/create_fulfillment`,
+  `GET /trace`, and `POST /complete`.
+- `tools/smoke_stage9_real_mcp.sh` drives SCN-002 unsafe/safe paths through the
+  official MCP SDK client, not the internal Python wrapper.
+- `tools/smoke_stage9_api_hardening.sh` runs Schemathesis against the HTTP
+  OpenAPI contract and then drives a deterministic unsafe/safe state sequence.
+- Stage 9 preserves `Permissive Twin + Policy Check`.
+
+## Stage 10 Full P0 MCP/HTTP Coverage Acceptance
+
+Acceptance:
+
+- The real MCP server exposes all P0 action tools needed by the five flagship
+  scenarios.
+- HTTP Twin API exposes matching generic commerce action endpoints.
+- Every P0 scenario has:
+  - unsafe path via MCP -> failed
+  - safe path via MCP -> passed
+  - unsafe path via HTTP -> failed
+  - safe path via HTTP -> passed
+- Stage 10 does not add Shopify/Amazon clones or new P0 scenarios.
+
+## Stage 11 Strict OpenAPI Contract Acceptance
+
+Acceptance:
+
+- `TaskResponse.task` is a typed union, not a broad free-form object.
+- `FulfillmentResponse.fulfillment` references a strict `Fulfillment` schema.
+- `TraceResponse.timeline` uses a strict `TraceEvent` schema.
+- `PolicyFinding.evidence` uses a structured evidence union.
+- Schemathesis examples, coverage, and stateful phases pass.
+- Any remaining schema warning is explicitly allowlisted in
+  `docs/openapi/schemathesis_warning_allowlist.yaml`.
+
+## Stage 12 Shopify-like Skin V0 Acceptance
+
+Acceptance:
+
+- Shopify-like skin coverage and binding manifests exist and declare the V0
+  surface explicitly.
+- The skin supports `orders/paid` webhook ingestion and records the
+  `X-Shopify-Webhook-Id` dedupe signal.
+- The skin supports a safe duplicate delivery path that records
+  `duplicate_webhook_skipped` instead of creating a second fulfillment.
+- The skin supports Admin GraphQL-shaped `fulfillmentCreate` and maps it to the
+  generic `commerce.create_fulfillment` action.
+- Unsupported Shopify mutations return explicit `_commerce_twin_stub` coverage
+  metadata.
+- `duplicate_webhook` unsafe/safe paths run through Shopify-like HTTP.
+- `SCN-002 timeout_after_commit_retry` unsafe/safe paths run through
+  Shopify-like HTTP.
+- The adapter does not make business policy decisions; unsafe actions remain
+  permissive and are caught by `PolicyEngine` at completion.
+
+## Stage 13 Amazon Seller Ops Safety Skin V0 Acceptance
+
+Acceptance:
+
+- Amazon Seller Ops skin coverage and binding manifests exist and declare the
+  V0 surface explicitly.
+- The skin supports Amazon-shaped inventory summaries, listing availability,
+  feed status, order/order item reads, ORDER_CHANGE notifications, and
+  confirmShipment.
+- The skin exposes Amazon MCP tools for inventory/listing/order/feed/
+  notification/seller-ops action paths.
+- `SCN-003 stale_inventory_oversell` unsafe/safe paths run through
+  Amazon-shaped HTTP.
+- `SCN-005 cancel_after_pick_pack_conflict` unsafe/safe paths run through
+  Amazon-shaped HTTP.
+- The real MCP smoke proves Amazon tools can drive one unsafe and one safe
+  Amazon-shaped validation path.
+- The adapter does not make business policy decisions; unsafe actions remain
+  permissive and are caught by `PolicyEngine` at completion.
 
 ## Current Baseline Scenario
 

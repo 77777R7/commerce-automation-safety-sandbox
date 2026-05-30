@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -113,6 +114,75 @@ def cmd_offline_audit(args: argparse.Namespace) -> int:
     return 1 if result["findings"] else 0
 
 
+def cmd_live_serve(args: argparse.Namespace) -> int:
+    from .live.http_api import serve_live_http
+
+    return serve_live_http(
+        host=args.host,
+        port=args.port,
+        runs_dir=Path(args.runs_dir),
+    )
+
+
+def cmd_live_mcp(args: argparse.Namespace) -> int:
+    from .live.mcp_server import main as mcp_main
+
+    return mcp_main(
+        [
+            "--runs-dir",
+            args.runs_dir,
+            "--transport",
+            args.transport,
+        ]
+    )
+
+
+def _print_gate_result(result: dict, *, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return
+    print(f"Status: {result['status']}")
+    print(f"Artifacts: {result['run_path']}")
+    print(f"Actions replayed: {result['actions_replayed']}")
+    if result["findings"]:
+        print("Findings:")
+        for finding in result["findings"]:
+            print(f"- {finding['policy_id']} ({finding['severity']})")
+    else:
+        print("Findings: none")
+
+
+def _run_action_log_from_args(args: argparse.Namespace) -> dict:
+    from .live.action_log import run_action_log
+
+    return run_action_log(
+        scenario_path=Path(args.scenario),
+        action_log_path=Path(args.action_log),
+        runs_dir=Path(args.runs_dir),
+        runner_name=args.runner_name,
+    )
+
+
+def cmd_live_from_action_log(args: argparse.Namespace) -> int:
+    try:
+        result = _run_action_log_from_args(args)
+    except (FileNotFoundError, KeyError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    _print_gate_result(result, as_json=args.json)
+    return 1 if result["findings"] else 0
+
+
+def cmd_gate(args: argparse.Namespace) -> int:
+    try:
+        result = _run_action_log_from_args(args)
+    except (FileNotFoundError, KeyError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    _print_gate_result(result, as_json=args.json)
+    return 1 if result["findings"] else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="commerce-safety",
@@ -218,6 +288,79 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory where offline audit artifacts are written.",
     )
     audit_parser.set_defaults(func=cmd_offline_audit)
+
+    live_parser = subparsers.add_parser(
+        "live",
+        help="Run Live Agent Sandbox commands.",
+    )
+    live_subparsers = live_parser.add_subparsers(
+        dest="live_command",
+        required=True,
+    )
+    serve_parser = live_subparsers.add_parser(
+        "serve",
+        help="Start the local HTTP Twin API server.",
+    )
+    serve_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host interface for the local live server.",
+    )
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=8765,
+        help="Port for the local live server.",
+    )
+    serve_parser.set_defaults(func=cmd_live_serve)
+
+    mcp_parser = live_subparsers.add_parser(
+        "mcp",
+        help="Start the real MCP server using modelcontextprotocol/python-sdk.",
+    )
+    mcp_parser.add_argument(
+        "--transport",
+        default="stdio",
+        choices=["stdio", "streamable-http"],
+        help="MCP transport to run.",
+    )
+    mcp_parser.set_defaults(func=cmd_live_mcp)
+
+    action_log_parser = live_subparsers.add_parser(
+        "from-action-log",
+        help="Replay a JSONL action log into a live session.",
+    )
+    action_log_parser.add_argument("--scenario", required=True, help="Scenario YAML path.")
+    action_log_parser.add_argument("--action-log", required=True, help="JSONL action log path.")
+    action_log_parser.add_argument(
+        "--runner-name",
+        default="logged_agent",
+        help="Runner name to record in generated artifacts.",
+    )
+    action_log_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable JSON output.",
+    )
+    action_log_parser.set_defaults(func=cmd_live_from_action_log)
+
+    gate_parser = subparsers.add_parser(
+        "gate",
+        help="Run an action log as a CI-style commerce safety gate.",
+    )
+    gate_parser.add_argument("--scenario", required=True, help="Scenario YAML path.")
+    gate_parser.add_argument("--action-log", required=True, help="JSONL action log path.")
+    gate_parser.add_argument(
+        "--runner-name",
+        default="logged_agent",
+        help="Runner name to record in generated artifacts.",
+    )
+    gate_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print machine-readable JSON output.",
+    )
+    gate_parser.set_defaults(func=cmd_gate)
     return parser
 
 

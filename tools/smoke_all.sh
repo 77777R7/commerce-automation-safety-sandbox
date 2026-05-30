@@ -11,6 +11,9 @@ echo "== Stage 0 rebaseline gate =="
 echo "== Unit tests =="
 python3 -m pytest
 
+echo "== Stage 1 live session gate =="
+./tools/smoke_stage1_live_session.sh
+
 echo "== P0 scenario smoke gates =="
 ./tools/smoke_week1.sh
 ./tools/smoke_scn002.sh

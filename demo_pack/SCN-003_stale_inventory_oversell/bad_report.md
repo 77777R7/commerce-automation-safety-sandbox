@@ -1,6 +1,6 @@
 # SCN-003 Stale Inventory Oversell - bad_runner
 
-- Run ID: `run_20260529T195548193456Z_SCN-003_bad_runner`
+- Run ID: `run_20260529T200553701157Z_SCN-003_bad_runner`
 - Status: `failed`
 - Runner: `bad_runner`
 - Demo meaning: 失败：Policy Engine 抓到了真实业务事故。
@@ -27,7 +27,7 @@
 
 # Commerce Safety Report: stale_inventory_oversell
 
-- Run ID: `run_20260529T195548193456Z_SCN-003_bad_runner`
+- Run ID: `run_20260529T200553701157Z_SCN-003_bad_runner`
 - Runner: `bad_runner`
 - Status: `failed`
 
@@ -139,4 +139,4 @@ Refresh inventory before making customer-facing fulfillment promises. Only promi
 
 ## Replay
 
-Run `commerce-safety replay runs/run_20260529T195548193456Z_SCN-003_bad_runner` to print the recorded timeline from `trace.json`.
+Run `commerce-safety replay runs/run_20260529T200553701157Z_SCN-003_bad_runner` to print the recorded timeline from `trace.json`.

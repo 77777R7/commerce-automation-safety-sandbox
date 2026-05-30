@@ -1,0 +1,31 @@
+skin: shopify_like
+stage: Stage 12
+status: vertical_slice
+description: >
+  Shopify-like skin V0 maps a narrow Shopify-shaped surface to the existing
+  permissive commerce twin. It is not a full Shopify Admin API clone.
+supported_scenarios:
+  - duplicate_webhook
+  - SCN-002
+webhooks:
+  orders/paid:
+    status: stateful
+    normalized_topic: order_paid
+    commerce_event: webhook_received
+    skip_event: duplicate_webhook_skipped
+  refunds/create:
+    status: unsupported
+mutations:
+  fulfillmentCreate:
+    status: stateful
+    commerce_action: commerce.create_fulfillment
+  refundCreate:
+    status: unsupported
+  productCreate:
+    status: unsupported
+non_goals:
+  - oauth
+  - full_graphql_parser
+  - checkout
+  - product_catalog
+  - shopify_full_api_clone

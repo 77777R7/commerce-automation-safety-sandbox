@@ -44,7 +44,7 @@ if offline_support_count < 3:
     )
 
 roadmap = docs["ROADMAP.md"]
-for stage in range(0, 9):
+for stage in range(0, 14):
     if f"## Stage {stage}:" not in roadmap:
         missing_snippets.append(f"ROADMAP.md missing Stage {stage} section")
 
@@ -57,6 +57,14 @@ stage_gate_snippets = [
     "./tools/smoke_stage5_action_log_gate.sh",
     "./tools/smoke_stage6_repair_loop.sh",
     "./tools/smoke_stage7_demo_pack.sh",
+    "./tools/smoke_stage9_real_mcp.sh",
+    "./tools/smoke_stage9_api_hardening.sh",
+    "./tools/smoke_stage10_mcp_p0_all.sh",
+    "./tools/smoke_stage10_http_p0_all.sh",
+    "./tools/smoke_stage11_openapi_contract.sh",
+    "./tools/smoke_stage12_shopify_skin_v0.sh",
+    "./tools/smoke_stage13_amazon_skin_v0.sh",
+    "./tools/smoke_stage13_amazon_mcp_v0.sh",
     "./tools/smoke_v35.sh",
 ]
 for snippet in stage_gate_snippets:

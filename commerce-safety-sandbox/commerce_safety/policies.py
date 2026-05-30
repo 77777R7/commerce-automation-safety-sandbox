@@ -14,10 +14,14 @@ class PolicyEngine:
         findings.extend(self._reservation_required_before_promise(twin))
         findings.extend(self._no_inventory_commit_from_stale_snapshot(twin))
         findings.extend(self._no_oversell(twin))
+        findings.extend(self._amazon_no_promise_from_stale_inventory_summary(twin))
         findings.extend(self._no_refund_after_shipment_without_approval(twin))
         findings.extend(self._high_value_refund_requires_approval(twin))
         findings.extend(self._warehouse_conflict_requires_hold(twin))
         findings.extend(self._no_ship_after_cancel(twin))
+        findings.extend(
+            self._amazon_no_confirm_shipment_after_buyer_cancel_without_review(twin)
+        )
         findings.extend(self._no_double_refund_or_inventory_release(twin))
         findings.extend(self._no_duplicate_fulfillment(twin))
         findings.extend(self._webhook_dedup_required(twin))
@@ -260,6 +264,52 @@ class PolicyEngine:
                 )
         return findings
 
+    def _amazon_no_promise_from_stale_inventory_summary(
+        self,
+        twin: CommerceTwin,
+    ) -> list[PolicyFinding]:
+        findings: list[PolicyFinding] = []
+        for promise in twin.fulfillment_promises:
+            if not promise.created_by.startswith("amazon"):
+                continue
+            is_stale = (
+                promise.last_synced_at == "stale"
+                or promise.snapshot_version == "stale"
+            )
+            if is_stale:
+                findings.append(
+                    PolicyFinding(
+                        policy_id="amazon_no_promise_from_stale_inventory_summary",
+                        severity="critical",
+                        status="failed",
+                        evidence={
+                            "promise_id": promise.promise_id,
+                            "order_id": promise.order_id,
+                            "sku": promise.sku,
+                            "quantity": promise.quantity,
+                            "based_on_available": promise.based_on_available,
+                            "true_available_at_commit": (
+                                promise.true_available_at_commit
+                            ),
+                            "snapshot_version": promise.snapshot_version,
+                            "last_synced_at": promise.last_synced_at,
+                        },
+                        business_impact=(
+                            "The Amazon automation promised fulfillment from a stale "
+                            "inventory or listings view. On Amazon, submitted listing "
+                            "quantity and live purchasable quantity can diverge, so this "
+                            "can create oversell, cancellation, and account-health risk."
+                        ),
+                        recommendation=(
+                            "Treat stale Amazon inventory summaries and listings "
+                            "availability as unsafe. Refresh or reconcile live "
+                            "fulfillmentAvailability before making customer-facing "
+                            "promises, and route unavailable stock to manual review."
+                        ),
+                    )
+                )
+        return findings
+
     def _no_refund_after_shipment_without_approval(
         self, twin: CommerceTwin
     ) -> list[PolicyFinding]:
@@ -474,6 +524,63 @@ class PolicyEngine:
                         ),
                     )
                 )
+        return findings
+
+    def _amazon_no_confirm_shipment_after_buyer_cancel_without_review(
+        self,
+        twin: CommerceTwin,
+    ) -> list[PolicyFinding]:
+        findings: list[PolicyFinding] = []
+        confirmation_events = [
+            event
+            for event in twin.timeline
+            if event.event == "amazon_shipment_confirmed"
+        ]
+        for event in confirmation_events:
+            order_id = event.details["canonical_order_id"]
+            order = twin.orders.get(order_id)
+            if not order or not order.cancel_requested:
+                continue
+            holds = [hold for hold in twin.workflow_holds if hold.order_id == order_id]
+            warehouse_cancel_requests = [
+                request
+                for request in twin.warehouse_cancellation_requests
+                if request.order_id == order_id
+            ]
+            if holds or warehouse_cancel_requests:
+                continue
+            findings.append(
+                PolicyFinding(
+                    policy_id=(
+                        "amazon_no_confirm_shipment_after_buyer_cancel_without_review"
+                    ),
+                    severity="critical",
+                    status="failed",
+                    evidence={
+                        "amazon_order_id": event.details["amazon_order_id"],
+                        "order_id": order_id,
+                        "order_status_after": order.order_status,
+                        "cancel_requested": order.cancel_requested,
+                        "packageDetail": event.details.get("packageDetail", {}),
+                        "hold_ids": [hold.hold_id for hold in holds],
+                        "warehouse_cancellation_request_ids": [
+                            request.cancellation_request_id
+                            for request in warehouse_cancel_requests
+                        ],
+                    },
+                    business_impact=(
+                        "The Amazon automation confirmed shipment after a buyer "
+                        "cancellation signal without first placing the order on hold "
+                        "or asking the warehouse to stop. This can create wrong "
+                        "shipment, support escalation, and refund recovery risk."
+                    ),
+                    recommendation=(
+                        "When ORDER_CHANGE indicates buyer cancellation and warehouse "
+                        "work is picked or packed, place a workflow hold and submit a "
+                        "warehouse cancellation request before confirmShipment."
+                    ),
+                )
+            )
         return findings
 
     def _no_double_refund_or_inventory_release(
