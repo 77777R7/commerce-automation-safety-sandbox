@@ -40,6 +40,13 @@ PYTHONPATH="$PWD/commerce-safety-sandbox" \
 ./commerce-safety live mcp --runs-dir runs
 ```
 
+For external testers, use the self-check and generated config first:
+
+```bash
+./commerce-safety doctor
+./commerce-safety mcp-config --python "$PWD/.venv-mcp/bin/python"
+```
+
 The default transport is `stdio`, which is the right mode for local agent
 clients such as Codex or Claude Desktop. The server also accepts
 `--transport streamable-http` for later hosted experiments, but V3.5 does not

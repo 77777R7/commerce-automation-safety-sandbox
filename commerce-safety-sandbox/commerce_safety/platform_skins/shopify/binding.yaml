@@ -8,6 +8,9 @@ webhooks:
     commerce_event: webhook_received
     skip_event: duplicate_webhook_skipped
     dedupe_signal: X-Shopify-Webhook-Id
+  orders/cancelled:
+    commerce_event: cancel_request_received
+    cancel_signal: X-Shopify-Webhook-Id
 mutations:
   fulfillmentCreate:
     commerce_action: commerce.create_fulfillment
@@ -18,3 +21,35 @@ mutations:
       - webhook_dedup_required
       - idempotency_required_for_mutating_retries
       - no_duplicate_fulfillment
+  inventoryAdjustQuantities:
+    commerce_action:
+      - commerce.reserve_inventory
+      - commerce.release_inventory
+    policy_layer: commerce_safety.PolicyEngine
+    relevant_policies:
+      - reservation_required_before_promise
+      - no_double_refund_or_inventory_release
+  refundCreate:
+    commerce_action: commerce.create_refund
+    policy_layer: commerce_safety.PolicyEngine
+    relevant_policies:
+      - no_refund_after_shipment_without_approval
+      - high_value_refund_requires_approval
+  refundApprovalRequestCreate:
+    commerce_action: commerce.create_approval_request
+    policy_layer: commerce_safety.PolicyEngine
+  orderCancel:
+    commerce_action: commerce.cancel_order
+    policy_layer: commerce_safety.PolicyEngine
+  fulfillmentOrderHold:
+    commerce_action: commerce.place_workflow_hold
+    policy_layer: commerce_safety.PolicyEngine
+  fulfillmentOrderSubmitCancellationRequest:
+    commerce_action: commerce.submit_warehouse_cancellation_request
+    policy_layer: commerce_safety.PolicyEngine
+  fulfillmentOrderContinue:
+    commerce_action: commerce.warehouse_continue_fulfillment
+    policy_layer: commerce_safety.PolicyEngine
+    relevant_policies:
+      - warehouse_conflict_requires_hold
+      - no_ship_after_cancel

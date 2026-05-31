@@ -9,11 +9,13 @@ from typing import Any
 class ShopifyPlatformBinding:
     order_ids: dict[str, str] = field(default_factory=dict)
     line_items: dict[str, dict[str, str]] = field(default_factory=dict)
+    skus: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_twin(cls, twin: Any) -> "ShopifyPlatformBinding":
         order_ids: dict[str, str] = {}
         line_items: dict[str, dict[str, str]] = {}
+        skus: dict[str, str] = {}
         for order in twin.orders.values():
             canonical_order_id = order.order_id
             order_keys = {canonical_order_id}
@@ -46,7 +48,19 @@ class ShopifyPlatformBinding:
                     )
                 for key in item_keys:
                     line_items[key] = dict(line_record)
-        return cls(order_ids=order_ids, line_items=line_items)
+
+        for sku in twin.inventory:
+            sku_keys = {
+                sku,
+                f"gid://shopify/InventoryItem/{sku}",
+            }
+            numeric_id = _last_digit_run(sku)
+            if numeric_id:
+                sku_keys.add(f"gid://shopify/InventoryItem/{numeric_id}")
+            for key in sku_keys:
+                skus[key] = sku
+
+        return cls(order_ids=order_ids, line_items=line_items, skus=skus)
 
     def resolve_order_id(self, *platform_ids: Any) -> tuple[str | None, str | None]:
         for platform_id in platform_ids:
@@ -69,10 +83,20 @@ class ShopifyPlatformBinding:
                 return self.line_items[key]
         return None
 
+    def resolve_sku(self, *platform_ids: Any) -> tuple[str | None, str | None]:
+        for platform_id in platform_ids:
+            if platform_id is None:
+                continue
+            key = str(platform_id)
+            if key in self.skus:
+                return self.skus[key], _sku_binding_source_for(key)
+        return None, None
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "order_ids": dict(self.order_ids),
             "line_items": {key: dict(value) for key, value in self.line_items.items()},
+            "skus": dict(self.skus),
         }
 
 
@@ -86,4 +110,10 @@ def _binding_source_for(key: str) -> str:
         return "shopify_gid"
     if key.isdigit():
         return "shopify_order_id"
+    return "canonical_or_metadata"
+
+
+def _sku_binding_source_for(key: str) -> str:
+    if key.startswith("gid://shopify/InventoryItem/"):
+        return "shopify_inventory_item_id"
     return "canonical_or_metadata"

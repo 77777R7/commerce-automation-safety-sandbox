@@ -25,6 +25,19 @@ def test_identify_mutation_detects_fulfillment_create():
     assert identify_mutation({"query": FULFILLMENT_CREATE_QUERY}) == "fulfillmentCreate"
 
 
+def test_identify_mutation_detects_full_p0_shopify_mutations():
+    for mutation in [
+        "inventoryAdjustQuantities",
+        "refundCreate",
+        "refundApprovalRequestCreate",
+        "orderCancel",
+        "fulfillmentOrderHold",
+        "fulfillmentOrderSubmitCancellationRequest",
+        "fulfillmentOrderContinue",
+    ]:
+        assert identify_mutation({"query": f"mutation {{ {mutation}(input: {{}}) {{ userErrors {{ message }} }} }}"}) == mutation
+
+
 def test_extract_fulfillment_create_action_maps_variables_to_commerce_action():
     action = extract_fulfillment_create_action(
         {

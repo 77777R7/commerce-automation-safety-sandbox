@@ -14,6 +14,8 @@ from .models import (
     Order,
     Reservation,
     Refund,
+    SupportTicket,
+    TrackingUpload,
     WarehouseCancellationRequest,
     WarehouseJob,
     WorkflowHold,
@@ -87,6 +89,8 @@ class CommerceTwin:
         self.fulfillments: list[Fulfillment] = []
         self.fulfillment_promises: list[FulfillmentPromise] = []
         self.refunds: list[Refund] = []
+        self.tracking_uploads: list[TrackingUpload] = []
+        self.support_tickets: list[SupportTicket] = []
         self.approval_requests: list[ApprovalRequest] = []
         self.warehouse_jobs: list[WarehouseJob] = [
             WarehouseJob(
@@ -115,6 +119,8 @@ class CommerceTwin:
         self._next_fulfillment = 1
         self._next_promise = 1
         self._next_refund = 1
+        self._next_tracking_upload = 1
+        self._next_support_ticket = 1
         self._next_approval = 1
         self._next_release = 1
         self._next_hold = 1
@@ -131,6 +137,8 @@ class CommerceTwin:
                 to_plain(item) for item in self.fulfillment_promises
             ],
             "refunds": [to_plain(item) for item in self.refunds],
+            "tracking_uploads": [to_plain(item) for item in self.tracking_uploads],
+            "support_tickets": [to_plain(item) for item in self.support_tickets],
             "approval_requests": [
                 to_plain(item) for item in self.approval_requests
             ],
@@ -147,6 +155,8 @@ class CommerceTwin:
                 "reservations": len(self.reservations),
                 "fulfillment_promises": len(self.fulfillment_promises),
                 "refunds": len(self.refunds),
+                "tracking_uploads": len(self.tracking_uploads),
+                "support_tickets": len(self.support_tickets),
                 "approval_requests": len(self.approval_requests),
                 "warehouse_jobs": len(self.warehouse_jobs),
                 "inventory_releases": len(self.inventory_releases),
@@ -165,6 +175,8 @@ class CommerceTwin:
             "fulfillments": len(self.fulfillments),
             "fulfillment_promises": len(self.fulfillment_promises),
             "refunds": len(self.refunds),
+            "tracking_uploads": len(self.tracking_uploads),
+            "support_tickets": len(self.support_tickets),
             "approval_requests": len(self.approval_requests),
             "inventory_releases": len(self.inventory_releases),
             "workflow_holds": len(self.workflow_holds),
@@ -236,6 +248,18 @@ class CommerceTwin:
                 f"{request['order_id']} in the amount of {request['amount']}."
             ),
             details=deepcopy(request),
+        )
+
+    def receive_tracking_upload_task(self, task: dict[str, Any]) -> None:
+        self.add_event(
+            actor="scenario",
+            event="tracking_upload_task_received",
+            message=(
+                f"Tracking upload task {task['id']} received for order "
+                f"{task['order_id']} while carrier status is "
+                f"{task.get('carrier_status', 'unknown')}."
+            ),
+            details=deepcopy(task),
         )
 
     def receive_cancel_request(self, request: dict[str, Any]) -> None:
@@ -586,6 +610,98 @@ class CommerceTwin:
             details=to_plain(refund),
         )
         return refund
+
+    def upload_tracking(
+        self,
+        *,
+        order_id: str,
+        tracking_number: str,
+        carrier_status: str,
+        first_carrier_scan_seen: bool,
+        actor: str,
+        source_event_id: str | None,
+        customer_notified: bool = True,
+    ) -> TrackingUpload:
+        order = self.orders[order_id]
+        upload = TrackingUpload(
+            tracking_upload_id=f"tracking_{self._next_tracking_upload:03d}",
+            order_id=order_id,
+            tracking_number=tracking_number,
+            carrier_status_at_upload=carrier_status,
+            first_carrier_scan_seen=first_carrier_scan_seen,
+            created_by=actor,
+            source_event_id=source_event_id,
+            customer_notified=customer_notified,
+        )
+        self._next_tracking_upload += 1
+        self.tracking_uploads.append(upload)
+        order.shipment_status = "tracking_uploaded"
+        self.add_event(
+            actor=actor,
+            event="tracking_uploaded",
+            message=(
+                f"{actor} uploads tracking {tracking_number} for order {order_id} "
+                f"while carrier status is {carrier_status}."
+            ),
+            details=to_plain(upload),
+        )
+        return upload
+
+    def create_support_ticket(
+        self,
+        *,
+        order_id: str,
+        reason: str,
+        actor: str,
+        source_event_id: str | None,
+        tracking_upload_id: str | None,
+        carrier_status: str | None,
+    ) -> SupportTicket:
+        ticket = SupportTicket(
+            support_ticket_id=f"ticket_{self._next_support_ticket:03d}",
+            order_id=order_id,
+            reason=reason,
+            created_by=actor,
+            source_event_id=source_event_id,
+            tracking_upload_id=tracking_upload_id,
+            carrier_status_at_open=carrier_status,
+        )
+        self._next_support_ticket += 1
+        self.support_tickets.append(ticket)
+        self.add_event(
+            actor="buyer_simulation",
+            event="support_ticket_opened",
+            message=(
+                f"Customer opens support ticket {ticket.support_ticket_id} "
+                f"because carrier status is {carrier_status}."
+            ),
+            details=to_plain(ticket),
+        )
+        return ticket
+
+    def hold_tracking_until_first_scan(
+        self,
+        *,
+        order_id: str,
+        tracking_number: str,
+        carrier_status: str,
+        actor: str,
+        source_event_id: str | None,
+    ) -> None:
+        self.add_event(
+            actor=actor,
+            event="tracking_upload_held",
+            message=(
+                f"{actor} holds tracking {tracking_number} for order {order_id} "
+                f"until the first carrier scan is visible."
+            ),
+            details={
+                "order_id": order_id,
+                "tracking_number": tracking_number,
+                "carrier_status": carrier_status,
+                "source_event_id": source_event_id,
+            },
+        )
 
     def create_fulfillment(
         self,

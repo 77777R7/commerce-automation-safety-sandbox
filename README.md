@@ -46,6 +46,7 @@ Each run writes:
 - `policy_report.json`
 - `state_diff.json`
 - `report.md`
+- `run_manifest.json`
 
 ## Quickstart
 
@@ -58,6 +59,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 
 chmod +x commerce-safety tools/*.sh
+./commerce-safety doctor
 ./tools/smoke_all.sh
 ```
 
@@ -70,6 +72,10 @@ python -m pytest
 ## Main Commands
 
 ```bash
+./commerce-safety doctor
+./commerce-safety mcp-config --python "$PWD/.venv/bin/python"
+./commerce-safety demo scn002-agent --python "$PWD/.venv/bin/python"
+./commerce-safety init --path n8n
 ./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner bad_runner
 ./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner good_runner
 ./commerce-safety replay runs/<run_id>
@@ -118,11 +124,17 @@ PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ./tools/smoke_stage12_shopify_skin_v0.sh
 ./tools/smoke_stage13_amazon_skin_v0.sh
 PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
+PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
 ```
 
 ## Demo And POC Materials
 
 - [Static demo viewer](demo_viewer/index.html)
+- [Design Partner POC package](docs/design_partner_poc/README.md)
+- [External tester quickstart](docs/QUICKSTART_EXTERNAL_TESTER.md)
+- [HTTP and n8n quickstart](docs/HTTP_N8N_QUICKSTART.md)
+- [Importable n8n SCN-002 workflow](demo_pack/n8n/scn002_timeout_retry_unsafe_safe.json)
+- [SCN-002 MCP agent test prompt](demo_pack/prompts/scn002_mcp_agent_test.md)
 - [Demo pack guide](demo_pack/README.md)
 - [Executive summary](demo_pack/executive_summary.md)
 - [Sales one-pager](demo_pack/sales_one_pager.md)
@@ -132,6 +144,13 @@ PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 - [Live Twin OpenAPI spec](docs/openapi/live_twin_api.yaml)
 - [Shopify-like skin V0](docs/SHOPIFY_LIKE_SKIN_V0.md)
 - [Amazon Seller Ops skin V0](docs/AMAZON_SELLER_OPS_SKIN_V0.md)
+- [Agent integration examples](examples/agent_integrations/README.md)
+- [Stage 18 agent integration examples](docs/STAGE18_AGENT_INTEGRATION_EXAMPLES.md)
+- [Stage 19 hosted design-partner trust gate](docs/STAGE19_HOSTED_DESIGN_PARTNER_TRUST_GATE.md)
+- [Stage 19 release candidate](docs/STAGE19_RELEASE_CANDIDATE.md)
+- [Stage 19 PR description](docs/PR_STAGE19_DESCRIPTION.md)
+- [Hosted design-partner onboarding](docs/HOSTED_DESIGN_PARTNER_ONBOARDING.md)
+- [POC security evidence binder](docs/security/SECURITY_OVERVIEW.md)
 - [Stage 12 PR readiness](docs/STAGE12_PR_READINESS.md)
 - [Offline Audit POC playbook](docs/OFFLINE_AUDIT_POC_PLAYBOOK.md)
 - [POC input templates](poc_templates/)
@@ -151,8 +170,9 @@ open demo_viewer/index.html
 - PII redaction currently applies only to the canonical `buyer_id` field.
 - Customers should not provide email, phone, address, customer name, shipping
   address, billing address, or free-form customer notes in the first POC.
-- The current repo is not a full Shopify sandbox, Amazon emulator, hosted
-  multi-tenant API platform, PR check platform, or buyer red-team product.
+- The current repo is not a full Shopify sandbox, Amazon emulator, full hosted
+  enterprise SaaS, PR check platform, or buyer red-team product. Stage 19 is a
+  hosted design-partner trust boundary only.
 - Real MCP server and strict OpenAPI hardening support require Python 3.10+.
   The core CLI and legacy MVP tests still run under the older system Python
   used by this local workspace.

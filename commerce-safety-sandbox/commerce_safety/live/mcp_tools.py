@@ -74,13 +74,20 @@ class CommerceMCPTools:
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name not in self._tools:
             raise KeyError(f"Unknown commerce MCP tool: {name}")
+        session_id = arguments.get("session_id")
+        if session_id:
+            session = self.manager.get_session(session_id)
+            with session.lock:
+                return self._tools[name](arguments)
         return self._tools[name](arguments)
 
     def _start_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
         scenario_path = arguments.get("scenario_path")
-        if not scenario_path:
-            raise ValueError("scenario_path is required")
-        session = self.manager.create_session(Path(scenario_path))
+        scenario_id = arguments.get("scenario_id")
+        session = self.manager.create_session(
+            Path(scenario_path) if scenario_path else None,
+            scenario_id=scenario_id,
+        )
         return {
             "ok": True,
             "session_id": session.session_id,
@@ -353,6 +360,8 @@ class CommerceMCPTools:
             twin=session.twin,
             binding=binding,
             seller_skus=arguments.get("sellerSkus") or arguments.get("seller_skus"),
+            simulate_rate_limit=bool(arguments.get("simulateRateLimit"))
+            or arguments.get("faultType") == "rate_limit_429",
         )
         return body
 
@@ -364,6 +373,8 @@ class CommerceMCPTools:
             binding=binding,
             seller_id=arguments.get("sellerId", "seller_123"),
             platform_sku=arguments["sellerSku"],
+            simulate_rate_limit=bool(arguments.get("simulateRateLimit"))
+            or arguments.get("faultType") == "rate_limit_429",
         )
         return body
 
@@ -396,6 +407,7 @@ class CommerceMCPTools:
         _, body = self.amazon.get_feed(
             session_id=session.session_id,
             feed_id=arguments["feedId"],
+            twin=session.twin,
         )
         return body
 

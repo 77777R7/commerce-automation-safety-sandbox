@@ -1,5 +1,6 @@
-PyYAML>=6.0
-openpyxl>=3.1
-pytest>=8.0
-mcp>=1.27; python_version >= "3.10"
-schemathesis>=4.6; python_version >= "3.10"
+PyYAML==6.0.3
+openpyxl==3.1.5
+pytest==8.4.2; python_version < "3.10"
+pytest==9.0.3; python_version >= "3.10"
+mcp==1.27.2; python_version >= "3.10"
+schemathesis==4.20.3; python_version >= "3.10"

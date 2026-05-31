@@ -1,0 +1,68 @@
+stage: 19
+name: Hosted Design Partner Trust Gate
+branch: codex/v35-demo-pack
+intent: >
+  Keep the Stage 19 PR/release candidate reviewable by isolating hosted
+  trust-boundary source, docs, tests, and gates from historical generated demo
+  artifacts and unrelated workspace noise.
+
+required_paths:
+  - .github/workflows/v35-ci.yml
+  - AGENTS.md
+  - README.md
+  - ROADMAP.md
+  - docs/STAGE19_HOSTED_DESIGN_PARTNER_TRUST_GATE.md
+  - docs/HOSTED_DESIGN_PARTNER_ONBOARDING.md
+  - docs/security/SECURITY_OVERVIEW.md
+  - docs/security/CONTROL_MATRIX.md
+  - docs/security/DATA_FLOW.md
+  - docs/security/ACCESS_CONTROL.md
+  - docs/security/AUDIT_LOGGING.md
+  - docs/security/DATA_RETENTION_AND_DELETION.md
+  - docs/security/ACCESS_REVIEW.md
+  - docs/security/CHANGE_MANAGEMENT.md
+  - docs/security/INCIDENT_RESPONSE.md
+  - docs/security/VENDOR_INVENTORY.md
+  - docs/security/DESIGN_PARTNER_DPA_NOTES.md
+  - docs/openapi/live_twin_api.yaml
+  - docs/STAGE19_RELEASE_CANDIDATE.md
+  - docs/PR_STAGE19_DESCRIPTION.md
+  - commerce-safety-sandbox/commerce_safety/artifacts.py
+  - commerce-safety-sandbox/commerce_safety/live/hosted.py
+  - commerce-safety-sandbox/commerce_safety/live/hosted_mcp_tools.py
+  - commerce-safety-sandbox/commerce_safety/live/http_api.py
+  - commerce-safety-sandbox/commerce_safety/live/sessions.py
+  - tests/test_stage19_hosted_trust_gate.py
+  - tools/check_stage19_release_candidate.py
+  - tools/smoke_stage19_auth_rbac.sh
+  - tools/smoke_stage19_tenant_isolation.sh
+  - tools/smoke_stage19_artifacts_audit.sh
+  - tools/smoke_stage19_limits_redaction.sh
+  - tools/smoke_stage19_p0_hosted_live.sh
+  - tools/smoke_stage19_hosted_enterprise_poc.sh
+  - tools/smoke_stage19_release_candidate.sh
+  - tools/smoke_v35.sh
+  - release_hygiene.yaml
+  - security_hardening.yaml
+
+generated_or_deferred_prefixes:
+  - commerce-safety-site/
+  - demo_pack/
+  - demo_viewer/
+  - failure_intelligence/
+  - offline_audits/
+  - outputs/
+  - regressions/
+  - runs/
+
+required_gates:
+  - PYTHON=/private/tmp/commerce-safety-stage9-venv/bin/python ./tools/smoke_stage19_release_candidate.sh
+  - PYTHON=/private/tmp/commerce-safety-stage9-venv/bin/python ./tools/smoke_stage19_hosted_enterprise_poc.sh
+  - PYTHON=/private/tmp/commerce-safety-stage9-venv/bin/python ./tools/smoke_stage15_release_hygiene.sh
+  - PYTHON=/private/tmp/commerce-safety-stage9-venv/bin/python ./tools/smoke_stage16_security_abuse.sh
+  - PYTHON=/private/tmp/commerce-safety-stage9-venv/bin/python ./tools/smoke_v35.sh
+
+stop_line: >
+  After Stage 19 passes, stop platform engineering and move to 1-3 design
+  partners, real staging-agent/workflow integrations, incident feedback, and
+  paid POC validation.

@@ -1,28 +1,88 @@
 skin: shopify_like
-stage: Stage 12
-status: vertical_slice
+stage: Stage 12+
+status: p0_coverage
 description: >
   Shopify-like skin V0 maps a narrow Shopify-shaped surface to the existing
   permissive commerce twin. It is not a full Shopify Admin API clone.
 supported_scenarios:
   - duplicate_webhook
   - SCN-002
+  - SCN-003
+  - SCN-004
+  - SCN-005
 webhooks:
   orders/paid:
     status: stateful
     normalized_topic: order_paid
     commerce_event: webhook_received
     skip_event: duplicate_webhook_skipped
+  orders/cancelled:
+    status: stateful
+    normalized_topic: cancel_request
+    commerce_event: cancel_request_received
   refunds/create:
     status: unsupported
 mutations:
   fulfillmentCreate:
     status: stateful
     commerce_action: commerce.create_fulfillment
+  inventoryAdjustQuantities:
+    status: stateful
+    commerce_action:
+      - commerce.reserve_inventory
+      - commerce.release_inventory
   refundCreate:
-    status: unsupported
+    status: stateful
+    commerce_action: commerce.create_refund
+  refundApprovalRequestCreate:
+    status: stateful
+    commerce_action: commerce.create_approval_request
+  orderCancel:
+    status: stateful
+    commerce_action: commerce.cancel_order
+  fulfillmentOrderHold:
+    status: stateful
+    commerce_action: commerce.place_workflow_hold
+  fulfillmentOrderSubmitCancellationRequest:
+    status: stateful
+    commerce_action: commerce.submit_warehouse_cancellation_request
+  fulfillmentOrderContinue:
+    status: stateful
+    commerce_action: commerce.warehouse_continue_fulfillment
   productCreate:
     status: unsupported
+routes:
+  inventoryLevels:
+    status: stateful
+    path: /shopify/admin/api/{version}/inventory_levels.json
+  inventoryAdjust:
+    status: stateful
+    path: /shopify/admin/api/{version}/inventory_levels/adjust.json
+actions:
+  promise_fulfillment:
+    status: stateful
+    commerce_action: commerce.promise_fulfillment
+  route_manual_review:
+    status: stateful
+    commerce_action: commerce.route_manual_review
+  create_approval_request:
+    status: stateful
+    commerce_action: commerce.create_approval_request
+  cancel_order:
+    status: stateful
+    commerce_action: commerce.cancel_order
+  release_inventory:
+    status: stateful
+    commerce_action: commerce.release_inventory
+  place_fulfillment_hold:
+    status: stateful
+    commerce_action: commerce.place_workflow_hold
+  submit_fulfillment_cancellation_request:
+    status: stateful
+    commerce_action: commerce.submit_warehouse_cancellation_request
+  warehouse_continue_fulfillment:
+    status: stateful
+    commerce_action: commerce.warehouse_continue_fulfillment
 non_goals:
   - oauth
   - full_graphql_parser

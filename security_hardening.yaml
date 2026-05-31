@@ -1,0 +1,169 @@
+source_scan:
+  repo_wide: true
+  skip_unreadable: true
+  prefixes:
+    - .github/workflows/
+    - AGENTS.md
+    - README.md
+    - ROADMAP.md
+    - SCENARIO_LIBRARY.md
+    - MVP_ACCEPTANCE.md
+    - stage19_release_candidate.yaml
+    - design_partner_poc_package.yaml
+    - docs/
+    - examples/
+    - commerce-safety
+    - commerce-safety-sandbox/commerce_safety/
+    - tests/
+    - tools/
+    - release_hygiene.yaml
+    - security_hardening.yaml
+    - requirements.txt
+  ignored_prefixes:
+    - .git/
+    - .pytest_cache/
+    - .venv/
+    - .venv312/
+    - __pycache__/
+  exempt_paths:
+    - release_hygiene.yaml
+    - security_hardening.yaml
+    - tests/test_stage15_release_hygiene.py
+    - tests/test_stage16_security_abuse.py
+  text_extensions:
+    - .css
+    - .html
+    - .js
+    - .json
+    - .md
+    - .py
+    - .sh
+    - .toml
+    - .ts
+    - .tsx
+    - .txt
+    - .yaml
+    - .yml
+  candidate_paths:
+    - .github/workflows/v35-ci.yml
+    - AGENTS.md
+    - ROADMAP.md
+    - docs/STAGE14_PRODUCTIONIZATION_GATE.md
+    - docs/STAGE15_RELEASE_HYGIENE_CI_GATE.md
+    - docs/STAGE16_SECURITY_ABUSE_HARDENING.md
+    - docs/STAGE17_RUN_MANIFEST_SCHEMA_VERSIONING.md
+    - docs/STAGE18_AGENT_INTEGRATION_EXAMPLES.md
+    - docs/STAGE19_HOSTED_DESIGN_PARTNER_TRUST_GATE.md
+    - docs/STAGE19_RELEASE_CANDIDATE.md
+    - docs/PR_STAGE19_DESCRIPTION.md
+    - docs/HOSTED_DESIGN_PARTNER_ONBOARDING.md
+    - docs/design_partner_poc/README.md
+    - docs/design_partner_poc/one_pager.md
+    - docs/design_partner_poc/hosted_boundary.md
+    - docs/design_partner_poc/no_real_store_boundary.md
+    - docs/design_partner_poc/integration_steps.md
+    - docs/design_partner_poc/p0_scenarios.md
+    - docs/design_partner_poc/artifact_report_examples.md
+    - docs/design_partner_poc/poc_success_criteria.md
+    - docs/design_partner_poc/samples/trace_excerpt.json
+    - docs/design_partner_poc/samples/policy_report_excerpt.json
+    - docs/design_partner_poc/samples/state_diff_excerpt.json
+    - docs/design_partner_poc/samples/report_excerpt.md
+    - docs/security/SECURITY_OVERVIEW.md
+    - docs/security/CONTROL_MATRIX.md
+    - docs/security/ACCESS_REVIEW.md
+    - docs/MCP_SERVER_SETUP.md
+    - docs/openapi/live_twin_api.yaml
+    - examples/agent_integrations/README.md
+    - examples/agent_integrations/http_scn002_timeout_retry_agent.py
+    - examples/agent_integrations/mcp_scn002_timeout_retry_agent.py
+    - commerce-safety-sandbox/commerce_safety/artifacts.py
+    - commerce-safety-sandbox/commerce_safety/live/action_log.py
+    - commerce-safety-sandbox/commerce_safety/live/hosted.py
+    - commerce-safety-sandbox/commerce_safety/live/hosted_mcp_tools.py
+    - commerce-safety-sandbox/commerce_safety/live/http_api.py
+    - commerce-safety-sandbox/commerce_safety/live/mcp_server.py
+    - commerce-safety-sandbox/commerce_safety/live/mcp_tools.py
+    - commerce-safety-sandbox/commerce_safety/live/scenario_registry.py
+    - commerce-safety-sandbox/commerce_safety/live/security.py
+    - tools/check_run_manifest.py
+    - tools/check_stage19_release_candidate.py
+    - tools/check_design_partner_poc_pack.py
+    - tools/check_security_hardening.py
+    - tools/smoke_stage16_security_abuse.sh
+    - tools/smoke_stage17_run_manifest.sh
+    - tools/smoke_stage19_release_candidate.sh
+    - tools/smoke_design_partner_poc_pack.sh
+    - tools/smoke_stage19_hosted_enterprise_poc.sh
+    - tools/smoke_v35.sh
+    - tests/test_stage16_security_abuse.py
+    - tests/test_stage17_run_manifest.py
+
+secret_patterns:
+  - id: stripe_live_secret_key
+    pattern: "sk_live_[A-Za-z0-9]{16,}"
+  - id: github_personal_access_token
+    pattern: "ghp_[A-Za-z0-9_]{30,}"
+  - id: aws_access_key_id
+    pattern: "AKIA[0-9A-Z]{16}"
+  - id: slack_bot_token
+    pattern: "xox[baprs]-[A-Za-z0-9-]{20,}"
+  - id: rapidapi_key_assignment
+    pattern: "RAPIDAPI_[A-Z0-9_]*KEY\\s*=\\s*[A-Za-z0-9]{20,}"
+
+banned_response_fragments:
+  - id: wildcard_cors
+    pattern: "Access-Control-Allow-Origin\\s*[:=]\\s*[\"']?\\*"
+  - id: absolute_user_path_in_error_copy
+    pattern: "/Users/[A-Za-z0-9._-]+/"
+
+required_source_snippets:
+  - path: commerce-safety-sandbox/commerce_safety/live/http_api.py
+    snippets:
+      - "validate_live_server_security"
+      - "request_body_too_large"
+      - "security_headers"
+  - path: commerce-safety-sandbox/commerce_safety/live/mcp_server.py
+    snippets:
+      - "streamable-http transport is disabled"
+  - path: commerce-safety-sandbox/commerce_safety/live/action_log.py
+    snippets:
+      - "MAX_ACTION_LOG_BYTES"
+      - "MAX_ACTION_LOG_ACTIONS"
+  - path: ROADMAP.md
+    snippets:
+      - "## Stage 16: Security / Abuse Hardening"
+  - path: AGENTS.md
+    snippets:
+      - "Stage 16: Security / Abuse Hardening"
+  - path: docs/STAGE18_AGENT_INTEGRATION_EXAMPLES.md
+    snippets:
+      - "Agent Integration Examples"
+  - path: tools/smoke_v35.sh
+    snippets:
+      - "smoke_stage16_security_abuse.sh"
+      - "smoke_stage18_agent_examples.sh"
+      - "smoke_stage19_hosted_enterprise_poc.sh"
+  - path: stage19_release_candidate.yaml
+    snippets:
+      - "Hosted Design Partner Trust Gate"
+      - "generated_or_deferred_prefixes"
+  - path: docs/STAGE19_RELEASE_CANDIDATE.md
+    snippets:
+      - "Exclude From Stage 19 Review"
+      - "Stop Line"
+  - path: tools/smoke_stage19_hosted_enterprise_poc.sh
+    snippets:
+      - "smoke_stage19_release_candidate.sh"
+  - path: ROADMAP.md
+    snippets:
+      - "## Stage 19: Hosted Design Partner Trust Gate"
+      - "Design Partner Trust Boundary, not SOC2 certification."
+  - path: AGENTS.md
+    snippets:
+      - "Stage 19: Hosted Design Partner Trust Gate"
+  - path: .github/workflows/v35-ci.yml
+    snippets:
+      - "smoke_stage16_security_abuse.sh"
+      - "smoke_stage18_agent_examples.sh"
+      - "smoke_stage19_hosted_enterprise_poc.sh"

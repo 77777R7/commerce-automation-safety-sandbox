@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNS_DIR="$(mktemp -d "${TMPDIR:-/tmp}/commerce-safety-stage2-runs.XXXXXX")"
 SERVER_LOG="$(mktemp "${TMPDIR:-/tmp}/commerce-safety-stage2-server.XXXXXX.log")"
 CLI="$ROOT_DIR/commerce-safety"
+PYTHON_BIN="${PYTHON:-python3}"
 PORT="$((18765 + (RANDOM % 1000)))"
 SERVER_PID=""
 
@@ -19,29 +20,42 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$ROOT_DIR"
+export PYTHONPATH="$ROOT_DIR/commerce-safety-sandbox:${PYTHONPATH:-}"
 
-"$CLI" --runs-dir "$RUNS_DIR" live serve --host 127.0.0.1 --port "$PORT" >"$SERVER_LOG" 2>&1 &
+"$PYTHON_BIN" "$CLI" --runs-dir "$RUNS_DIR" live serve --host 127.0.0.1 --port "$PORT" >"$SERVER_LOG" 2>&1 &
 SERVER_PID=$!
 
-for _ in {1..50}; do
-  if grep -q "Commerce Safety live server listening" "$SERVER_LOG"; then
-    break
-  fi
-  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-    cat "$SERVER_LOG" >&2
-    echo "FAIL: live server exited before it was ready" >&2
-    exit 1
-  fi
-  sleep 0.1
-done
+if ! "$PYTHON_BIN" - "http://127.0.0.1:$PORT" "$SERVER_PID" <<'PY'
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
 
-grep -q "Commerce Safety live server listening" "$SERVER_LOG" || {
+base_url = sys.argv[1]
+server_pid = int(sys.argv[2])
+deadline = time.time() + 90
+
+while time.time() < deadline:
+    try:
+        urllib.request.urlopen(f"{base_url}/sessions/not-real/trace", timeout=0.5)
+    except urllib.error.HTTPError:
+        raise SystemExit(0)
+    except Exception:
+        try:
+            os.kill(server_pid, 0)
+        except OSError:
+            raise SystemExit("live server exited before it was ready")
+        time.sleep(0.1)
+
+raise SystemExit("live server did not become ready")
+PY
+then
   cat "$SERVER_LOG" >&2
-  echo "FAIL: live server did not become ready" >&2
   exit 1
-}
+fi
 
-python3 - "$PORT" "$RUNS_DIR" <<'PY'
+"$PYTHON_BIN" - "$PORT" "$RUNS_DIR" <<'PY'
 import json
 import pathlib
 import sys

@@ -80,12 +80,15 @@ def create_mcp_server(
     tools = CommerceMCPTools(runs_dir=runs_dir)
 
     @app.tool(name="commerce.start_session")
-    def start_session(scenario_path: str) -> dict[str, Any]:
-        """Start a live commerce validation session from a scenario YAML path."""
+    def start_session(
+        scenario_path: str | None = None,
+        scenario_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Start a live commerce validation session from an allowlisted scenario."""
 
         return tools.call_tool(
             "commerce.start_session",
-            {"scenario_path": scenario_path},
+            {"scenario_path": scenario_path, "scenario_id": scenario_id},
         )
 
     @app.tool(name="commerce.get_task")
@@ -695,6 +698,12 @@ def main(argv: list[str] | None = None) -> int:
         help="MCP transport to run.",
     )
     args = parser.parse_args(argv)
+
+    if args.transport != "stdio":
+        raise SystemExit(
+            "MCP streamable-http transport is disabled in local V3.5 until "
+            "host binding and auth policy are explicitly gated. Use --transport stdio."
+        )
 
     app = create_mcp_server(runs_dir=Path(args.runs_dir))
     app.run(transport=args.transport)

@@ -22,6 +22,7 @@ def test_amazon_mcp_tool_surface_runs_stale_inventory_failure(tmp_path):
         {"session_id": session_id, "sellerSkus": ["sku_stale_1"]},
     )
     assert inventory["payload"]["inventorySummaries"][0]["inventoryDetails"]["fulfillableQuantity"] == 1
+    assert inventory["payload"]["inventorySummaries"][0]["sellerSku"] == "SELLER-0001"
 
     tools.call_tool(
         "amazon.promise_fulfillment",
@@ -41,3 +42,38 @@ def test_amazon_mcp_tool_surface_runs_stale_inventory_failure(tmp_path):
     assert complete["status"] == "failed"
     policy_ids = {finding["policy_id"] for finding in complete["findings"]}
     assert "amazon_no_promise_from_stale_inventory_summary" in policy_ids
+
+
+def test_amazon_mcp_feed_report_and_rate_limit_metadata(tmp_path):
+    tools = CommerceMCPTools(runs_dir=tmp_path)
+    session = tools.call_tool("commerce.start_session", {"scenario_path": SCN003})
+    session_id = session["session_id"]
+
+    limited = tools.call_tool(
+        "amazon.get_inventory_summaries",
+        {
+            "session_id": session_id,
+            "sellerSkus": ["SELLER-0001"],
+            "simulateRateLimit": True,
+        },
+    )
+    assert limited["error"] == "rate_limited"
+    assert limited["_commerce_twin"]["fault"] == "rate_limit_429"
+
+    submitted = tools.call_tool(
+        "amazon.submit_feed",
+        {
+            "session_id": session_id,
+            "feedType": "POST_INVENTORY_AVAILABILITY_DATA",
+            "messages": [{"sellerSku": "SELLER-0001", "quantity": 0}],
+        },
+    )
+    feed_id = submitted["payload"]["feedId"]
+    report = tools.call_tool(
+        "amazon.get_feed_status",
+        {"session_id": session_id, "feedId": feed_id},
+    )
+    assert report["payload"]["processingStatus"] == "DONE"
+    assert report["payload"]["processingReport"]["processingSummary"][
+        "messagesProcessed"
+    ] == 1

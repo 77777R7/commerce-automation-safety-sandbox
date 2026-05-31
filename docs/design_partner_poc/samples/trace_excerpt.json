@@ -1,0 +1,37 @@
+{
+  "scenario_id": "SCN-002",
+  "scenario_name": "timeout_after_commit_retry",
+  "status": "failed",
+  "timeline": [
+    {
+      "step": 1,
+      "actor": "scenario",
+      "event": "fulfillment_task_received",
+      "message": "Agent received fulfillment task for order_2001."
+    },
+    {
+      "step": 2,
+      "actor": "external_agent",
+      "event": "create_fulfillment",
+      "message": "The permissive twin committed the fulfillment, then returned a timeout to simulate ambiguity."
+    },
+    {
+      "step": 3,
+      "actor": "external_agent",
+      "event": "retry_create_fulfillment",
+      "message": "Unsafe retry created a second fulfillment without checking existing state."
+    },
+    {
+      "step": 4,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: idempotency_required_for_mutating_retries."
+    },
+    {
+      "step": 5,
+      "actor": "policy_engine",
+      "event": "policy_violation_detected",
+      "message": "Policy violation detected: no_duplicate_fulfillment."
+    }
+  ]
+}

@@ -18,6 +18,22 @@ environment details.
 - `docs/openapi/live_twin_api.yaml`
 - `docs/STAGE12_PR_READINESS.md`
 - `docs/AMAZON_SELLER_OPS_SKIN_V0.md`
+- `docs/STAGE14_PRODUCTIONIZATION_GATE.md`
+- `docs/STAGE15_RELEASE_HYGIENE_CI_GATE.md`
+- `docs/STAGE16_SECURITY_ABUSE_HARDENING.md`
+- `docs/STAGE17_RUN_MANIFEST_SCHEMA_VERSIONING.md`
+- `docs/STAGE18_AGENT_INTEGRATION_EXAMPLES.md`
+- `docs/STAGE19_HOSTED_DESIGN_PARTNER_TRUST_GATE.md`
+- `docs/STAGE19_RELEASE_CANDIDATE.md`
+- `docs/PR_STAGE19_DESCRIPTION.md`
+- `docs/HOSTED_DESIGN_PARTNER_ONBOARDING.md`
+- `docs/design_partner_poc/README.md`
+- `design_partner_poc_package.yaml`
+- `docs/security/SECURITY_OVERVIEW.md`
+- `docs/security/CONTROL_MATRIX.md`
+- `release_hygiene.yaml`
+- `security_hardening.yaml`
+- `.github/workflows/v35-ci.yml`
 
 ## Current Product Direction
 
@@ -60,7 +76,7 @@ but it is no longer the mainline for V3.5 execution.
 - `good_runner` must pass with zero findings.
 - Replay must read from `trace.json`; it must not rerun the scenario.
 - Run artifacts must include `trace.json`, `policy_report.json`,
-  `state_diff.json`, and `report.md`.
+  `state_diff.json`, `report.md`, and `run_manifest.json`.
 - Keep `PolicyFinding` structured with `policy_id`, `severity`, `status`,
   `evidence`, `business_impact`, and `recommendation`.
 - Every V3.5 stage must define and pass a strict gate before the next stage
@@ -76,7 +92,7 @@ Do not build these in the current lane:
 - Agent container
 - Egress proxy
 - New P0 scenario classes
-- Hosted multi-tenant control plane
+- Hosted multi-tenant control plane beyond the Stage 19 Design Partner Trust Gate
 - Decorative dashboard polish before live agent validation works
 
 ## V3.5 Stage Gates
@@ -102,6 +118,12 @@ After Stage 0, follow `ROADMAP.md` stage by stage:
 11. Stage 11: Strict OpenAPI Contract Hardening.
 12. Stage 12: Shopify-like Skin V0 Vertical Slice.
 13. Stage 13: Amazon Seller Ops Safety Skin V0.
+14. Stage 14: Productionization Gate.
+15. Stage 15: Release Hygiene + CI Gate.
+16. Stage 16: Security / Abuse Hardening.
+17. Stage 17: Run Manifest + Artifact Schema Versioning.
+18. Stage 18: Agent Integration Examples.
+19. Stage 19: Hosted Design Partner Trust Gate.
 
 ## Completion Gate
 
@@ -128,4 +150,10 @@ PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ./tools/smoke_stage12_shopify_skin_v0.sh
 ./tools/smoke_stage13_amazon_skin_v0.sh
 PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
+PYTHON=python3.12 ./tools/smoke_stage15_release_hygiene.sh
+PYTHON=python3.12 ./tools/smoke_stage16_security_abuse.sh
+PYTHON=python3.12 ./tools/smoke_stage17_run_manifest.sh
+PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
+PYTHON=python3.12 ./tools/smoke_stage19_release_candidate.sh
+PYTHON=python3.12 ./tools/smoke_stage19_hosted_enterprise_poc.sh
 ```

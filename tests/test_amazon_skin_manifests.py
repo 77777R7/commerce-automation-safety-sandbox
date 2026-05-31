@@ -11,5 +11,10 @@ def test_amazon_coverage_manifest_declares_v0_surface():
     assert coverage.route_status("getListingsItem") == "stateful"
     assert coverage.route_status("confirmShipment") == "stateful"
     assert coverage.route_status("createFeed") == "stateful"
-    assert coverage.route_status("getFeed") == "stateful"
+    assert coverage.route_status("getFeed") == "stateful_with_processing_report"
     assert coverage.route_status("unknownOperation") == "stub"
+    data = coverage.as_dict()
+    assert data["binding"]["sellerId"]["canonical"] == "A1COMMERCESELLER"
+    assert "seller_123" in data["binding"]["sellerId"]["aliases"]
+    assert data["faults"]["rate_limit_429"]["retryable"] is True
+    assert data["stubs"]["unsupported_notifications"] == "explicit_stub"

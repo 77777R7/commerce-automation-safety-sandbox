@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ..artifacts import PATCH_HINTS_SCHEMA_VERSION
+
 
 POLICY_HINTS = {
     "idempotency_required_for_mutating_retries": {
@@ -119,6 +121,7 @@ def build_patch_hints(
         )
 
     return {
+        "schema_version": PATCH_HINTS_SCHEMA_VERSION,
         "run_id": run_id,
         "scenario_id": scenario["id"],
         "scenario_name": scenario.get("name", scenario["id"]),

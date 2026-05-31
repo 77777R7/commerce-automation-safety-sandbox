@@ -55,6 +55,45 @@ def build_business_risk_summary(
     ]
 
 
+def build_incident_cards(
+    *,
+    findings: list[dict[str, Any]],
+    run_id: str,
+) -> list[str]:
+    if not findings:
+        return []
+
+    lines = [
+        "## Incident Cards",
+        "",
+    ]
+    for finding in findings:
+        evidence = finding.get("evidence", {})
+        action = evidence.get("action") or evidence.get("event") or "unsafe automation action"
+        entity = (
+            evidence.get("order_id")
+            or evidence.get("sku")
+            or evidence.get("fulfillment_id")
+            or "the tested commerce state"
+        )
+        lines.extend(
+            [
+                f"### Incident Card: {finding['policy_id']}",
+                "",
+                f"- What happened: `{action}` changed {entity} into an unsafe state.",
+                f"- Why it matters: {_sentence(finding['business_impact'])}",
+                f"- Evidence: see the JSON evidence for `{finding['policy_id']}` below.",
+                f"- Recommended guardrail: {_sentence(finding['recommendation'])}",
+                (
+                    "- How to retest: apply the guardrail, rerun the same scenario, "
+                    f"and confirm `commerce-safety replay runs/{run_id}` shows no policy findings."
+                ),
+                "",
+            ]
+        )
+    return lines
+
+
 def build_state_diff(
     before: dict[str, Any],
     after: dict[str, Any],
@@ -93,6 +132,21 @@ def build_state_diff(
         and int(promise["quantity"]) > int(promise["true_available_at_commit"])
     ]
     after_refunds = after.get("refunds", [])
+    after_tracking_uploads = after.get("tracking_uploads", [])
+    after_support_tickets = after.get("support_tickets", [])
+    tracking_uploads_before_first_scan = [
+        upload
+        for upload in after_tracking_uploads
+        if not upload.get("first_carrier_scan_seen")
+        and upload.get("carrier_status_at_upload")
+        not in {"first_scan", "carrier_scanned", "accepted", "in_transit", "shipped"}
+    ]
+    support_tickets_from_early_tracking = [
+        ticket
+        for ticket in after_support_tickets
+        if ticket.get("tracking_upload_id")
+        and ticket.get("reason") == "tracking_visible_before_first_carrier_scan"
+    ]
     after_approval_requests = after.get("approval_requests", [])
     refund_amount_before = sum(float(refund["amount"]) for refund in before.get("refunds", []))
     refund_amount_after = sum(float(refund["amount"]) for refund in after_refunds)
@@ -144,6 +198,8 @@ def build_state_diff(
             "fulfillments": before["counts"]["fulfillments"],
             "fulfillment_promises": before["counts"].get("fulfillment_promises", 0),
             "refunds": before["counts"].get("refunds", 0),
+            "tracking_uploads": before["counts"].get("tracking_uploads", 0),
+            "support_tickets": before["counts"].get("support_tickets", 0),
             "approval_requests": before["counts"].get("approval_requests", 0),
             "inventory_releases": before["counts"].get("inventory_releases", 0),
             "workflow_holds": before["counts"].get("workflow_holds", 0),
@@ -159,6 +215,8 @@ def build_state_diff(
             "fulfillments": after["counts"]["fulfillments"],
             "fulfillment_promises": after["counts"].get("fulfillment_promises", 0),
             "refunds": after["counts"].get("refunds", 0),
+            "tracking_uploads": after["counts"].get("tracking_uploads", 0),
+            "support_tickets": after["counts"].get("support_tickets", 0),
             "approval_requests": after["counts"].get("approval_requests", 0),
             "inventory_releases": after["counts"].get("inventory_releases", 0),
             "workflow_holds": after["counts"].get("workflow_holds", 0),
@@ -171,6 +229,8 @@ def build_state_diff(
             "fulfillments_detail": after["fulfillments"],
             "fulfillment_promises_detail": after_promises,
             "refunds_detail": after_refunds,
+            "tracking_uploads_detail": after_tracking_uploads,
+            "support_tickets_detail": after_support_tickets,
             "approval_requests_detail": after_approval_requests,
             "warehouse_jobs": after_warehouse_jobs,
             "inventory_releases_detail": after_inventory_releases,
@@ -185,6 +245,10 @@ def build_state_diff(
             - before["counts"].get("fulfillment_promises", 0),
             "refunds_added": after["counts"].get("refunds", 0)
             - before["counts"].get("refunds", 0),
+            "tracking_uploads_added": after["counts"].get("tracking_uploads", 0)
+            - before["counts"].get("tracking_uploads", 0),
+            "support_tickets_added": after["counts"].get("support_tickets", 0)
+            - before["counts"].get("support_tickets", 0),
             "approval_requests_added": after["counts"].get("approval_requests", 0)
             - before["counts"].get("approval_requests", 0),
             "inventory_releases_added": after["counts"].get("inventory_releases", 0)
@@ -214,6 +278,12 @@ def build_state_diff(
             ),
             "high_value_refund_without_approval": bool(
                 high_value_refunds_without_approval
+            ),
+            "tracking_upload_before_first_carrier_scan": bool(
+                tracking_uploads_before_first_scan
+            ),
+            "support_ticket_from_early_tracking": bool(
+                support_tickets_from_early_tracking
             ),
             "warehouse_conflict_without_hold": warehouse_conflict_without_hold,
             "ship_after_cancel": ship_after_cancel,
@@ -280,6 +350,10 @@ def build_markdown_report(
             f"- Fulfillment promises after: `{state_diff['after']['fulfillment_promises']}`",
             f"- Refunds before: `{state_diff['before']['refunds']}`",
             f"- Refunds after: `{state_diff['after']['refunds']}`",
+            f"- Tracking uploads before: `{state_diff['before']['tracking_uploads']}`",
+            f"- Tracking uploads after: `{state_diff['after']['tracking_uploads']}`",
+            f"- Support tickets before: `{state_diff['before']['support_tickets']}`",
+            f"- Support tickets after: `{state_diff['after']['support_tickets']}`",
             f"- Approval requests before: `{state_diff['before']['approval_requests']}`",
             f"- Approval requests after: `{state_diff['after']['approval_requests']}`",
             f"- Inventory releases before: `{state_diff['before']['inventory_releases']}`",
@@ -302,6 +376,10 @@ def build_markdown_report(
     if not findings:
         lines.append("No policy violations were detected.")
     else:
+        lines[-2:] = build_incident_cards(findings=findings, run_id=run_id) + [
+            "## Findings",
+            "",
+        ]
         for finding in findings:
             evidence = json.dumps(finding["evidence"], indent=2, ensure_ascii=False)
             lines.extend(

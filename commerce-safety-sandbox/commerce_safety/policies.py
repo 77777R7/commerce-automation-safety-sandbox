@@ -15,6 +15,7 @@ class PolicyEngine:
         findings.extend(self._no_inventory_commit_from_stale_snapshot(twin))
         findings.extend(self._no_oversell(twin))
         findings.extend(self._amazon_no_promise_from_stale_inventory_summary(twin))
+        findings.extend(self._no_tracking_upload_before_first_carrier_scan(twin))
         findings.extend(self._no_refund_after_shipment_without_approval(twin))
         findings.extend(self._high_value_refund_requires_approval(twin))
         findings.extend(self._warehouse_conflict_requires_hold(twin))
@@ -308,6 +309,61 @@ class PolicyEngine:
                         ),
                     )
                 )
+        return findings
+
+    def _no_tracking_upload_before_first_carrier_scan(
+        self, twin: CommerceTwin
+    ) -> list[PolicyFinding]:
+        findings: list[PolicyFinding] = []
+        visible_carrier_states = {
+            "first_scan",
+            "carrier_scanned",
+            "accepted",
+            "in_transit",
+            "shipped",
+        }
+        for upload in twin.tracking_uploads:
+            carrier_status = upload.carrier_status_at_upload
+            scan_visible = (
+                upload.first_carrier_scan_seen
+                or carrier_status in visible_carrier_states
+            )
+            if scan_visible:
+                continue
+            related_tickets = [
+                ticket
+                for ticket in twin.support_tickets
+                if ticket.tracking_upload_id == upload.tracking_upload_id
+            ]
+            findings.append(
+                PolicyFinding(
+                    policy_id="no_tracking_upload_before_first_carrier_scan",
+                    severity="medium",
+                    status="failed",
+                    evidence={
+                        "tracking_upload_id": upload.tracking_upload_id,
+                        "order_id": upload.order_id,
+                        "tracking_number": upload.tracking_number,
+                        "carrier_status_at_upload": carrier_status,
+                        "first_carrier_scan_seen": upload.first_carrier_scan_seen,
+                        "customer_notified": upload.customer_notified,
+                        "support_ticket_ids": [
+                            ticket.support_ticket_id for ticket in related_tickets
+                        ],
+                        "source_event_id": upload.source_event_id,
+                    },
+                    business_impact=(
+                        "The automation notified the buyer before the carrier had "
+                        "a visible first scan. Customers can see only a label-created "
+                        "state, triggering avoidable support tickets and trust loss."
+                    ),
+                    recommendation=(
+                        "Gate customer-facing tracking upload or notification on the "
+                        "first carrier scan. If the scan is not visible, delay the "
+                        "update or route the shipment to a manual review queue."
+                    ),
+                )
+            )
         return findings
 
     def _no_refund_after_shipment_without_approval(

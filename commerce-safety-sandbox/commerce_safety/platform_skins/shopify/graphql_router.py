@@ -11,9 +11,26 @@ from .response_shapes import (
     fulfillment_create_timeout,
     unsupported_mutation_response,
 )
+from .router import (
+    ShopifyOpsRouter,
+    first_inventory_change,
+    input_object,
+    mutation_success,
+)
 
 
 MUTATION_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+STATEFUL_MUTATIONS = {
+    "fulfillmentCreate",
+    "inventoryAdjustQuantities",
+    "refundCreate",
+    "refundApprovalRequestCreate",
+    "orderCancel",
+    "fulfillmentOrderHold",
+    "fulfillmentOrderSubmitCancellationRequest",
+    "fulfillmentOrderContinue",
+}
+KNOWN_MUTATIONS = STATEFUL_MUTATIONS | {"productCreate"}
 
 
 class ShopifyGraphQLMappingError(ValueError):
@@ -22,11 +39,11 @@ class ShopifyGraphQLMappingError(ValueError):
 
 def identify_mutation(body: dict[str, Any]) -> str | None:
     operation_name = body.get("operationName")
-    if operation_name in {"fulfillmentCreate", "refundCreate", "productCreate"}:
+    if operation_name in KNOWN_MUTATIONS:
         return str(operation_name)
 
     query = str(body.get("query", ""))
-    for known_name in ("fulfillmentCreate", "refundCreate", "productCreate"):
+    for known_name in KNOWN_MUTATIONS:
         if re.search(rf"\b{known_name}\s*\(", query):
             return known_name
     for match in MUTATION_RE.finditer(query):
@@ -113,6 +130,7 @@ class ShopifyGraphQLRouter:
     def __init__(self, tools: Any):
         self.tools = tools
         self.coverage = load_shopify_coverage()
+        self.ops = ShopifyOpsRouter(tools)
 
     def handle(
         self,
@@ -126,30 +144,84 @@ class ShopifyGraphQLRouter:
         if self.coverage.mutation_status(mutation_name or "") != "stateful":
             return 200, unsupported_mutation_response(mutation_name)
 
-        if mutation_name != "fulfillmentCreate":
+        if mutation_name == "fulfillmentCreate":
+            action = extract_fulfillment_create_action(
+                body,
+                actor=actor,
+                binding=binding,
+            )
+            result = self.tools.call_tool(
+                "commerce.create_fulfillment",
+                {"session_id": session_id, **action},
+            )
+            if result.get("error") == "timeout_after_commit":
+                return 504, fulfillment_create_timeout(
+                    session_id=session_id,
+                    fulfillment_id=str(result["fulfillment_id"]),
+                )
+            if not result.get("ok"):
+                return _graphql_error(result)
+            return 200, fulfillment_create_success(
+                to_plain(result["fulfillment"]),
+                session_id=session_id,
+            )
+
+        if binding is None:
+            raise ShopifyGraphQLMappingError("stateful Shopify mutation requires binding")
+
+        if mutation_name == "inventoryAdjustQuantities":
+            status, result = self.ops.adjust_inventory_level(
+                session_id=session_id,
+                binding=binding,
+                body={**first_inventory_change(body), "actor": actor},
+            )
+        elif mutation_name == "refundCreate":
+            status, result = self.ops.create_refund(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "refund"), "actor": actor},
+            )
+        elif mutation_name == "refundApprovalRequestCreate":
+            status, result = self.ops.create_approval_request(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "approval", "refund"), "actor": actor},
+            )
+        elif mutation_name == "orderCancel":
+            status, result = self.ops.cancel_order(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "order"), "actor": actor},
+            )
+        elif mutation_name == "fulfillmentOrderHold":
+            status, result = self.ops.place_fulfillment_hold(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "fulfillmentHold"), "actor": actor},
+            )
+        elif mutation_name == "fulfillmentOrderSubmitCancellationRequest":
+            status, result = self.ops.submit_fulfillment_cancellation_request(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "cancellationRequest"), "actor": actor},
+            )
+        elif mutation_name == "fulfillmentOrderContinue":
+            status, result = self.ops.warehouse_continue_fulfillment(
+                session_id=session_id,
+                binding=binding,
+                body={**input_object(body, "fulfillmentOrder"), "actor": actor},
+            )
+        else:
             return 200, unsupported_mutation_response(mutation_name)
 
-        action = extract_fulfillment_create_action(
-            body,
-            actor=actor,
-            binding=binding,
-        )
-        result = self.tools.call_tool(
-            "commerce.create_fulfillment",
-            {"session_id": session_id, **action},
-        )
-        if result.get("error") == "timeout_after_commit":
-            return 504, fulfillment_create_timeout(
-                session_id=session_id,
-                fulfillment_id=str(result["fulfillment_id"]),
-            )
-        if not result.get("ok"):
-            return 400, {
-                "data": None,
-                "errors": [{"message": str(result.get("error", "unknown_error"))}],
-                "extensions": {"_commerce_twin": {"skin": "shopify_like"}},
-            }
-        return 200, fulfillment_create_success(
-            to_plain(result["fulfillment"]),
-            session_id=session_id,
-        )
+        if status >= 400 or not result.get("ok", True):
+            return _graphql_error(result)
+        return 200, mutation_success(mutation_name, result, session_id=session_id)
+
+
+def _graphql_error(result: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    return 400, {
+        "data": None,
+        "errors": [{"message": str(result.get("error", "unknown_error"))}],
+        "extensions": {"_commerce_twin": {"skin": "shopify_like"}},
+    }

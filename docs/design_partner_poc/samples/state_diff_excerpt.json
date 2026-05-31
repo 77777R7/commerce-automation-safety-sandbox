@@ -1,0 +1,32 @@
+{
+  "scenario_id": "SCN-002",
+  "scenario_name": "timeout_after_commit_retry",
+  "before": {
+    "orders": {
+      "order_2001": {
+        "fulfillments": 0
+      }
+    },
+    "inventory": {
+      "sku_1": {
+        "reserved": 1
+      }
+    }
+  },
+  "after": {
+    "orders": {
+      "order_2001": {
+        "fulfillments": 2
+      }
+    },
+    "inventory": {
+      "sku_1": {
+        "reserved": 1
+      }
+    }
+  },
+  "accident_signals": [
+    "duplicate_fulfillment",
+    "unsafe_retry_after_timeout"
+  ]
+}

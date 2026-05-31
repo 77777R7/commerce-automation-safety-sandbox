@@ -236,7 +236,7 @@ Acceptance:
 - Any remaining schema warning is explicitly allowlisted in
   `docs/openapi/schemathesis_warning_allowlist.yaml`.
 
-## Stage 12 Shopify-like Skin V0 Acceptance
+## Stage 12 Shopify-like Skin P0 Coverage Acceptance
 
 Acceptance:
 
@@ -248,10 +248,20 @@ Acceptance:
   `duplicate_webhook_skipped` instead of creating a second fulfillment.
 - The skin supports Admin GraphQL-shaped `fulfillmentCreate` and maps it to the
   generic `commerce.create_fulfillment` action.
+- The skin supports inventory level reads, inventory adjustment/reservation
+  mapping, `refundCreate`, refund approval request mapping, `orders/cancelled`,
+  order cancellation, fulfillment hold, warehouse cancellation request, and
+  warehouse continuation mapping.
 - Unsupported Shopify mutations return explicit `_commerce_twin_stub` coverage
   metadata.
 - `duplicate_webhook` unsafe/safe paths run through Shopify-like HTTP.
 - `SCN-002 timeout_after_commit_retry` unsafe/safe paths run through
+  Shopify-like HTTP.
+- `SCN-003 stale_inventory_oversell` unsafe/safe paths run through
+  Shopify-like HTTP.
+- `SCN-004 refund_after_shipment_bypass` unsafe/safe paths run through
+  Shopify-like HTTP.
+- `SCN-005 cancel_after_pick_pack_conflict` unsafe/safe paths run through
   Shopify-like HTTP.
 - The adapter does not make business policy decisions; unsafe actions remain
   permissive and are caught by `PolicyEngine` at completion.
@@ -265,6 +275,17 @@ Acceptance:
 - The skin supports Amazon-shaped inventory summaries, listing availability,
   feed status, order/order item reads, ORDER_CHANGE notifications, and
   confirmShipment.
+- The skin exposes realistic binding metadata for canonical seller id, seller
+  aliases, marketplace id, SellerSKU, ASIN, FNSKU, and OrderItemId resolution.
+- Feed submission and polling expose a processing report with processed,
+  successful, warning, and error counts.
+- Rate-limit simulation returns retryable 429 metadata with retry-after
+  guidance, and the same operation can pass on retry without the injected
+  fault.
+- Unsupported Amazon-shaped notifications and seller-ops actions return
+  explicit stub coverage metadata.
+- Buyer-cancel followed by confirmShipment records a clear conflict trace with
+  the cancellation signal, prior warehouse status, and risk signal.
 - The skin exposes Amazon MCP tools for inventory/listing/order/feed/
   notification/seller-ops action paths.
 - `SCN-003 stale_inventory_oversell` unsafe/safe paths run through

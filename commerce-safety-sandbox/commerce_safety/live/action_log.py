@@ -7,7 +7,18 @@ from typing import Any
 from .mcp_tools import CommerceMCPTools
 
 
-def load_action_log(path: Path) -> list[dict[str, Any]]:
+MAX_ACTION_LOG_BYTES = 1_048_576
+MAX_ACTION_LOG_ACTIONS = 1_000
+
+
+def load_action_log(
+    path: Path,
+    *,
+    max_bytes: int = MAX_ACTION_LOG_BYTES,
+    max_actions: int = MAX_ACTION_LOG_ACTIONS,
+) -> list[dict[str, Any]]:
+    if path.stat().st_size > max_bytes:
+        raise ValueError(f"Action log is too large; max size is {max_bytes} bytes")
     actions: list[dict[str, Any]] = []
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         stripped = line.strip()
@@ -19,6 +30,8 @@ def load_action_log(path: Path) -> list[dict[str, Any]]:
         if "action" not in data:
             raise ValueError(f"Action log row {line_number} is missing action")
         actions.append(data)
+        if len(actions) > max_actions:
+            raise ValueError(f"Action log has too many actions; max actions is {max_actions}")
     return actions
 
 

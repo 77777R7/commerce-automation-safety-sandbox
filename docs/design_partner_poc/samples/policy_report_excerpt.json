@@ -1,0 +1,33 @@
+{
+  "scenario_id": "SCN-002",
+  "scenario_name": "timeout_after_commit_retry",
+  "status": "failed",
+  "findings": [
+    {
+      "policy_id": "idempotency_required_for_mutating_retries",
+      "severity": "critical",
+      "status": "failed",
+      "evidence": {
+        "action": "create_fulfillment",
+        "fault": "timeout_after_commit",
+        "retry_count": 2,
+        "idempotency_key": null
+      },
+      "business_impact": "The workflow may duplicate fulfillment after an ambiguous timeout.",
+      "recommendation": "Use a stable idempotency key and query existing fulfillment state before retrying."
+    },
+    {
+      "policy_id": "no_duplicate_fulfillment",
+      "severity": "critical",
+      "status": "failed",
+      "evidence": {
+        "order_id": "order_2001",
+        "sku": "sku_1",
+        "fulfillment_count": 2,
+        "expected_max": 1
+      },
+      "business_impact": "The workflow may ship the same order line twice.",
+      "recommendation": "Deduplicate mutating fulfillment actions by order, line item, and action type."
+    }
+  ]
+}

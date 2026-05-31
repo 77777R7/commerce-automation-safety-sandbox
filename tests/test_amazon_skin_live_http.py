@@ -46,10 +46,12 @@ def test_amazon_scn003_unsafe_stale_inventory_path_fails(tmp_path):
     )
     assert status == 200
     summary = inventory["payload"]["inventorySummaries"][0]
-    assert summary["sellerSku"] == "sku_stale_1"
+    assert summary["sellerSku"] == "sku_stale_1" or summary["sellerSku"] == "SELLER-0001"
     assert summary["inventoryDetails"]["fulfillableQuantity"] == 1
     assert summary["_commerce_twin"]["trueAvailable"] == 0
     assert summary["_commerce_twin"]["snapshotVersion"] == "stale"
+    assert summary["_commerce_twin"]["sellerId"] == "A1COMMERCESELLER"
+    assert summary["_commerce_twin"]["marketplaceIds"] == ["ATVPDKIKX0DER"]
 
     status, promise = _request(
         api,
@@ -85,6 +87,8 @@ def test_amazon_scn003_safe_stale_inventory_path_passes_with_review(tmp_path):
     )
     assert status == 200
     assert listing["fulfillmentAvailability"][0]["quantity"] == 0
+    assert listing["sellerBinding"]["knownSeller"] is True
+    assert listing["summaries"][0]["marketplaceId"] == "ATVPDKIKX0DER"
 
     status, review = _request(
         api,
@@ -154,6 +158,16 @@ def test_amazon_scn005_unsafe_cancel_after_pick_pack_path_fails(tmp_path):
     )
     assert status == 200
     assert shipment["payload"]["shipmentStatus"] == "confirmed"
+    status, trace = _request(api, "GET", f"/sessions/{session_id}/trace")
+    assert status == 200
+    event_names = [event["event"] for event in trace["timeline"]]
+    assert "amazon_buyer_cancel_received" in event_names
+    shipment_event = next(
+        event for event in trace["timeline"] if event["event"] == "amazon_shipment_confirmed"
+    )
+    assert shipment_event["details"]["risk_signal"] == "confirmShipment_after_buyer_cancel"
+    assert shipment_event["details"]["cancel_requested_before_confirmation"] is True
+    assert shipment_event["details"]["warehouse_status_before_confirmation"] == "picked"
 
     status, complete = _complete(api, session_id, "amazon_like_unsafe_agent")
     assert status == 200
@@ -222,3 +236,102 @@ def test_amazon_coverage_endpoint_exposes_stateful_surface(tmp_path):
     assert response["coverage"]["skin"] == "amazon_seller_ops"
     assert response["coverage"]["routes"]["getInventorySummaries"] == "stateful"
     assert response["coverage"]["routes"]["confirmShipment"] == "stateful"
+    assert response["coverage"]["routes"]["getFeed"] == "stateful_with_processing_report"
+    assert response["coverage"]["binding"]["sellerId"]["canonical"] == "A1COMMERCESELLER"
+
+
+def test_amazon_feed_processing_report_is_available_after_poll(tmp_path):
+    api = LiveAPI(runs_dir=tmp_path)
+    session_id = _start(api, SCN003)
+
+    status, submitted = _request(
+        api,
+        "POST",
+        f"/sessions/{session_id}/amazon/sp-api/feeds/2021-06-30/feeds",
+        {
+            "feedType": "POST_INVENTORY_AVAILABILITY_DATA",
+            "messages": [{"sellerSku": "SELLER-0001", "quantity": 0}],
+        },
+    )
+    assert status == 202
+    feed_id = submitted["payload"]["feedId"]
+    assert submitted["payload"]["processingStatus"] == "IN_QUEUE"
+    assert submitted["payload"]["resultFeedDocumentId"] == f"feed_result_{feed_id}"
+
+    status, polled = _request(
+        api,
+        "GET",
+        f"/sessions/{session_id}/amazon/sp-api/feeds/2021-06-30/feeds/{feed_id}",
+    )
+    assert status == 200
+    assert polled["payload"]["processingStatus"] == "DONE"
+    report = polled["payload"]["processingReport"]
+    assert report["processingSummary"]["messagesProcessed"] == 1
+    assert report["processingSummary"]["messagesWithError"] == 0
+
+    status, trace = _request(api, "GET", f"/sessions/{session_id}/trace")
+    assert status == 200
+    assert any(
+        event["event"] == "amazon_feed_processing_report_ready"
+        for event in trace["timeline"]
+    )
+
+
+def test_amazon_rate_limit_then_retry_inventory_summary(tmp_path):
+    api = LiveAPI(runs_dir=tmp_path)
+    session_id = _start(api, SCN003)
+
+    status, limited = _request(
+        api,
+        "GET",
+        f"/sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries"
+        "?sellerSkus=SELLER-0001&simulateRateLimit=true",
+    )
+    assert status == 429
+    assert limited["error"] == "rate_limited"
+    assert limited["retryAfterSeconds"] == 2
+    assert limited["_commerce_twin"]["retryable"] is True
+
+    status, retried = _request(
+        api,
+        "GET",
+        f"/sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries"
+        "?sellerSkus=SELLER-0001",
+    )
+    assert status == 200
+    assert retried["payload"]["inventorySummaries"][0]["_commerce_twin"][
+        "canonicalSku"
+    ] == "sku_stale_1"
+    status, trace = _request(api, "GET", f"/sessions/{session_id}/trace")
+    assert status == 200
+    rate_limit_event = next(
+        event for event in trace["timeline"] if event["event"] == "amazon_rate_limit_injected"
+    )
+    assert rate_limit_event["details"]["operation"] == "getInventorySummaries"
+    assert rate_limit_event["details"]["retryable"] is True
+
+
+def test_amazon_unsupported_surface_returns_stub_metadata(tmp_path):
+    api = LiveAPI(runs_dir=tmp_path)
+    session_id = _start(api, SCN003)
+
+    status, notification = _request(
+        api,
+        "POST",
+        f"/sessions/{session_id}/amazon/notifications",
+        {"notificationType": "ANY_OFFER_CHANGED", "payload": {}},
+    )
+    assert status == 202
+    assert notification["_commerce_twin_stub"] is True
+    assert notification["stub"]["contract"] == "explicit_stub_not_full_sp_api"
+    assert notification["_commerce_twin"]["coverage"] == "stub"
+
+    status, action = _request(
+        api,
+        "POST",
+        f"/sessions/{session_id}/amazon/actions/create_return",
+        {"amazonOrderId": "AMZ-3001"},
+    )
+    assert status == 200
+    assert action["_commerce_twin_stub"] is True
+    assert action["stub"]["surface"] == "actions/create_return"

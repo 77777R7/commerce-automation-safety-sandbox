@@ -1,0 +1,41 @@
+name: Design Partner POC Package
+version: v0.1
+intent: >
+  Provide customer-readable materials for hosted design-partner POCs without
+  adding new product functionality or expanding the V3.5 platform boundary.
+
+source_of_truth:
+  - docs/design_partner_poc/README.md
+  - docs/design_partner_poc/one_pager.md
+  - docs/design_partner_poc/hosted_boundary.md
+  - docs/design_partner_poc/no_real_store_boundary.md
+  - docs/design_partner_poc/integration_steps.md
+  - docs/design_partner_poc/p0_scenarios.md
+  - docs/design_partner_poc/artifact_report_examples.md
+  - docs/design_partner_poc/poc_success_criteria.md
+
+sample_artifacts:
+  - docs/design_partner_poc/samples/trace_excerpt.json
+  - docs/design_partner_poc/samples/policy_report_excerpt.json
+  - docs/design_partner_poc/samples/state_diff_excerpt.json
+  - docs/design_partner_poc/samples/report_excerpt.md
+
+required_messages:
+  - Hosted boundary
+  - No-real-store boundary
+  - MCP/HTTP integration
+  - Five P0 scenarios
+  - Artifact/report samples
+  - POC success criteria
+  - Permissive Twin + Policy Check
+  - External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints
+
+non_goals:
+  - Production store connectivity
+  - Full Shopify or Amazon API clone
+  - SOC2 certification claim
+  - Buyer simulator
+  - Hosted multi-tenant SaaS beyond the Stage 19 design-partner trust boundary
+
+gate:
+  - PYTHON=python3.12 ./tools/smoke_design_partner_poc_pack.sh

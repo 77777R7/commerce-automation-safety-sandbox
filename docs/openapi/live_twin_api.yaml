@@ -52,6 +52,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/tasks/next:
     get:
@@ -85,6 +87,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/create_fulfillment:
     post:
@@ -125,6 +129,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "504":
           description: Timeout after the twin committed the mutation
           content:
@@ -161,6 +167,8 @@ paths:
                 $ref: "#/components/schemas/ReservationResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/promise_fulfillment:
     post:
@@ -191,6 +199,8 @@ paths:
                 $ref: "#/components/schemas/PromiseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/refresh_inventory:
     post:
@@ -218,6 +228,8 @@ paths:
                 $ref: "#/components/schemas/InventoryResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/route_manual_review:
     post:
@@ -248,6 +260,8 @@ paths:
                 $ref: "#/components/schemas/OkSessionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/find_fulfillment:
     post:
@@ -276,6 +290,8 @@ paths:
                 $ref: "#/components/schemas/FindFulfillmentResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/create_refund:
     post:
@@ -306,6 +322,8 @@ paths:
                 $ref: "#/components/schemas/RefundResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/create_approval_request:
     post:
@@ -337,6 +355,8 @@ paths:
                 $ref: "#/components/schemas/ApprovalResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/cancel_order:
     post:
@@ -365,6 +385,8 @@ paths:
                 $ref: "#/components/schemas/OkSessionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/release_inventory:
     post:
@@ -395,6 +417,8 @@ paths:
                 $ref: "#/components/schemas/InventoryReleaseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/place_workflow_hold:
     post:
@@ -425,6 +449,8 @@ paths:
                 $ref: "#/components/schemas/WorkflowHoldResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/submit_warehouse_cancellation_request:
     post:
@@ -453,6 +479,8 @@ paths:
                 $ref: "#/components/schemas/WarehouseCancellationResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/warehouse_continue_fulfillment:
     post:
@@ -482,6 +510,8 @@ paths:
                 $ref: "#/components/schemas/WarehouseJobResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/twin/skip_duplicate_webhook:
     post:
@@ -513,14 +543,17 @@ paths:
                 $ref: "#/components/schemas/OkSessionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/shopify/webhooks:
     post:
       operationId: shopifyReceiveWebhook
       summary: Receive a Shopify-like webhook delivery
       description: |
-        Stage 12 Shopify-like Skin V0 accepts `orders/paid` deliveries and maps
-        Shopify order ids into the session's canonical commerce order ids.
+        Stage 12 Shopify-like Skin accepts `orders/paid` and
+        `orders/cancelled` deliveries and maps Shopify order ids into the
+        session's canonical commerce order ids.
       parameters:
         - $ref: "#/components/parameters/session_id"
         - $ref: "#/components/parameters/shopify_topic"
@@ -546,6 +579,8 @@ paths:
                 $ref: "#/components/schemas/ShopifyWebhookResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/shopify/webhooks/skip_duplicate:
     post:
@@ -576,14 +611,17 @@ paths:
                 $ref: "#/components/schemas/ShopifyWebhookSkipResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json:
     post:
       operationId: shopifyGraphQL
       summary: Run a Shopify-like Admin GraphQL mutation
       description: |
-        Stage 12 only supports `fulfillmentCreate`. Unsupported mutations return
-        explicit `_commerce_twin_stub` metadata instead of silently succeeding.
+        Stage 12 supports the Shopify-shaped mutations required by the five P0
+        scenarios. Unsupported mutations return explicit `_commerce_twin_stub`
+        metadata instead of silently succeeding.
       parameters:
         - $ref: "#/components/parameters/session_id"
         - $ref: "#/components/parameters/api_version"
@@ -616,12 +654,102 @@ paths:
                 $ref: "#/components/schemas/ShopifyGraphQLResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "504":
           description: Timeout after the twin committed the mutation
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ShopifyGraphQLTimeoutResponse"
+
+  /sessions/{session_id}/shopify/admin/api/{api_version}/inventory_levels.json:
+    get:
+      operationId: shopifyInventoryLevels
+      summary: Read Shopify-like inventory levels
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+        - name: inventory_item_ids
+          in: query
+          required: false
+          schema:
+            type: string
+          example: gid://shopify/InventoryItem/sku_stale_1
+      responses:
+        "200":
+          description: Shopify-like inventory levels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyInventoryLevelsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/shopify/admin/api/{api_version}/inventory_levels/adjust.json:
+    post:
+      operationId: shopifyInventoryAdjust
+      summary: Apply a Shopify-like inventory adjustment
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/api_version"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyInventoryAdjustRequest"
+      responses:
+        "200":
+          description: Inventory adjustment mapped into the permissive twin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/shopify/actions/{shopify_action}:
+    post:
+      operationId: shopifyOpsAction
+      summary: Run a Shopify-like commerce safety action
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - name: shopify_action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - promise_fulfillment
+              - route_manual_review
+              - create_approval_request
+              - cancel_order
+              - release_inventory
+              - place_fulfillment_hold
+              - submit_fulfillment_cancellation_request
+              - warehouse_continue_fulfillment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShopifyActionRequest"
+      responses:
+        "200":
+          description: Shopify-like action mapped into the permissive twin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShopifyGenericResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/shopify/coverage:
     get:
@@ -638,6 +766,8 @@ paths:
                 $ref: "#/components/schemas/ShopifyCoverageResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries:
     get:
@@ -651,9 +781,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonInventorySummariesResponse"
+        "429":
+          description: Retryable Amazon-shaped rate limit fault
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AmazonRateLimitResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}:
     get:
@@ -670,9 +808,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonListingItemResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
     patch:
       operationId: amazonPatchListingQuantity
       summary: Submit Amazon-shaped listing quantity update
@@ -693,9 +833,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonListingPatchResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}:
     get:
@@ -710,9 +852,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonOrderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems:
     get:
@@ -727,9 +871,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonOrderItemsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation:
     post:
@@ -750,9 +896,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonShipmentConfirmationResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds:
     post:
@@ -773,9 +921,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonFeedResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}:
     get:
@@ -791,9 +941,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonFeedResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/notifications:
     post:
@@ -813,9 +965,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                oneOf:
+                  - $ref: "#/components/schemas/AmazonNotificationResponse"
+                  - $ref: "#/components/schemas/AmazonStubResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/actions/{amazon_action}:
     post:
@@ -836,9 +992,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                oneOf:
+                  - $ref: "#/components/schemas/AmazonSellerOpsActionResponse"
+                  - $ref: "#/components/schemas/AmazonStubResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/amazon/coverage:
     get:
@@ -852,9 +1012,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AmazonGenericResponse"
+                $ref: "#/components/schemas/AmazonCoverageResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/trace:
     get:
@@ -875,6 +1037,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /sessions/{session_id}/complete:
     post:
@@ -905,6 +1069,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   parameters:
@@ -998,11 +1164,19 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Unknown session, scenario, route, or session-scoped resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
   schemas:
     StartSessionRequest:
       type: object
-      required: [scenario_path]
       properties:
+        scenario_id:
+          type: string
+          minLength: 1
         scenario_path:
           type: string
           minLength: 1
@@ -1015,6 +1189,9 @@ components:
           type: boolean
         session_id:
           type: string
+        workspace_id:
+          type: string
+          nullable: true
         scenario_id:
           type: string
         scenario_name:
@@ -1022,6 +1199,14 @@ components:
         status:
           type: string
           enum: [open, passed, failed]
+        ttl_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        retention_expires_at:
+          type: string
+          format: date-time
+          nullable: true
       additionalProperties: false
     TaskResponse:
       type: object
@@ -1128,7 +1313,359 @@ components:
           nullable: true
       additionalProperties: false
 
-    AmazonGenericResponse:
+    AmazonInventorySummariesResponse:
+      type: object
+      required: [ok, session_id, payload]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/AmazonInventorySummariesPayload"
+      additionalProperties: false
+    AmazonInventorySummariesPayload:
+      type: object
+      required: [inventorySummaries]
+      properties:
+        inventorySummaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AmazonInventorySummary"
+      additionalProperties: false
+    AmazonInventorySummary:
+      type: object
+      required:
+        - sellerSku
+        - asin
+        - fnSku
+        - condition
+        - marketplaceId
+        - inventoryDetails
+        - _commerce_twin
+      properties:
+        sellerSku:
+          type: string
+        asin:
+          type: string
+        fnSku:
+          type: string
+        condition:
+          type: string
+        marketplaceId:
+          type: string
+        inventoryDetails:
+          $ref: "#/components/schemas/AmazonInventoryDetails"
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonInventoryDetails:
+      type: object
+      required:
+        - fulfillableQuantity
+        - totalReservedQuantity
+        - pendingCustomerOrderQuantity
+        - totalQuantity
+      properties:
+        fulfillableQuantity:
+          type: integer
+        totalReservedQuantity:
+          type: integer
+        pendingCustomerOrderQuantity:
+          type: integer
+        totalQuantity:
+          type: integer
+      additionalProperties: false
+    AmazonRateLimitResponse:
+      type: object
+      required: [ok, session_id, error, message, retryAfterSeconds, _commerce_twin]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        session_id:
+          type: string
+        error:
+          type: string
+          enum: [rate_limited]
+        message:
+          type: string
+        retryAfterSeconds:
+          type: integer
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonListingItemResponse:
+      type: object
+      required:
+        - ok
+        - session_id
+        - sku
+        - sellerId
+        - sellerBinding
+        - summaries
+        - attributes
+        - fulfillmentAvailability
+        - _commerce_twin
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        sku:
+          type: string
+        sellerId:
+          type: string
+        sellerBinding:
+          $ref: "#/components/schemas/AmazonSellerBinding"
+        summaries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AmazonListingSummary"
+        attributes:
+          $ref: "#/components/schemas/AmazonListingAttributes"
+        fulfillmentAvailability:
+          type: array
+          items:
+            $ref: "#/components/schemas/AmazonFulfillmentAvailability"
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonSellerBinding:
+      type: object
+      required: [expectedSellerId, aliases, knownSeller]
+      properties:
+        expectedSellerId:
+          type: string
+        aliases:
+          type: array
+          items:
+            type: string
+        knownSeller:
+          type: boolean
+      additionalProperties: false
+    AmazonListingSummary:
+      type: object
+      required: [marketplaceId, asin]
+      properties:
+        marketplaceId:
+          type: string
+        asin:
+          type: string
+      additionalProperties: false
+    AmazonListingAttributes:
+      type: object
+      required: [fulfillment_availability]
+      properties:
+        fulfillment_availability:
+          type: array
+          items:
+            type: object
+            required: [fulfillment_channel_code, marketplace_id, quantity]
+            properties:
+              fulfillment_channel_code:
+                type: string
+              marketplace_id:
+                type: string
+              quantity:
+                type: integer
+            additionalProperties: false
+      additionalProperties: false
+    AmazonFulfillmentAvailability:
+      type: object
+      required: [fulfillmentChannelCode, marketplaceId, quantity]
+      properties:
+        fulfillmentChannelCode:
+          type: string
+        marketplaceId:
+          type: string
+        quantity:
+          type: integer
+      additionalProperties: false
+    AmazonListingPatchResponse:
+      type: object
+      required: [ok, session_id, sku, status, _commerce_twin]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        sku:
+          type: string
+        status:
+          type: string
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonOrderResponse:
+      type: object
+      required: [ok, session_id, payload]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/AmazonOrderPayload"
+      additionalProperties: false
+    AmazonOrderPayload:
+      type: object
+      required:
+        - AmazonOrderId
+        - OrderStatus
+        - FulfillmentChannel
+        - NumberOfItemsShipped
+        - NumberOfItemsUnshipped
+        - _commerce_twin
+      properties:
+        AmazonOrderId:
+          type: string
+        OrderStatus:
+          type: string
+        FulfillmentChannel:
+          type: string
+        NumberOfItemsShipped:
+          type: integer
+        NumberOfItemsUnshipped:
+          type: integer
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonOrderItemsResponse:
+      type: object
+      required: [ok, session_id, payload]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/AmazonOrderItemsPayload"
+      additionalProperties: false
+    AmazonOrderItemsPayload:
+      type: object
+      required: [OrderItems]
+      properties:
+        OrderItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/AmazonOrderItem"
+      additionalProperties: false
+    AmazonOrderItem:
+      type: object
+      required: [OrderItemId, SellerSKU, ASIN, QuantityOrdered, _commerce_twin]
+      properties:
+        OrderItemId:
+          type: string
+        SellerSKU:
+          type: string
+        ASIN:
+          type: string
+        QuantityOrdered:
+          type: integer
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonShipmentConfirmationResponse:
+      type: object
+      required: [ok, session_id, payload]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/AmazonShipmentConfirmationPayload"
+      additionalProperties: false
+    AmazonShipmentConfirmationPayload:
+      type: object
+      required: [AmazonOrderId, shipmentStatus, warehouseJob]
+      properties:
+        AmazonOrderId:
+          type: string
+        shipmentStatus:
+          type: string
+        warehouseJob:
+          $ref: "#/components/schemas/WarehouseJob"
+      additionalProperties: false
+    AmazonFeedResponse:
+      type: object
+      required: [ok, session_id, payload]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/AmazonFeedPayload"
+      additionalProperties: false
+    AmazonFeedPayload:
+      type: object
+      required:
+        - feedId
+        - feedType
+        - processingStatus
+        - resultFeedDocumentId
+        - processingReport
+        - _commerce_twin
+      properties:
+        feedId:
+          type: string
+        feedType:
+          type: string
+        processingStatus:
+          type: string
+          enum: [IN_QUEUE, DONE]
+        resultFeedDocumentId:
+          type: string
+        processingReport:
+          $ref: "#/components/schemas/AmazonFeedProcessingReport"
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+      additionalProperties: false
+    AmazonFeedProcessingReport:
+      type: object
+      required: [documentId, processingSummary, results]
+      properties:
+        documentId:
+          type: string
+        processingSummary:
+          $ref: "#/components/schemas/AmazonFeedProcessingSummary"
+        results:
+          type: array
+          items:
+            type: object
+      additionalProperties: false
+    AmazonFeedProcessingSummary:
+      type: object
+      required:
+        - messagesProcessed
+        - messagesSuccessful
+        - messagesWithError
+        - messagesWithWarning
+      properties:
+        messagesProcessed:
+          type: integer
+        messagesSuccessful:
+          type: integer
+        messagesWithError:
+          type: integer
+        messagesWithWarning:
+          type: integer
+      additionalProperties: false
+    AmazonNotificationResponse:
+      type: object
+      required: [ok, session_id, event]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        event:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    AmazonSellerOpsActionResponse:
       type: object
       required: [ok, session_id]
       properties:
@@ -1136,39 +1673,99 @@ components:
           type: boolean
         session_id:
           type: string
-        payload:
-          type: object
-          additionalProperties: true
-        coverage:
-          oneOf:
-            - type: object
-              additionalProperties: true
-            - type: string
-        event:
-          type: object
-          additionalProperties: true
-        sku:
-          type: string
-        status:
-          type: string
         promise:
           $ref: "#/components/schemas/FulfillmentPromise"
-        manual_review:
-          type: object
-          additionalProperties: true
-        cancelled_order:
-          type: object
-          additionalProperties: true
         workflow_hold:
           $ref: "#/components/schemas/WorkflowHold"
         warehouse_cancellation_request:
           $ref: "#/components/schemas/WarehouseCancellationRequest"
-        _commerce_twin:
+      additionalProperties: false
+    AmazonCoverageResponse:
+      type: object
+      required: [ok, session_id, coverage]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        coverage:
           type: object
           additionalProperties: true
+      additionalProperties: false
+    AmazonStubResponse:
+      type: object
+      required: [ok, session_id, _commerce_twin_stub, coverage, stub, _commerce_twin]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
         _commerce_twin_stub:
           type: boolean
-      additionalProperties: true
+          enum: [true]
+        coverage:
+          type: string
+          enum: [stub]
+        stub:
+          type: object
+          additionalProperties: true
+        _commerce_twin:
+          $ref: "#/components/schemas/AmazonTwinMetadata"
+        event:
+          type: object
+          additionalProperties: true
+      additionalProperties: false
+    AmazonTwinMetadata:
+      type: object
+      properties:
+        coverage:
+          type: string
+        canonicalOrderId:
+          type: string
+        canonicalSku:
+          type: string
+        sellerId:
+          type: string
+        sellerAliases:
+          type: array
+          items:
+            type: string
+        marketplaceIds:
+          type: array
+          items:
+            type: string
+        snapshotVersion:
+          type: string
+          nullable: true
+        lastSyncedAt:
+          type: string
+          nullable: true
+        trueAvailable:
+          type: integer
+          nullable: true
+        sellerSku:
+          type: string
+        submittedQuantity:
+          type: integer
+        liveQuantity:
+          type: integer
+        processing_state:
+          type: string
+        report_available_after:
+          type: string
+        retryable:
+          type: boolean
+        next_step:
+          type: string
+        fault:
+          type: string
+        operation:
+          type: string
+        stub:
+          type: boolean
+        unsupportedSurface:
+          type: string
+      additionalProperties: false
     AmazonActionRequest:
       type: object
       properties:
@@ -1473,15 +2070,22 @@ components:
     ShopifyOrderPaidWebhook:
       type: object
       description: >
-        Minimal Shopify-like orders/paid payload accepted by Stage 12. The
-        adapter can resolve `id` or `admin_graphql_api_id` through the session
-        binding, or accept explicit `metadata.commerce_order_id`.
+        Minimal Shopify-like orders/paid or orders/cancelled payload accepted
+        by Stage 12. The adapter can resolve `id` or `admin_graphql_api_id`
+        through the session binding, or accept explicit
+        `metadata.commerce_order_id`.
       properties:
         id:
           oneOf:
             - type: string
             - type: integer
         admin_graphql_api_id:
+          type: string
+        total_price:
+          oneOf:
+            - type: string
+            - type: number
+        cancel_reason:
           type: string
         order_id:
           type: string
@@ -1501,10 +2105,10 @@ components:
           type: string
         topic:
           type: string
-          enum: [order_paid]
+          enum: [order_paid, cancel_request]
         raw_topic:
           type: string
-          enum: [orders/paid]
+          enum: [orders/paid, orders/cancelled]
         order_id:
           type: string
         platform:
@@ -1526,7 +2130,89 @@ components:
             - commerce_order_id
             - shopify_order_id
             - shopify_gid
+        type:
+          type: string
+          nullable: true
+        amount:
+          nullable: true
+        reason:
+          type: string
+          nullable: true
       additionalProperties: false
+    ShopifyGenericResponse:
+      type: object
+      required: [ok, session_id]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+      additionalProperties: true
+    ShopifyInventoryLevelsResponse:
+      type: object
+      required: [ok, session_id, inventory_levels]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        inventory_levels:
+          type: array
+          items:
+            type: object
+            required: [inventory_item_id, sku, available, _commerce_twin]
+            properties:
+              inventory_item_id:
+                type: string
+              sku:
+                type: string
+              location_id:
+                type: string
+              available:
+                type: integer
+              _commerce_twin:
+                type: object
+                additionalProperties: true
+            additionalProperties: false
+      additionalProperties: false
+    ShopifyInventoryAdjustRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+        inventoryItemId:
+          type: string
+        sku:
+          type: string
+        quantity:
+          type: integer
+        available_adjustment:
+          type: integer
+        reason:
+          type: string
+        sourceEventId:
+          type: string
+      additionalProperties: true
+    ShopifyActionRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+        fulfillmentOrderId:
+          type: string
+        sku:
+          type: string
+        inventoryItemId:
+          type: string
+        quantity:
+          type: integer
+        amount:
+          type: number
+        reason:
+          type: string
+        sourceEventId:
+          type: string
+      additionalProperties: true
     ShopifyWebhookResponse:
       type: object
       required: [ok, session_id, event]
@@ -1626,6 +2312,14 @@ components:
               additionalProperties:
                 type: string
             mutations:
+              type: object
+              additionalProperties:
+                type: string
+            routes:
+              type: object
+              additionalProperties:
+                type: string
+            actions:
               type: object
               additionalProperties:
                 type: string
@@ -2124,7 +2818,7 @@ components:
           type: string
           enum: [failed]
         evidence:
-          oneOf:
+          anyOf:
             - $ref: "#/components/schemas/DuplicateFulfillmentEvidence"
             - $ref: "#/components/schemas/WebhookDedupEvidence"
             - $ref: "#/components/schemas/IdempotencyRetryEvidence"
@@ -2244,5 +2938,14 @@ components:
           type: boolean
           enum: [false]
         error:
-          type: string
+          type: object
+          required: [code, message, status]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            status:
+              type: integer
+          additionalProperties: false
       additionalProperties: false

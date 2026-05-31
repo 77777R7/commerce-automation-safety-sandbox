@@ -33,7 +33,8 @@ The repo already has a working incident core:
 - Five P0 commerce accident scenarios.
 - `Permissive Twin + Policy Check`.
 - `bad_runner` / `good_runner` CLI validation.
-- `trace.json`, `policy_report.json`, `state_diff.json`, and `report.md`.
+- `trace.json`, `policy_report.json`, `state_diff.json`, `report.md`, and
+  `run_manifest.json`.
 - Regression scenario capture.
 - Offline Audit v0.
 - Demo pack and static demo viewer.
@@ -58,12 +59,20 @@ Do not build these before the relevant stage gate asks for them:
 Each stage must have a named gate. Do not move to the next stage until the
 current stage gate passes in the current worktree.
 
-The complete V3.5 interface objective is not achieved until Stage 12 passes.
+The complete V3.5 interface objective is not achieved until Stage 18 passes.
 Stage 9 makes the interfaces real, Stage 10 proves all five P0 scenarios
-through agent-facing MCP/HTTP paths, Stage 11 tightens the HTTP contract, and
-Stage 12 adds the first platform-shaped adapter without becoming a full
-Shopify clone. Stage 13 adds the Amazon Seller Ops Safety Skin V0 without
-becoming a full Amazon SP-API clone.
+through agent-facing MCP/HTTP paths, Stage 11 tightens the HTTP contract, Stage
+12 adds the first platform-shaped adapter without becoming a full Shopify
+clone, Stage 13 adds the Amazon Seller Ops Safety Skin V0 without becoming a
+full Amazon SP-API clone, Stage 14 hardens production boundaries, Stage 15
+makes the release reviewable through hygiene and CI gates, Stage 16 hardens
+the local agent-facing surface against accidental exposure and abuse, and Stage
+17 stabilizes run artifact contracts with manifests and schema versions. Stage
+18 packages runnable external-agent examples so builders can validate MCP,
+HTTP, and action-log integrations without reading source code. Stage 19 adds a
+hosted design-partner trust boundary so 1-3 staging agents/workflows can use
+the MCP/HTTP sandbox without production store access; it is not SOC2
+certification or a full enterprise SaaS control plane.
 
 ## Stage 0: V3.5 Rebaseline
 
@@ -473,29 +482,39 @@ python -m pytest tests/test_openapi_contract_shape.py
 PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
 ```
 
-## Stage 12: Shopify-like Skin V0 Vertical Slice
+## Stage 12: Shopify-like Skin P0 Coverage
 
 Goal: add the first platform-shaped digital twin skin while keeping the core
-commerce twin and policy engine as the source of truth.
+commerce twin and policy engine as the source of truth. The skin must cover all
+five P0 scenarios without becoming a full Shopify clone.
 
 Scope:
 
-- Only Shopify-like `orders/paid` webhook ingestion.
-- Only Shopify-like Admin GraphQL `fulfillmentCreate`.
-- Only `duplicate_webhook` and `SCN-002 timeout_after_commit_retry`.
+- Shopify-like `orders/paid` and `orders/cancelled` webhook ingestion.
+- Shopify-like Admin GraphQL `fulfillmentCreate`, `refundCreate`,
+  `inventoryAdjustQuantities`, order cancellation, fulfillment hold, and
+  fulfillment cancellation/continuation mutations needed by the five P0
+  scenarios.
+- Shopify-like inventory level reads and adjustment/reservation mapping.
+- Minimal Shopify ops actions for fulfillment promises, manual review, approval
+  requests, and warehouse conflict handling.
 - Unsupported Shopify mutations must return explicit stub/coverage metadata.
 
 Deliverables:
 
 - Shopify-like coverage and binding manifests.
 - Webhook mapper for `X-Shopify-Topic` and `X-Shopify-Webhook-Id`.
-- GraphQL mutation router for `fulfillmentCreate`.
+- GraphQL mutation router for fulfillment, inventory, refund, approval, order
+  cancellation, and warehouse conflict actions.
 - Live HTTP routes:
   - `POST /sessions/{session_id}/shopify/webhooks`
   - `POST /sessions/{session_id}/shopify/webhooks/skip_duplicate`
   - `POST /sessions/{session_id}/shopify/admin/api/{version}/graphql.json`
+  - `GET /sessions/{session_id}/shopify/admin/api/{version}/inventory_levels.json`
+  - `POST /sessions/{session_id}/shopify/admin/api/{version}/inventory_levels/adjust.json`
+  - `POST /sessions/{session_id}/shopify/actions/{action}`
   - `GET /sessions/{session_id}/shopify/coverage`
-- Stage 12 smoke harness for unsafe/safe paths.
+- Stage 12 smoke harness for unsafe/safe paths across all five P0 scenarios.
 
 Acceptance:
 
@@ -509,6 +528,13 @@ Acceptance:
   `no_duplicate_fulfillment`.
 - `SCN-002` safe path through Shopify-like HTTP passes with a stable
   idempotency key.
+- `SCN-003` unsafe/safe paths run through Shopify-like inventory query and
+  promise/review actions.
+- `SCN-004` unsafe/safe paths run through Shopify-like `refundCreate` and
+  approval mapping.
+- `SCN-005` unsafe/safe paths run through Shopify-like `orders/cancelled`,
+  inventory release, refund, fulfillment hold, warehouse cancellation, and
+  warehouse continuation mapping.
 - The skin remains an adapter: it maps to generic commerce actions and does not
   perform policy decisions itself.
 - No full Shopify GraphQL implementation, OAuth, checkout, product catalog, or
@@ -525,7 +551,8 @@ python -m pytest tests/test_shopify_skin_manifests.py tests/test_shopify_webhook
 
 Goal: add an Amazon-shaped seller operations skin that is deep enough to sell as
 an automation safety demo, while keeping the core commerce twin and policy
-engine as the source of truth.
+engine as the source of truth. Do not expand into a full Amazon SP-API
+emulator.
 
 Scope:
 
@@ -540,9 +567,16 @@ Deliverables:
 - Amazon Seller Ops coverage and binding manifests.
 - Amazon platform binding for `AmazonOrderId`, `OrderItemId`, `SellerSKU`,
   ASIN, FNSKU, marketplace id, and seller id.
+- More realistic seller/account binding metadata for canonical seller id,
+  seller aliases, marketplace ids, SellerSKU, ASIN, FNSKU, and order-item
+  mappings.
 - HTTP routes for FBA inventory summaries, Listings Items availability,
   listing quantity patch, Orders/orderItems, confirmShipment, Feeds status,
   Amazon notifications, Amazon seller-ops actions, and coverage metadata.
+- Feed processing report metadata for accepted feeds.
+- Retryable rate-limit behavior with `retryAfterSeconds` and trace events.
+- Explicit stub coverage metadata for unsupported seller-ops surfaces.
+- Clear buyer-cancel to confirmShipment conflict trace metadata.
 - MCP tools for Amazon inventory, listing, feed, order, notification,
   confirmShipment, seller-ops actions, and coverage metadata.
 - Amazon-specific policy findings:
@@ -562,6 +596,13 @@ Acceptance:
   `warehouse_conflict_requires_hold`, and `no_ship_after_cancel`.
 - `SCN-005` safe path through Amazon HTTP passes when the agent holds the
   workflow and requests warehouse cancellation before confirming shipment.
+- Feed submission returns a processing report after polling `getFeed`.
+- Rate-limited Amazon-shaped calls return retryable 429 metadata and can be
+  retried successfully.
+- Unsupported Amazon-shaped notifications/actions return explicit stub coverage
+  metadata rather than pretending to be full SP-API coverage.
+- `confirmShipment` after buyer cancellation emits trace details showing the
+  prior cancellation signal, warehouse status, and risk signal.
 - Real MCP smoke proves Amazon tools can drive at least one unsafe and one safe
   Amazon-shaped path through the official MCP server.
 - The skin remains an adapter: it maps Amazon-shaped requests to normalized
@@ -578,9 +619,262 @@ python -m pytest tests/test_amazon_mcp_server_contract.py tests/test_amazon_skin
 PYTHON=python3.12 ./tools/smoke_stage13_amazon_mcp_v0.sh
 ```
 
+## Stage 14: Productionization Gate
+
+Goal: harden the local live-agent surface without adding new platform skins.
+
+Deliverables:
+
+- Scenario registry and path allowlist.
+- Local API token support for HTTP live server.
+- Session-scoped Amazon feed store.
+- Per-session locking around live tool execution.
+- Unified HTTP protocol error envelope.
+- Python version preflight for MCP/API gates.
+- Named, tighter Amazon OpenAPI response schemas.
+- Source PR vs generated artifacts PR guidance.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage14_productionization.py tests/test_openapi_contract_shape.py
+PYTHON=python3.12 ./tools/smoke_stage9_api_hardening.sh
+PYTHON=python3.12 ./tools/smoke_stage11_openapi_contract.sh
+```
+
+## Stage 15: Release Hygiene + CI Gate
+
+Goal: make V3.5 reviewable by an outside engineer and runnable in CI without
+mixing runtime source changes with generated demo collateral.
+
+Deliverables:
+
+- `release_hygiene.yaml` source/generated PR manifest.
+- `tools/check_release_hygiene.py` local path and PR split checker.
+- `tools/smoke_stage15_release_hygiene.sh`.
+- `.github/workflows/v35-ci.yml`.
+- Pinned CI dependencies in `requirements.txt`.
+- Stage 15 documentation.
+
+Acceptance:
+
+- Source PR paths are separate from generated artifact paths.
+- Local machine paths fail the hygiene gate.
+- Generated artifacts such as `demo_pack/`, `demo_viewer/`,
+  `failure_intelligence/`, and runtime outputs are documented as a separate PR.
+- GitHub Actions runs release hygiene, unit tests, MCP/HTTP/OpenAPI gates, and
+  Shopify/Amazon skin gates.
+- The full V3.5 gate includes Stage 15.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage15_release_hygiene.py
+PYTHON=python3.12 ./tools/smoke_stage15_release_hygiene.sh
+```
+
+## Stage 16: Security / Abuse Hardening
+
+Goal: harden the local HTTP/MCP/action-log surface against accidental exposure,
+abuse, and sensitive-data leakage while preserving `Permissive Twin + Policy
+Check`.
+
+Deliverables:
+
+- Repository-scoped threat model for the V3.5 agent-facing surfaces.
+- Non-loopback HTTP bind protection unless an API token is configured.
+- Constant-time local token comparison.
+- Bounded HTTP JSON request bodies.
+- No-store and nosniff HTTP response headers.
+- Agent-facing scenario path errors that do not leak local filesystem paths.
+- Bounded JSONL action logs.
+- `security_hardening.yaml` source scan config for high-confidence secret
+  patterns and banned response fragments.
+- `tools/check_security_hardening.py`.
+- `tools/smoke_stage16_security_abuse.sh`.
+- Stage 16 tests and documentation.
+
+Acceptance:
+
+- `0.0.0.0` or other non-loopback HTTP binds without a token fail before socket
+  binding.
+- Loopback HTTP binds still work without a token for local demos.
+- Token-protected HTTP requests still pass with the correct token and reject
+  the wrong token.
+- Oversized JSON request bodies and action logs fail with explicit errors.
+- Source scanning rejects high-confidence live secret patterns and wildcard
+  CORS response fragments.
+- Stage 16 is included in CI and the full V3.5 release gate.
+- The twin remains permissive; Stage 16 must not turn business policy failures
+  into early API validation rejects.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage16_security_abuse.py
+PYTHON=python3.12 ./tools/smoke_stage16_security_abuse.sh
+```
+
+## Stage 17: Run Manifest + Artifact Schema Versioning
+
+Goal: make every generated run artifact consumable by CI, external agents, and
+future hosted sessions without guessing schema shape or artifact integrity.
+
+Deliverables:
+
+- `run_manifest.json` for CLI and live-session runs.
+- Artifact schema ids for `trace.json`, `policy_report.json`,
+  `state_diff.json`, and `patch_hints.json`.
+- Manifest entries for markdown artifacts with content type, bytes, and SHA-256.
+- `commerce_safety.artifacts` module with manifest writer and validator.
+- `tools/check_run_manifest.py`.
+- `tools/smoke_stage17_run_manifest.sh`.
+- Stage 17 tests and documentation.
+
+Acceptance:
+
+- CLI `run` writes `run_manifest.json`.
+- Live `complete_session` writes `run_manifest.json` including repair artifacts.
+- JSON artifacts carry stable `schema_version` values.
+- Manifest validation checks file existence, byte size, SHA-256, and JSON
+  schema version agreement.
+- Tampered artifacts fail manifest validation.
+- Stage 17 is included in CI and the full V3.5 release gate.
+- The twin remains permissive; Stage 17 only contracts artifacts and does not
+  reject unsafe commerce actions early.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage17_run_manifest.py
+PYTHON=python3.12 ./tools/smoke_stage17_run_manifest.sh
+```
+
+## Stage 18: Agent Integration Examples
+
+Goal: turn the V3.5 live surfaces into self-serve external-agent examples.
+
+Deliverables:
+
+- Runnable MCP example for `SCN-002 timeout_after_commit_retry`.
+- Runnable HTTP Twin API example for `SCN-002 timeout_after_commit_retry`.
+- Committed action-log fixtures for `SCN-004 refund_after_shipment_bypass`.
+- `examples/agent_integrations/README.md`.
+- `docs/STAGE18_AGENT_INTEGRATION_EXAMPLES.md`.
+- `tools/smoke_stage18_agent_examples.sh`.
+- Stage 18 tests.
+
+Acceptance:
+
+- MCP unsafe path fails with `idempotency_required_for_mutating_retries` and
+  `no_duplicate_fulfillment`.
+- MCP safe path passes with zero findings.
+- HTTP unsafe path fails with the same SCN-002 policy findings.
+- HTTP safe path passes with zero findings.
+- Action-log unsafe path exits `1` and finds refund-after-shipment approval
+  violations.
+- Action-log safe path exits `0`.
+- All example-generated run paths pass manifest validation.
+- Examples remain local-only and do not include production platform
+  credentials.
+
+Gate:
+
+```bash
+python -m pytest tests/test_stage18_agent_integration_examples.py
+PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
+```
+
+## Stage 19: Hosted Design Partner Trust Gate
+
+Goal: make the hosted commerce agent sandbox safe enough for 1-3 design
+partners to connect staging agents/workflows to MCP/HTTP without giving us
+production store access.
+
+Subtitle:
+
+```txt
+Design Partner Trust Boundary, not SOC2 certification.
+```
+
+Non-goals:
+
+- Full SOC2 certification.
+- Full enterprise SaaS.
+- SSO/SAML.
+- Billing.
+- VPC deployment.
+- Firecracker/gVisor.
+- Hosted dashboard polish.
+- New platform skins.
+
+Deliverables:
+
+- Workspace and tenant boundary.
+- API token auth.
+- Minimal RBAC with `owner`, `operator`, `viewer`, and `agent_token`.
+- Token scopes for sessions, twin/MCP calls, reports, artifacts, workspace
+  export/delete, token management, and audit reads.
+- Per-session run storage with workspace/session/retention metadata.
+- Signed artifact download URLs.
+- Audit log for token, session, twin action, policy report, artifact, export,
+  delete, auth failure, authorization denial, rate limit, PII, and secret events.
+- Request size limits.
+- Rate limits.
+- Session TTL.
+- Artifact retention metadata.
+- Lightweight PII/secret warnings.
+- Workspace suspend and token revoke kill switch.
+- Workspace export and deletion receipt.
+- POC Security Evidence Binder under `docs/security/`.
+- Hosted P0 validation for MCP and HTTP paths.
+
+Acceptance:
+
+- No token, invalid token, expired token, and revoked token return `401`.
+- Wrong scope returns `403`.
+- Viewer cannot create a session.
+- Agent token cannot export workspace data.
+- Workspace A cannot read, complete, or download artifacts from workspace B.
+- Guessing a session id does not bypass object-level authorization.
+- `run_manifest.json` includes `workspace_id`, `session_id`, and retention metadata.
+- Artifact entries include SHA-256.
+- Signed artifact URL expires.
+- Artifact access is audited.
+- Oversized request is rejected.
+- Rate limit triggers.
+- Session TTL blocks late writes.
+- PII/secret warning is generated.
+- Workspace export works.
+- Workspace deletion produces a deletion receipt.
+- All five P0 scenarios still work through hosted MCP and hosted HTTP paths.
+
+Gate:
+
+```bash
+PYTHON=python3.12 ./tools/smoke_stage19_release_candidate.sh
+PYTHON=python3.12 ./tools/smoke_stage19_hosted_enterprise_poc.sh
+```
+
+Sub-gates:
+
+```bash
+PYTHON=python3.12 ./tools/smoke_stage19_auth_rbac.sh
+PYTHON=python3.12 ./tools/smoke_stage19_tenant_isolation.sh
+PYTHON=python3.12 ./tools/smoke_stage19_artifacts_audit.sh
+PYTHON=python3.12 ./tools/smoke_stage19_limits_redaction.sh
+PYTHON=python3.12 ./tools/smoke_stage19_p0_hosted_live.sh
+```
+
+Stop line:
+
+After Stage 19 passes, stop platform engineering and move to 1-3 design
+partners, real staging-agent/workflow integrations, incident feedback, and paid
+POC validation.
+
 ## Full V3.5 Gate
 
-Once Stage 13 is implemented, the V3.5 release gate is:
+Once Stage 19 is implemented, the V3.5 release gate is:
 
 ```bash
 ./tools/smoke_v35.sh
@@ -602,3 +896,7 @@ This command must run:
 - Stage 11 strict OpenAPI contract gate.
 - Stage 12 Shopify-like skin V0 gate.
 - Stage 13 Amazon Seller Ops skin V0 gates.
+- Stage 15 release hygiene + CI gate.
+- Stage 16 security / abuse hardening gate.
+- Stage 17 run manifest + artifact schema versioning gate.
+- Stage 18 agent integration examples gate.
