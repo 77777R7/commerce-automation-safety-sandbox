@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from commerce_safety.policy_packs import PolicyPackRegistry
+
 
 SPEC_PATH = Path(__file__).resolve().parents[1] / "docs/openapi/live_twin_api.yaml"
 
@@ -53,10 +55,9 @@ def test_openapi_complete_session_exposes_policy_packs():
     schema = _spec()["components"]["schemas"]["CompleteSessionResponse"]
 
     assert "policy_packs" in schema["required"]
-    assert schema["properties"]["policy_packs"]["items"]["enum"] == [
-        "legacy_commerce",
-        "saas_billing_v0",
-    ]
+    assert schema["properties"]["policy_packs"]["items"]["enum"] == list(
+        PolicyPackRegistry().ids()
+    )
 
 
 def test_openapi_has_stage12_shopify_like_skin_paths():

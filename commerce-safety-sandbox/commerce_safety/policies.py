@@ -4,18 +4,26 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from .models import PolicyFinding, to_plain
+from .policy_packs import PolicyPackRegistry
 from .twin import CommerceTwin
 
 
 LEGACY_COMMERCE_POLICY_PACK = "legacy_commerce"
 SAAS_BILLING_POLICY_PACK = "saas_billing_v0"
-SUPPORTED_POLICY_PACKS = {
-    LEGACY_COMMERCE_POLICY_PACK,
-    SAAS_BILLING_POLICY_PACK,
-}
 
 
 class PolicyEngine:
+    def __init__(
+        self,
+        *,
+        policy_pack_registry: PolicyPackRegistry | None = None,
+    ):
+        self.policy_pack_registry = policy_pack_registry or PolicyPackRegistry()
+
+    @property
+    def supported_policy_packs(self) -> set[str]:
+        return set(self.policy_pack_registry.ids())
+
     def evaluate_environment(
         self,
         environment: Any,
@@ -52,13 +60,13 @@ class PolicyEngine:
         """
         declared = self._as_list((scenario or {}).get("policy_packs"))
         if declared:
-            unknown = sorted(set(declared) - SUPPORTED_POLICY_PACKS)
+            unknown = sorted(set(declared) - self.supported_policy_packs)
             if unknown:
                 raise ValueError(f"Unsupported policy_packs: {unknown}")
             return tuple(dict.fromkeys(declared))
 
         if scenario is None:
-            return (LEGACY_COMMERCE_POLICY_PACK, SAAS_BILLING_POLICY_PACK)
+            return self.policy_pack_registry.ids()
 
         scenario_id = str(scenario.get("id", ""))
         if scenario_id.startswith("SAAS-"):

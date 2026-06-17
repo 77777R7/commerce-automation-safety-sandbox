@@ -38,33 +38,36 @@ defines the mainline.
 8. Scenario-backed live sessions must evaluate only their active policy pack:
    `saas_billing_v0` for SaaS validation scenarios and `legacy_commerce` for
    legacy commerce scenarios.
-9. The same scenario must exercise both safe and unsafe automation.
-10. Replay reads from `trace.json`; it must not rerun the scenario.
-11. Every run writes:
+9. Every active policy pack must have a manifest in `policy_packs/` listing
+   policy IDs, applicable scenarios, service twins, non-goals, safety
+   boundaries, and artifact contract.
+10. The same scenario must exercise both safe and unsafe automation.
+11. Replay reads from `trace.json`; it must not rerun the scenario.
+12. Every run writes:
    - `trace.json`
    - `policy_report.json`
    - `state_diff.json`
    - `report.md`
    - `patch_hints.json`
    - `run_manifest.json`
-12. `PolicyFinding` must include:
+13. `PolicyFinding` must include:
    - `policy_id`
    - `severity`
    - `status`
    - `evidence`
    - `business_impact`
    - `recommendation`
-13. POC mode must not use production Stripe keys, production Slack bot tokens,
+14. POC mode must not use production Stripe keys, production Slack bot tokens,
     production GitHub installation tokens, customer PII, real refunds, or real
     PR writes.
-14. Failed policy state must not be hidden behind a success GitHub check in the
+15. Failed policy state must not be hidden behind a success GitHub check in the
     SaaS validation lane.
-15. Inventory accident signals must compare actual reserved inventory to expected
+16. Inventory accident signals must compare actual reserved inventory to expected
    order quantity, not use a naive `reserved > 1` check.
-16. Duplicate webhook detection should track duplicate side effects generally.
+17. Duplicate webhook detection should track duplicate side effects generally.
     The current slice must at least include reservations and fulfillments.
-17. Every stage must define a strict gate and pass it before the next stage.
-18. V3.5 live validation must prove unsafe and safe external-agent paths without
+18. Every stage must define a strict gate and pass it before the next stage.
+19. V3.5 live validation must prove unsafe and safe external-agent paths without
     relying only on internal `bad_runner` / `good_runner`.
 
 ## SaaS Rebaseline Acceptance
@@ -144,6 +147,8 @@ Phase 5 exposes SAAS-001 through agent-facing HTTP and MCP:
 Phase 6 introduces `SAAS-002_private_channel_billing_alert_fallback`:
 
 - SAAS-002 declares `policy_packs: [saas_billing_v0]`.
+- `policy_packs/saas_billing_v0.yaml` lists SAAS-001 and SAAS-002 as applicable
+  scenarios and declares the required SaaS artifact contract.
 - Unsafe path fails when a failed Stripe payment is followed by a Slack
   private-channel delivery failure and no delivered fallback billing alert.
 - Safe path passes when the agent delivers the billing failure alert to a

@@ -1,0 +1,45 @@
+id: legacy_commerce
+name: Legacy Commerce Regression Pack
+version: 0.1.0
+status: legacy_regression
+summary: >
+  Preserves the original commerce incident regression library while SaaS V0
+  moves to Stripe, Slack, and GitHub validation.
+service_twins:
+  - commerce
+evaluation_source:
+  - commerce_twin_snapshot
+  - commerce_twin_timeline
+applicable_scenarios:
+  - duplicate_webhook
+  - SCN-002
+  - SCN-003
+  - SCN-004
+  - SCN-005
+policy_ids:
+  - idempotency_required_for_mutating_retries
+  - reservation_required_before_promise
+  - no_inventory_commit_from_stale_snapshot
+  - no_oversell
+  - amazon_no_promise_from_stale_inventory_summary
+  - no_tracking_upload_before_first_carrier_scan
+  - no_refund_after_shipment_without_approval
+  - high_value_refund_requires_approval
+  - warehouse_conflict_requires_hold
+  - no_ship_after_cancel
+  - amazon_no_confirm_shipment_after_buyer_cancel_without_review
+  - no_double_refund_or_inventory_release
+  - no_duplicate_fulfillment
+  - webhook_dedup_required
+artifact_contract:
+  required_artifacts:
+    - trace.json
+    - policy_report.json
+    - state_diff.json
+    - report.md
+    - patch_hints.json
+    - run_manifest.json
+non_goals:
+  - New SaaS V0 product surface.
+  - New Shopify or Amazon skin expansion.
+  - New fulfillment, warehouse, or inventory scenario classes.

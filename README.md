@@ -53,10 +53,14 @@ they are no longer the product direction.
 
 Scenario policy boundaries are explicit:
 
-- SaaS validation scenarios use `policy_packs: [saas_billing_v0]`.
-- Legacy commerce scenarios use `policy_packs: [legacy_commerce]`.
+- SaaS validation scenarios use `policy_packs: [saas_billing_v0]`, backed by
+  [policy_packs/saas_billing_v0.yaml](policy_packs/saas_billing_v0.yaml).
+- Legacy commerce scenarios use `policy_packs: [legacy_commerce]`, backed by
+  [policy_packs/legacy_commerce.yaml](policy_packs/legacy_commerce.yaml).
 - The policy engine must not mix SaaS and legacy findings for a scenario-backed
   live session.
+- Each policy pack manifest lists policy IDs, applicable scenarios, service
+  twins, non-goals, safety boundaries, and the required artifact contract.
 
 ## Current MVP
 

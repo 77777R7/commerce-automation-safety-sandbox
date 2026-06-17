@@ -100,6 +100,9 @@ Phase 4: SlackTwin + GitHubTwin V0 And SAAS-001
   policy demo.
 - Declare `policy_packs: [saas_billing_v0]` for SAAS-001 so SaaS validation
   runs do not evaluate legacy commerce policies.
+- Add `policy_packs/saas_billing_v0.yaml` as the auditable pack manifest for
+  SaaS billing validation policies, applicable scenarios, non-goals, and
+  artifact contract.
 - Bad path: Stripe records failed payment, Slack alert delivery fails, and the
   agent still emits Slack/GitHub success state.
 - Good path: Stripe failure stays non-success, Slack receives a billing failure
