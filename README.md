@@ -1,7 +1,18 @@
-# Commerce Automation Safety Sandbox
+# Agent Integration Safety Sandbox
 
-V3.5 work is now focused on a Live Agent Sandbox for commerce automation and AI
-agents.
+This repository is being rebaselined from `Commerce Automation Safety Sandbox`
+to a SaaS agent validation sandbox for stateful integrations.
+
+The V0 product direction is:
+
+```txt
+Stripe + Slack + GitHub agent validation
+```
+
+We test AI agents and automation workflows against stateful Stripe, Slack, and
+GitHub twins before they touch production billing, notifications, or PR checks.
+The existing commerce implementation remains as the legacy foundation while the
+SaaS twin bundle is introduced.
 
 The product principle is:
 
@@ -25,9 +36,24 @@ required surfaces, but MCP is the native interface for Codex, Claude, and other
 agent builders. `Offline Fulfillment Automation Audit` remains as a supporting
 entrypoint, not the mainline.
 
+## SaaS V0 Boundary
+
+Only these twins are V0 mainline:
+
+- `StripeTwin`: billing state, subscriptions, invoices, payment intents,
+  refunds, and webhook delivery/retry state.
+- `SlackTwin`: workspace/channel/message state, bot membership, permission
+  failures, and incident/support alert delivery.
+- `GitHubTwin`: repository, pull request, check run, issue, and PR comment
+  state.
+
+Shopify, Amazon, fulfillment, warehouse, and inventory flows are now legacy
+commerce surfaces. They can stay in tests and demos as regression coverage, but
+they are no longer the product direction.
+
 ## Current MVP
 
-The current P0 demo covers five flagship commerce accidents:
+The current P0 demo covers five legacy commerce accidents:
 
 - `SCN-001 duplicate_webhook_fulfillment`
 - `SCN-002 timeout_after_commit_retry`
@@ -46,7 +72,32 @@ Each run writes:
 - `policy_report.json`
 - `state_diff.json`
 - `report.md`
+- `patch_hints.json`
 - `run_manifest.json`
+
+SaaS validation runs must preserve the same artifact loop and add
+agent-readable repair output rather than replacing it.
+
+## SaaS V0 Hero Path
+
+The first SaaS cross-service demo is:
+
+- `SAAS-001 failed_payment_success_notification`
+
+It runs against stateful Stripe, Slack, and GitHub twins. The unsafe path
+creates a failed Stripe payment, misses the Slack billing failure alert, and
+still publishes success state. The safe path delivers the billing alert and
+keeps GitHub in a non-success review state.
+
+SAAS-001 is exposed through the agent-facing surfaces:
+
+- MCP: `stripe.create_customer`, `stripe.create_subscription`,
+  `slack.post_message`, `github.create_check_run`, `github.create_issue`, and
+  `github.comment_on_pr`.
+- HTTP: `POST /sessions/{session_id}/twin/stripe_create_customer`,
+  `stripe_create_subscription`, `slack_post_message`,
+  `github_create_check_run`, `github_create_issue`, and
+  `github_comment_on_pr`.
 
 ## Quickstart
 
@@ -112,8 +163,8 @@ V3.5 live sandbox gate:
 ```
 
 Stage 9-11 real MCP/API hardening gates require Python 3.10+ because the
-official MCP SDK and Schemathesis gates run there. Stage 12 adds the
-Shopify-like skin V0 HTTP gate:
+official MCP SDK and Schemathesis gates run there. Stage 12/13 Shopify and
+Amazon gates are legacy commerce regression gates, not the new mainline:
 
 ```bash
 PYTHON=python3.12 ./tools/smoke_stage9_real_mcp.sh
@@ -170,9 +221,12 @@ open demo_viewer/index.html
 - PII redaction currently applies only to the canonical `buyer_id` field.
 - Customers should not provide email, phone, address, customer name, shipping
   address, billing address, or free-form customer notes in the first POC.
+- SaaS POC mode must not use production Stripe keys, production Slack bot
+  tokens, production GitHub installation tokens, customer PII, real refunds, or
+  real PR writes unless an explicit future integration mode enables them.
 - The current repo is not a full Shopify sandbox, Amazon emulator, full hosted
-  enterprise SaaS, PR check platform, or buyer red-team product. Stage 19 is a
-  hosted design-partner trust boundary only.
+  enterprise SaaS, or buyer red-team product. Stage 19 is a hosted
+  design-partner trust boundary only.
 - Real MCP server and strict OpenAPI hardening support require Python 3.10+.
   The core CLI and legacy MVP tests still run under the older system Python
   used by this local workspace.

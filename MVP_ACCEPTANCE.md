@@ -1,8 +1,18 @@
-# V3.5 Acceptance Contract
+# SaaS Agent Validation Acceptance Contract
 
-This document defines the non-negotiable behavior for the Commerce Automation
-Safety Sandbox. It preserves the existing incident core and rebaselines V3.5
-toward Live Agent Sandbox-first execution.
+This document defines the non-negotiable behavior for the Agent Integration
+Safety Sandbox. It preserves the existing incident core and rebaselines the
+product toward SaaS Agent Validation-first execution.
+
+V0 scope:
+
+```txt
+StripeTwin + SlackTwin + GitHubTwin
+```
+
+Shopify, Amazon, fulfillment, warehouse, and inventory flows are legacy
+commerce coverage. They may remain as regression evidence, but they are not the
+product direction.
 
 V3.5 core narrative:
 
@@ -17,30 +27,116 @@ defines the mainline.
 ## Hard Rules
 
 1. V3.5 is Live Agent Sandbox-first.
-2. The twin is permissive: bad actions must be allowed to mutate state.
-3. Policy Engine detects incidents after the twin records state changes.
-4. Policy findings must make `commerce-safety run` exit non-zero by default.
-5. The same scenario must exercise both safe and unsafe automation.
-6. Replay reads from `trace.json`; it must not rerun the scenario.
-7. Every run writes:
+2. The product is SaaS Agent Validation-first.
+3. Stripe, Slack, and GitHub are the only V0 mainline twins.
+4. Shopify, Amazon, fulfillment, warehouse, and inventory are legacy surfaces.
+5. The twin is permissive: bad actions must be allowed to mutate state.
+6. Policy Engine detects incidents after twins record state changes and event
+   ledger entries.
+7. Policy findings must make `commerce-safety run` or live `complete_session`
+   return a failed validation state by default.
+8. The same scenario must exercise both safe and unsafe automation.
+9. Replay reads from `trace.json`; it must not rerun the scenario.
+10. Every run writes:
    - `trace.json`
    - `policy_report.json`
    - `state_diff.json`
    - `report.md`
-8. `PolicyFinding` must include:
+   - `patch_hints.json`
+   - `run_manifest.json`
+11. `PolicyFinding` must include:
    - `policy_id`
    - `severity`
    - `status`
    - `evidence`
    - `business_impact`
    - `recommendation`
-9. Inventory accident signals must compare actual reserved inventory to expected
+12. POC mode must not use production Stripe keys, production Slack bot tokens,
+    production GitHub installation tokens, customer PII, real refunds, or real
+    PR writes.
+13. Failed policy state must not be hidden behind a success GitHub check in the
+    SaaS validation lane.
+14. Inventory accident signals must compare actual reserved inventory to expected
    order quantity, not use a naive `reserved > 1` check.
-10. Duplicate webhook detection should track duplicate side effects generally.
+15. Duplicate webhook detection should track duplicate side effects generally.
     The current slice must at least include reservations and fulfillments.
-11. Every stage must define a strict gate and pass it before the next stage.
-12. V3.5 live validation must prove unsafe and safe external-agent paths without
+16. Every stage must define a strict gate and pass it before the next stage.
+17. V3.5 live validation must prove unsafe and safe external-agent paths without
     relying only on internal `bad_runner` / `good_runner`.
+
+## SaaS Rebaseline Acceptance
+
+Phase 0 restores a readable Git worktree and captures a clean baseline before
+product changes.
+
+Phase 1 updates the source-of-truth docs so they state:
+
+- SaaS Agent Validation-first.
+- Stripe, Slack, and GitHub are the only V0 twins.
+- Shopify, Amazon, fulfillment, warehouse, and inventory are legacy.
+- `Permissive Twin + Policy Check` remains the core principle.
+- The required artifact loop is `trace.json`, `policy_report.json`,
+  `state_diff.json`, `report.md`, `patch_hints.json`, and
+  `run_manifest.json`.
+- POC mode uses no production API keys, no customer PII, no real refunds, and no
+  real PR writes.
+
+Phase 2 introduces `SandboxEnvironment`, `TwinBundle`, and `ToolCallEvent` so
+sessions can expose:
+
+```python
+session.environment.twins["stripe"]
+session.environment.twins["slack"]
+session.environment.twins["github"]
+session.events
+```
+
+The legacy `CommerceTwin` can remain as a compatibility twin while the SaaS
+twins are built.
+
+Phase 3 introduces `StripeTwin V0`:
+
+- `StripeTwin` supports customers, subscriptions, invoices, payment intents,
+  refunds, and events.
+- Failed payment maps to `subscription.status = incomplete`,
+  `invoice.status = open`, and
+  `payment_intent.status = requires_payment_method`.
+- Invoice payment recovery maps back to paid invoice, succeeded payment intent,
+  and active subscription.
+- Duplicate webhook delivery is tracked on the Stripe event object.
+- Refund creation remains permissive and can record a refund without approval;
+  policy packs decide later whether that state is unsafe.
+- Stripe state is visible through `session.environment.twins["stripe"]`.
+
+Phase 4 introduces `SlackTwin V0`, `GitHubTwin V0`, and `SAAS-001`:
+
+- `SlackTwin` supports channels, private-channel membership, message delivery,
+  delivery failures, billing failure alerts, and success notification signals.
+- `GitHubTwin` supports repos, pull requests, check runs, issues, PR comments,
+  success-check signals, and review artifacts.
+- `SAAS-001_failed_payment_success_notification` is the first cross-service
+  SaaS policy demo.
+- Unsafe path fails when a failed Stripe payment is followed by a missing Slack
+  billing alert or downstream success state.
+- Safe path passes when the billing failure is delivered to Slack and GitHub
+  remains non-success/action-required.
+- Policy findings for the unsafe path include:
+  - `no_success_state_after_failed_payment`
+  - `billing_failure_must_trigger_alert`
+  - `slack_permission_failure_must_not_be_silent`
+  - `github_check_must_match_policy_status`
+
+Phase 5 exposes SAAS-001 through agent-facing HTTP and MCP:
+
+- External agents can run SAAS-001 without importing Python or reading
+  `session.environment.twins[...]`.
+- MCP exposes `stripe.create_customer`, `stripe.create_subscription`,
+  `slack.post_message`, `github.create_check_run`, `github.create_issue`, and
+  `github.comment_on_pr`.
+- HTTP exposes equivalent `/sessions/{session_id}/twin/...` actions.
+- `GET /sessions/{session_id}/trace` includes `environment_state` and
+  `event_ledger`.
+- Unsafe and safe SAAS-001 paths are covered through both HTTP and MCP tests.
 
 ## Stage Gate Acceptance
 

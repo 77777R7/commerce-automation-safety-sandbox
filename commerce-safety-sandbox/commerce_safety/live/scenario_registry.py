@@ -49,7 +49,7 @@ class ScenarioRegistry:
 
     def _resolve_id(self, scenario_id: str) -> Path:
         scenario_id = scenario_id.strip()
-        for path in sorted(self.scenario_root.glob("*.yaml")):
+        for path in sorted(self.scenario_root.rglob("*.yaml")):
             scenario = load_yaml(path)
             aliases = {
                 str(scenario.get("id", "")),

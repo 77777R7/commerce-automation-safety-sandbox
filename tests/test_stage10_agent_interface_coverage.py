@@ -384,7 +384,7 @@ def test_stage10_real_mcp_server_tool_surface_covers_all_p0_actions():
 
 def test_stage10_http_twin_exposes_all_p0_actions():
     api = LiveAPI()
-    actions = {
+    p0_actions = {
         "reserve_inventory",
         "promise_fulfillment",
         "refresh_inventory",
@@ -400,8 +400,18 @@ def test_stage10_http_twin_exposes_all_p0_actions():
         "warehouse_continue_fulfillment",
         "skip_duplicate_webhook",
     }
+    saas_v0_actions = {
+        "stripe_create_customer",
+        "stripe_create_subscription",
+        "slack_post_message",
+        "github_create_check_run",
+        "github_create_issue",
+        "github_comment_on_pr",
+    }
+    exposed = set(api.twin_action_tools)
 
-    assert actions == set(api.twin_action_tools)
+    assert p0_actions.issubset(exposed)
+    assert saas_v0_actions.issubset(exposed)
 
 
 def test_stage10_http_unsafe_and_safe_paths_cover_all_p0(tmp_path):

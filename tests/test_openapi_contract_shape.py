@@ -34,6 +34,21 @@ def test_openapi_has_stage10_generic_commerce_action_paths():
         assert f"/sessions/{{session_id}}/twin/{action}" in spec["paths"]
 
 
+def test_openapi_has_saas_v0_action_paths():
+    paths = _spec()["paths"]
+    action_names = {
+        "stripe_create_customer",
+        "stripe_create_subscription",
+        "slack_post_message",
+        "github_create_check_run",
+        "github_create_issue",
+        "github_comment_on_pr",
+    }
+
+    for action in action_names:
+        assert f"/sessions/{{session_id}}/twin/{action}" in paths
+
+
 def test_openapi_has_stage12_shopify_like_skin_paths():
     paths = _spec()["paths"]
 

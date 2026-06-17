@@ -80,20 +80,30 @@ class LiveAPI:
         self.shopify_coverage = load_shopify_coverage()
         self.amazon = AmazonSellerOpsRouter(self.tools)
         self.twin_action_tools = {
-            "reserve_inventory",
-            "promise_fulfillment",
-            "refresh_inventory",
-            "route_manual_review",
-            "create_fulfillment",
-            "find_fulfillment",
-            "create_refund",
-            "create_approval_request",
-            "cancel_order",
-            "release_inventory",
-            "place_workflow_hold",
-            "submit_warehouse_cancellation_request",
-            "warehouse_continue_fulfillment",
-            "skip_duplicate_webhook",
+            "reserve_inventory": "commerce.reserve_inventory",
+            "promise_fulfillment": "commerce.promise_fulfillment",
+            "refresh_inventory": "commerce.refresh_inventory",
+            "route_manual_review": "commerce.route_manual_review",
+            "create_fulfillment": "commerce.create_fulfillment",
+            "find_fulfillment": "commerce.find_fulfillment",
+            "create_refund": "commerce.create_refund",
+            "create_approval_request": "commerce.create_approval_request",
+            "cancel_order": "commerce.cancel_order",
+            "release_inventory": "commerce.release_inventory",
+            "place_workflow_hold": "commerce.place_workflow_hold",
+            "submit_warehouse_cancellation_request": (
+                "commerce.submit_warehouse_cancellation_request"
+            ),
+            "warehouse_continue_fulfillment": (
+                "commerce.warehouse_continue_fulfillment"
+            ),
+            "skip_duplicate_webhook": "commerce.skip_duplicate_webhook",
+            "stripe_create_customer": "stripe.create_customer",
+            "stripe_create_subscription": "stripe.create_subscription",
+            "slack_post_message": "slack.post_message",
+            "github_create_check_run": "github.create_check_run",
+            "github_create_issue": "github.create_issue",
+            "github_comment_on_pr": "github.comment_on_pr",
         }
 
     def handle(
@@ -521,7 +531,7 @@ class LiveAPI:
         if action not in self.twin_action_tools:
             return 404, {"ok": False, "error": "not_found"}
         payload = {"session_id": session_id, **body}
-        return 200, self.tools.call_tool(f"commerce.{action}", payload)
+        return 200, self.tools.call_tool(self.twin_action_tools[action], payload)
 
     def _receive_shopify_webhook(
         self,
@@ -813,6 +823,8 @@ class LiveAPI:
             "status": session.status,
             "initial_state": session.initial_state,
             "current_state": session.twin.snapshot_summary(),
+            "environment_state": session.environment.snapshot_summary(),
+            "event_ledger": [to_plain(event) for event in session.environment.events],
             "timeline": [to_plain(event) for event in session.twin.timeline],
         }
 

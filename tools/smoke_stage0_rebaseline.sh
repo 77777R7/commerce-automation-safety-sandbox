@@ -24,9 +24,18 @@ docs = {str(path): path.read_text(encoding="utf-8") for path in required_files}
 combined = "\n".join(docs.values())
 
 required_global_snippets = [
+    "SaaS Agent Validation-first",
+    "Stripe, Slack, and GitHub are the only V0",
+    "Shopify, Amazon, fulfillment, warehouse, and inventory",
     "Live Agent Sandbox-first",
     "MCP is not optional for V3.5",
     "External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints",
+    "Permissive Twin + Policy Check",
+    "patch_hints.json",
+    "run_manifest.json",
+    "no production API keys",
+    "no customer PII",
+    "no real refunds",
 ]
 
 missing_snippets = []

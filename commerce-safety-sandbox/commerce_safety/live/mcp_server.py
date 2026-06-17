@@ -39,6 +39,12 @@ AGENT_FACING_MCP_TOOL_NAMES = [
     "commerce.get_trace",
     "commerce.get_policy_report",
     "commerce.get_patch_hints",
+    "stripe.create_customer",
+    "stripe.create_subscription",
+    "slack.post_message",
+    "github.create_check_run",
+    "github.create_issue",
+    "github.comment_on_pr",
     "amazon.get_inventory_summaries",
     "amazon.get_listing_item",
     "amazon.patch_listing_quantity",
@@ -401,6 +407,162 @@ def create_mcp_server(
             {
                 "session_id": session_id,
                 "webhook": webhook,
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="stripe.create_customer")
+    def stripe_create_customer(
+        session_id: str,
+        email: str | None = None,
+        name: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a Stripe customer in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "stripe.create_customer",
+            {
+                "session_id": session_id,
+                "email": email,
+                "name": name,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="stripe.create_subscription")
+    def stripe_create_subscription(
+        session_id: str,
+        customer_id: str,
+        price_id: str,
+        amount_due: int,
+        currency: str = "usd",
+        payment_outcome: str = "succeeded",
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a Stripe subscription and initial invoice/payment intent."""
+
+        return tools.call_tool(
+            "stripe.create_subscription",
+            {
+                "session_id": session_id,
+                "customer_id": customer_id,
+                "price_id": price_id,
+                "amount_due": amount_due,
+                "currency": currency,
+                "payment_outcome": payment_outcome,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="slack.post_message")
+    def slack_post_message(
+        session_id: str,
+        channel_id: str,
+        text: str,
+        thread_ts: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Post a Slack message in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "slack.post_message",
+            {
+                "session_id": session_id,
+                "channel_id": channel_id,
+                "text": text,
+                "thread_ts": thread_ts,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.create_check_run")
+    def github_create_check_run(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        head_sha: str,
+        name: str = "agent-policy/saas-validation",
+        status: str = "completed",
+        conclusion: str | None = None,
+        output_summary: str = "",
+        details_url: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a GitHub check run in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.create_check_run",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "head_sha": head_sha,
+                "name": name,
+                "status": status,
+                "conclusion": conclusion,
+                "output_summary": output_summary,
+                "details_url": details_url,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.create_issue")
+    def github_create_issue(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        title: str,
+        body: str,
+        labels: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a GitHub issue in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.create_issue",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "title": title,
+                "body": body,
+                "labels": labels or [],
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.comment_on_pr")
+    def github_comment_on_pr(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        pull_number: int,
+        body: str,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Comment on a GitHub PR in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.comment_on_pr",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "pull_number": pull_number,
+                "body": body,
+                "metadata": metadata or {},
                 "actor": actor,
             },
         )

@@ -46,6 +46,12 @@ class CommerceMCPTools:
             "commerce.get_trace": self._get_trace,
             "commerce.get_policy_report": self._get_policy_report,
             "commerce.get_patch_hints": self._get_patch_hints,
+            "stripe.create_customer": self._stripe_create_customer,
+            "stripe.create_subscription": self._stripe_create_subscription,
+            "slack.post_message": self._slack_post_message,
+            "github.create_check_run": self._github_create_check_run,
+            "github.create_issue": self._github_create_issue,
+            "github.comment_on_pr": self._github_comment_on_pr,
             "amazon.get_inventory_summaries": self._amazon_get_inventory_summaries,
             "amazon.get_listing_item": self._amazon_get_listing_item,
             "amazon.patch_listing_quantity": self._amazon_patch_listing_quantity,
@@ -335,6 +341,8 @@ class CommerceMCPTools:
             "status": session.status,
             "initial_state": session.initial_state,
             "current_state": session.twin.snapshot_summary(),
+            "environment_state": session.environment.snapshot_summary(),
+            "event_ledger": [to_plain(event) for event in session.environment.events],
             "timeline": [to_plain(event) for event in session.twin.timeline],
         }
 
@@ -345,6 +353,189 @@ class CommerceMCPTools:
     def _get_patch_hints(self, arguments: dict[str, Any]) -> dict[str, Any]:
         session = self.manager.get_session(arguments["session_id"])
         return read_json(session.output_path / "patch_hints.json")
+
+    def _record_agent_action(
+        self,
+        session,
+        *,
+        actor: str,
+        service: str,
+        operation: str,
+        request: dict[str, Any],
+        response: dict[str, Any],
+        state_before: dict[str, Any],
+        fault: str | None = None,
+    ) -> None:
+        session.environment.record_tool_call(
+            actor=actor,
+            service=service,
+            operation=operation,
+            request=request,
+            response=response,
+            fault=fault,
+            state_before=state_before,
+            state_after=session.environment.snapshot_summary(),
+            source_event_id=request.get("source_event_id")
+            or request.get("sourceEventId"),
+        )
+
+    def _stripe_create_customer(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        customer = session.environment.twins["stripe"].create_customer(
+            email=arguments.get("email"),
+            name=arguments.get("name"),
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        response = {"customer": to_plain(customer)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="stripe",
+            operation="customers.create",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _stripe_create_subscription(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        stripe = session.environment.twins["stripe"]
+        subscription = stripe.create_subscription(
+            customer_id=arguments["customer_id"],
+            price_id=arguments["price_id"],
+            amount_due=int(arguments["amount_due"]),
+            currency=arguments.get("currency", "usd"),
+            payment_outcome=arguments.get("payment_outcome", "succeeded"),
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        invoice = stripe.invoices[subscription.latest_invoice_id]
+        payment_intent = stripe.payment_intents[invoice.payment_intent_id]
+        response = {
+            "subscription": to_plain(subscription),
+            "invoice": to_plain(invoice),
+            "payment_intent": to_plain(payment_intent),
+        }
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="stripe",
+            operation="subscriptions.create",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _slack_post_message(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        message = session.environment.twins["slack"].post_message(
+            channel_id=arguments["channel_id"],
+            text=arguments["text"],
+            thread_ts=arguments.get("thread_ts"),
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        response = {"message": to_plain(message)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="slack",
+            operation="chat.postMessage",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+            fault=message.error,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _github_create_check_run(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        check_run = session.environment.twins["github"].create_check_run(
+            owner=arguments["owner"],
+            repo_name=arguments["repo_name"],
+            head_sha=arguments["head_sha"],
+            name=arguments.get("name", "agent-policy/saas-validation"),
+            status=arguments.get("status", "completed"),
+            conclusion=arguments.get("conclusion"),
+            output_summary=arguments.get("output_summary", ""),
+            details_url=arguments.get("details_url"),
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        response = {"check_run": to_plain(check_run)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="github",
+            operation="checks.create",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _github_create_issue(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        issue = session.environment.twins["github"].create_issue(
+            owner=arguments["owner"],
+            repo_name=arguments["repo_name"],
+            title=arguments["title"],
+            body=arguments["body"],
+            labels=arguments.get("labels") or [],
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        response = {"issue": to_plain(issue)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="github",
+            operation="issues.create",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _github_comment_on_pr(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        comment = session.environment.twins["github"].comment_on_pr(
+            owner=arguments["owner"],
+            repo_name=arguments["repo_name"],
+            pull_number=int(arguments["pull_number"]),
+            body=arguments["body"],
+            metadata=arguments.get("metadata") or {},
+            actor=actor,
+        )
+        response = {"comment": to_plain(comment)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="github",
+            operation="pulls.comment",
+            request=arguments,
+            response=response,
+            state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
 
     def _amazon_binding(self, session_id: str):
         session = self.manager.get_session(session_id)
@@ -530,6 +721,16 @@ class CommerceMCPTools:
             "commerce.get_trace": "Read the live trace timeline.",
             "commerce.get_policy_report": "Read structured policy findings.",
             "commerce.get_patch_hints": "Read agent-readable repair hints.",
+            "stripe.create_customer": "Create a Stripe customer in the SaaS twin.",
+            "stripe.create_subscription": (
+                "Create a Stripe subscription and initial invoice/payment intent."
+            ),
+            "slack.post_message": "Post a Slack message in the SaaS twin.",
+            "github.create_check_run": "Create a GitHub check run in the SaaS twin.",
+            "github.create_issue": "Create a GitHub issue in the SaaS twin.",
+            "github.comment_on_pr": (
+                "Comment on a GitHub pull request in the SaaS twin."
+            ),
             "amazon.get_inventory_summaries": "Read Amazon-shaped FBA inventory summaries.",
             "amazon.get_listing_item": "Read an Amazon-shaped listing item.",
             "amazon.patch_listing_quantity": "Submit an Amazon-shaped listing quantity patch.",

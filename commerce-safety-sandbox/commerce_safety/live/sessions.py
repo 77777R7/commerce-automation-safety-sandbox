@@ -20,6 +20,7 @@ from ..models import to_plain
 from ..policies import PolicyEngine, findings_to_plain
 from ..reporting import build_markdown_report, build_state_diff
 from ..twin import CommerceTwin
+from .environment import SandboxEnvironment, ToolCallEvent
 from .patch_hints import (
     build_agent_summary_markdown,
     build_failure_explain_markdown,
@@ -43,7 +44,7 @@ class LiveSession:
     scenario_name: str
     scenario_path: Path
     scenario: dict[str, Any]
-    twin: CommerceTwin
+    environment: SandboxEnvironment
     initial_state: dict[str, Any]
     output_path: Path
     status: str = "open"
@@ -56,6 +57,14 @@ class LiveSession:
     lock: Any = field(default_factory=RLock, repr=False, compare=False)
     amazon_feeds: dict[str, dict[str, Any]] = field(default_factory=dict)
     next_amazon_feed: int = 1
+
+    @property
+    def twin(self) -> CommerceTwin:
+        return self.environment.commerce
+
+    @property
+    def events(self) -> list[ToolCallEvent]:
+        return self.environment.events
 
 
 class SessionManager:
@@ -85,6 +94,7 @@ class SessionManager:
             scenario_path=scenario_path,
         )
         twin = CommerceTwin(scenario)
+        environment = SandboxEnvironment.from_legacy_commerce(twin)
         now = datetime.now(timezone.utc)
         stamp = now.strftime("%Y%m%dT%H%M%S%fZ")
         session_id = f"sess_{stamp}_{scenario['id']}_{uuid4().hex[:8]}"
@@ -98,7 +108,7 @@ class SessionManager:
             scenario_name=scenario.get("name", scenario["id"]),
             scenario_path=scenario_file,
             scenario=scenario,
-            twin=twin,
+            environment=environment,
             initial_state=twin.snapshot_summary(),
             output_path=output_path,
             created_at=now.isoformat(),
@@ -163,7 +173,9 @@ class SessionManager:
     ) -> dict[str, Any]:
         session = self.get_session(session_id)
         with session.lock:
-            findings = findings_to_plain(PolicyEngine().evaluate(session.twin))
+            findings = findings_to_plain(
+                PolicyEngine().evaluate_environment(session.environment)
+            )
             status = "failed" if findings else "passed"
             session.status = status
             session.completed_at = datetime.now(timezone.utc).isoformat()
@@ -210,6 +222,10 @@ class SessionManager:
                     "generated_at": datetime.now(timezone.utc).isoformat(),
                     "initial_state": session.initial_state,
                     "final_state": final_state,
+                    "environment_state": session.environment.snapshot_summary(),
+                    "event_ledger": [
+                        to_plain(event) for event in session.environment.events
+                    ],
                     "timeline": [to_plain(event) for event in session.twin.timeline],
                 },
                 TRACE_SCHEMA_VERSION,
@@ -306,6 +322,7 @@ class SessionManager:
         event: dict[str, Any],
     ) -> None:
         event_type = event["type"]
+        state_before = session.environment.snapshot_summary()
         if event_type == "webhook":
             session.twin.receive_webhook(event)
         elif event_type == "fulfillment_task":
@@ -316,5 +333,23 @@ class SessionManager:
             session.twin.receive_refund_request(event)
         elif event_type == "cancel_request":
             session.twin.receive_cancel_request(event)
+        elif event_type in {"billing_upgrade_task", "saas_validation_task"}:
+            session.twin.add_event(
+                actor="scenario",
+                event=f"{event_type}_received",
+                message=f"SaaS validation task {event['id']} received.",
+                details=deepcopy(event),
+            )
         else:
             raise ValueError(f"Unsupported event type: {event_type}")
+        session.environment.record_tool_call(
+            actor="scenario",
+            service="scenario",
+            operation=event_type,
+            request=event,
+            response={"recorded": True},
+            fault=event.get("fault", {}).get("type"),
+            state_before=state_before,
+            state_after=session.environment.snapshot_summary(),
+            source_event_id=event.get("id"),
+        )

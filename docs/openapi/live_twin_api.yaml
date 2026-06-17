@@ -546,6 +546,199 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /sessions/{session_id}/twin/stripe_create_customer:
+    post:
+      operationId: stripeCreateCustomer
+      summary: Create a Stripe customer in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeCreateCustomerRequest"
+            examples:
+              saas001_customer:
+                value:
+                  email: customer@example.test
+                  name: Example Customer
+                  actor: external_agent
+      responses:
+        "200":
+          description: Stripe customer recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCustomerResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/stripe_create_subscription:
+    post:
+      operationId: stripeCreateSubscription
+      summary: Create a Stripe subscription in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeCreateSubscriptionRequest"
+            examples:
+              saas001_failed_payment:
+                value:
+                  customer_id: cus_000001
+                  price_id: price_pro_monthly
+                  amount_due: 2900
+                  currency: usd
+                  payment_outcome: requires_payment_method
+                  actor: external_agent
+      responses:
+        "200":
+          description: Stripe subscription, invoice, and payment intent recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeSubscriptionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/slack_post_message:
+    post:
+      operationId: slackPostMessage
+      summary: Post a Slack message in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SlackPostMessageRequest"
+            examples:
+              saas001_billing_alert:
+                value:
+                  channel_id: C_INCIDENTS
+                  text: "Billing failure: payment failed."
+                  metadata:
+                    kind: billing_failure_alert
+                  actor: external_agent
+      responses:
+        "200":
+          description: Slack message attempt recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlackMessageResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/github_create_check_run:
+    post:
+      operationId: githubCreateCheckRun
+      summary: Create a GitHub check run in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GitHubCreateCheckRunRequest"
+            examples:
+              saas001_action_required:
+                value:
+                  owner: acme
+                  repo_name: billing-agent
+                  head_sha: abc123
+                  conclusion: action_required
+                  output_summary: "Payment failed; billing recovery required."
+                  actor: external_agent
+      responses:
+        "200":
+          description: GitHub check run recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitHubCheckRunResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/github_create_issue:
+    post:
+      operationId: githubCreateIssue
+      summary: Create a GitHub issue in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GitHubCreateIssueRequest"
+            examples:
+              saas001_recovery_issue:
+                value:
+                  owner: acme
+                  repo_name: billing-agent
+                  title: Billing recovery required
+                  body: Initial payment failed; do not publish success state.
+                  labels: [billing, agent-review]
+                  actor: external_agent
+      responses:
+        "200":
+          description: GitHub issue recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitHubIssueResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/github_comment_on_pr:
+    post:
+      operationId: githubCommentOnPr
+      summary: Comment on a GitHub pull request in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GitHubCommentOnPrRequest"
+            examples:
+              saas001_pr_feedback:
+                value:
+                  owner: acme
+                  repo_name: billing-agent
+                  pull_number: 42
+                  body: Policy check requires billing recovery before merge.
+                  actor: external_agent
+      responses:
+        "200":
+          description: GitHub PR comment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GitHubPRCommentResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /sessions/{session_id}/shopify/webhooks:
     post:
       operationId: shopifyReceiveWebhook
@@ -1226,6 +1419,7 @@ components:
             - $ref: "#/components/schemas/InventoryPromiseTask"
             - $ref: "#/components/schemas/RefundRequestTask"
             - $ref: "#/components/schemas/CancelRequestTask"
+            - $ref: "#/components/schemas/BillingUpgradeTask"
       additionalProperties: false
     WebhookTask:
       type: object
@@ -1299,6 +1493,52 @@ components:
         amount:
           type: number
         reason:
+          type: string
+      additionalProperties: false
+    BillingUpgradeTask:
+      type: object
+      required:
+        - type
+        - id
+        - customer_email
+        - price_id
+        - amount_due
+        - billing_alert_channel
+        - fallback_channel
+        - repo_owner
+        - repo_name
+        - pull_number
+        - head_sha
+      properties:
+        type:
+          type: string
+          enum: [billing_upgrade_task]
+        id:
+          type: string
+        customer_email:
+          type: string
+        customer_name:
+          type: string
+          nullable: true
+        price_id:
+          type: string
+        amount_due:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          default: usd
+        billing_alert_channel:
+          type: string
+        fallback_channel:
+          type: string
+        repo_owner:
+          type: string
+        repo_name:
+          type: string
+        pull_number:
+          type: integer
+        head_sha:
           type: string
       additionalProperties: false
     Fault:
@@ -2067,6 +2307,129 @@ components:
         webhook:
           $ref: "#/components/schemas/WebhookTask"
       additionalProperties: false
+    Metadata:
+      type: object
+      additionalProperties: true
+    StripeCreateCustomerRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    StripeCreateSubscriptionRequest:
+      type: object
+      required: [customer_id, price_id, amount_due]
+      properties:
+        customer_id:
+          type: string
+        price_id:
+          type: string
+        amount_due:
+          type: integer
+          minimum: 0
+        currency:
+          type: string
+          default: usd
+        payment_outcome:
+          type: string
+          enum: [requires_payment_method, requires_action, processing, succeeded]
+          default: succeeded
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    SlackPostMessageRequest:
+      type: object
+      required: [channel_id, text]
+      properties:
+        channel_id:
+          type: string
+        text:
+          type: string
+        thread_ts:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    GitHubCreateCheckRunRequest:
+      type: object
+      required: [owner, repo_name, head_sha]
+      properties:
+        owner:
+          type: string
+        repo_name:
+          type: string
+        head_sha:
+          type: string
+        name:
+          type: string
+          default: agent-policy/saas-validation
+        status:
+          type: string
+          default: completed
+        conclusion:
+          type: string
+          nullable: true
+        output_summary:
+          type: string
+        details_url:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    GitHubCreateIssueRequest:
+      type: object
+      required: [owner, repo_name, title, body]
+      properties:
+        owner:
+          type: string
+        repo_name:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
+    GitHubCommentOnPrRequest:
+      type: object
+      required: [owner, repo_name, pull_number, body]
+      properties:
+        owner:
+          type: string
+        repo_name:
+          type: string
+        pull_number:
+          type: integer
+        body:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
     ShopifyOrderPaidWebhook:
       type: object
       description: >
@@ -2338,6 +2701,76 @@ components:
         session_id:
           type: string
       additionalProperties: false
+    StripeCustomerResponse:
+      type: object
+      required: [ok, session_id, customer]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        customer:
+          $ref: "#/components/schemas/StripeCustomer"
+      additionalProperties: false
+    StripeSubscriptionResponse:
+      type: object
+      required: [ok, session_id, subscription, invoice, payment_intent]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        subscription:
+          $ref: "#/components/schemas/StripeSubscription"
+        invoice:
+          $ref: "#/components/schemas/StripeInvoice"
+        payment_intent:
+          $ref: "#/components/schemas/StripePaymentIntent"
+      additionalProperties: false
+    SlackMessageResponse:
+      type: object
+      required: [ok, session_id, message]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        message:
+          $ref: "#/components/schemas/SlackMessage"
+      additionalProperties: false
+    GitHubCheckRunResponse:
+      type: object
+      required: [ok, session_id, check_run]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        check_run:
+          $ref: "#/components/schemas/GitHubCheckRun"
+      additionalProperties: false
+    GitHubIssueResponse:
+      type: object
+      required: [ok, session_id, issue]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        issue:
+          $ref: "#/components/schemas/GitHubIssue"
+      additionalProperties: false
+    GitHubPRCommentResponse:
+      type: object
+      required: [ok, session_id, comment]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        comment:
+          $ref: "#/components/schemas/GitHubPRComment"
+      additionalProperties: false
     FulfillmentResponse:
       type: object
       required: [ok, session_id, fulfillment]
@@ -2520,6 +2953,13 @@ components:
           $ref: "#/components/schemas/StateSnapshot"
         current_state:
           $ref: "#/components/schemas/StateSnapshot"
+        environment_state:
+          $ref: "#/components/schemas/StateSnapshot"
+        event_ledger:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
         timeline:
           type: array
           items:
@@ -2545,6 +2985,196 @@ components:
     StateSnapshot:
       type: object
       additionalProperties: true
+
+    StripeCustomer:
+      type: object
+      required: [customer_id, metadata]
+      properties:
+        customer_id:
+          type: string
+        email:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      additionalProperties: false
+    StripeSubscription:
+      type: object
+      required:
+        - subscription_id
+        - customer_id
+        - price_id
+        - latest_invoice_id
+        - status
+        - metadata
+      properties:
+        subscription_id:
+          type: string
+        customer_id:
+          type: string
+        price_id:
+          type: string
+        latest_invoice_id:
+          type: string
+        status:
+          type: string
+          enum: [trialing, active, incomplete, past_due, canceled]
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      additionalProperties: false
+    StripeInvoice:
+      type: object
+      required:
+        - invoice_id
+        - customer_id
+        - subscription_id
+        - payment_intent_id
+        - amount_due
+        - amount_paid
+        - currency
+        - status
+      properties:
+        invoice_id:
+          type: string
+        customer_id:
+          type: string
+        subscription_id:
+          type: string
+        payment_intent_id:
+          type: string
+        amount_due:
+          type: integer
+        amount_paid:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, open, paid, void, uncollectible]
+      additionalProperties: false
+    StripePaymentIntent:
+      type: object
+      required:
+        - payment_intent_id
+        - customer_id
+        - invoice_id
+        - amount
+        - currency
+        - status
+      properties:
+        payment_intent_id:
+          type: string
+        customer_id:
+          type: string
+        invoice_id:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [requires_payment_method, requires_action, processing, succeeded]
+        last_payment_error:
+          type: string
+          nullable: true
+      additionalProperties: false
+    SlackMessage:
+      type: object
+      required:
+        - message_id
+        - channel_id
+        - text
+        - delivered
+        - metadata
+        - actor
+      properties:
+        message_id:
+          type: string
+        channel_id:
+          type: string
+        text:
+          type: string
+        delivered:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+        thread_ts:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        actor:
+          type: string
+      additionalProperties: false
+    GitHubCheckRun:
+      type: object
+      required:
+        - check_run_id
+        - name
+        - repo
+        - head_sha
+        - status
+        - output_summary
+        - metadata
+      properties:
+        check_run_id:
+          type: string
+        name:
+          type: string
+        repo:
+          type: string
+        head_sha:
+          type: string
+        status:
+          type: string
+        conclusion:
+          type: string
+          nullable: true
+        output_summary:
+          type: string
+        details_url:
+          type: string
+          nullable: true
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      additionalProperties: false
+    GitHubIssue:
+      type: object
+      required: [issue_id, title, body, labels, state, metadata]
+      properties:
+        issue_id:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+        labels:
+          type: array
+          items:
+            type: string
+        state:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      additionalProperties: false
+    GitHubPRComment:
+      type: object
+      required: [comment_id, pull_number, body, metadata]
+      properties:
+        comment_id:
+          type: string
+        pull_number:
+          type: integer
+        body:
+          type: string
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+      additionalProperties: false
 
     Fulfillment:
       type: object

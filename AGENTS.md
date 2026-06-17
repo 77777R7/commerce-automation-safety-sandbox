@@ -16,8 +16,6 @@ environment details.
 - `docs/OFFLINE_AUDIT_POC_PLAYBOOK.md`
 - `docs/MCP_SERVER_SETUP.md`
 - `docs/openapi/live_twin_api.yaml`
-- `docs/STAGE12_PR_READINESS.md`
-- `docs/AMAZON_SELLER_OPS_SKIN_V0.md`
 - `docs/STAGE14_PRODUCTIONIZATION_GATE.md`
 - `docs/STAGE15_RELEASE_HYGIENE_CI_GATE.md`
 - `docs/STAGE16_SECURITY_ABUSE_HARDENING.md`
@@ -37,8 +35,28 @@ environment details.
 
 ## Current Product Direction
 
-The product is `Commerce Automation Safety Sandbox`: a pre-production crash
-test layer for commerce automation and AI agents.
+The product is now `Agent Integration Safety Sandbox`: a pre-production crash
+test layer for SaaS AI agents that touch billing, notifications, and developer
+workflow state.
+
+The V0 mainline twins are:
+
+- `StripeTwin`
+- `SlackTwin`
+- `GitHubTwin`
+
+The first SaaS cross-service policy demo is
+`SAAS-001_failed_payment_success_notification`: failed Stripe payment must not
+turn into Slack/GitHub success state, and Slack delivery failures must remain
+visible.
+
+SAAS-001 must be runnable through agent-facing HTTP/MCP actions. Do not write
+new demo code that reaches into `session.environment.twins[...]` unless it is a
+low-level unit test for a twin implementation.
+
+Shopify, Amazon, fulfillment, warehouse, and inventory flows are legacy
+commerce coverage. Keep them green while they exist, but do not extend them as
+the product direction.
 
 The V3.5 mainline is:
 
@@ -63,7 +81,13 @@ but it is no longer the mainline for V3.5 execution.
 
 - Use `Permissive Twin + Policy Check`: unsafe actions are allowed to mutate
   twin state, then policies catch the resulting business incident.
-- Keep the P0 library to exactly five flagship scenarios:
+- SaaS V0 supports only Stripe, Slack, and GitHub twins. Do not add Notion,
+  Linear, HubSpot, Shopify, Amazon, warehouse, or inventory as new V0 product
+  surfaces.
+- No production Stripe keys, production Slack bot tokens, production GitHub
+  installation tokens, customer PII, real refunds, or real PR writes in POC
+  mode.
+- Keep the legacy commerce P0 library to exactly five regression scenarios:
   `SCN-001 duplicate_webhook_fulfillment`,
   `SCN-002 timeout_after_commit_retry`,
   `SCN-003 stale_inventory_oversell`,
@@ -76,7 +100,7 @@ but it is no longer the mainline for V3.5 execution.
 - `good_runner` must pass with zero findings.
 - Replay must read from `trace.json`; it must not rerun the scenario.
 - Run artifacts must include `trace.json`, `policy_report.json`,
-  `state_diff.json`, `report.md`, and `run_manifest.json`.
+  `state_diff.json`, `report.md`, `patch_hints.json`, and `run_manifest.json`.
 - Keep `PolicyFinding` structured with `policy_id`, `severity`, `status`,
   `evidence`, `business_impact`, and `recommendation`.
 - Every V3.5 stage must define and pass a strict gate before the next stage
@@ -86,8 +110,11 @@ but it is no longer the mainline for V3.5 execution.
 
 Do not build these in the current lane:
 
-- GitHub PR check
-- Shopify-like or Amazon-like full API skin
+- Real GitHub App / PR writes
+- Real Stripe API compatibility
+- Real Slack OAuth
+- Shopify-like or Amazon-like full API skin extensions
+- New fulfillment, warehouse, or inventory product work
 - Buyer simulator
 - Agent container
 - Egress proxy

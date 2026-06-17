@@ -1,10 +1,10 @@
-# Commerce Automation Safety Sandbox V3.5 Roadmap
+# Agent Integration Safety Sandbox Roadmap
 
-This roadmap supersedes the earlier Offline Audit-first roadmap. The product
-mainline is now `Live Agent Sandbox` first: external AI agents must be able to
-connect to a stateful commerce twin, make real commerce mutations under seeded
-scenario faults, and receive policy findings plus agent-readable repair
-artifacts.
+This roadmap supersedes the commerce-first roadmap. The product mainline is now
+SaaS Agent Validation-first: external AI agents must be able to connect to
+stateful Stripe, Slack, and GitHub twins, make realistic integration mutations
+under seeded scenario faults, and receive policy findings plus agent-readable
+repair artifacts before touching production systems.
 
 Core narrative:
 
@@ -14,17 +14,21 @@ External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hin
 
 ## Product Direction
 
-Build one commerce automation incident validation core with live agent testing
-as the primary entrypoint.
+Build one agent integration validation core with live agent testing as the
+primary entrypoint.
 
-- Primary: `Live Commerce Agent Validation` for AI agents, workflows, and SaaS
-  builders.
+- Primary: `SaaS Agent Validation` for AI agents, workflows, and SaaS builders
+  that touch billing, notifications, and developer workflow state.
+- V0 twins: `StripeTwin`, `SlackTwin`, and `GitHubTwin`.
 - Required V3.5 interface: MCP. MCP is not optional for V3.5 because agent
   builders need a native tool interface.
 - Required V3.5 interface: HTTP Twin API for workflows, scripts, and non-MCP
   clients.
 - Supporting entrypoint: `Offline Fulfillment Automation Audit` remains useful
   for operators and POCs, but it is no longer the project mainline.
+- Legacy coverage: Shopify, Amazon, fulfillment, warehouse, and inventory
+  remain as existing regression/demo coverage only. Do not extend them as the
+  main product surface.
 
 ## Existing Foundation
 
@@ -39,18 +43,102 @@ The repo already has a working incident core:
 - Offline Audit v0.
 - Demo pack and static demo viewer.
 
-Do not rewrite this foundation. V3.5 builds live agent validation on top of it.
+Do not rewrite this foundation. The SaaS rebaseline keeps the session,
+artifact, policy, MCP, HTTP, action-log, and hosted trust-boundary machinery
+while replacing the product domain.
+
+## Immediate SaaS Rebaseline Phases
+
+Phase 0: Restore Worktree Readability
+
+- Hydrate or replace the dataless local checkout with a readable Git worktree.
+- Preserve a backup of the broken/dataless directory.
+- Capture a clean baseline with Stage 0, unit tests, and `smoke_v35`.
+
+Phase 1: SaaS Rebaseline Docs And Boundaries
+
+- Update `README.md`, `ROADMAP.md`, `MVP_ACCEPTANCE.md`, and `AGENTS.md`.
+- State that Stripe, Slack, and GitHub are the only V0 mainline twins.
+- Mark Shopify, Amazon, fulfillment, warehouse, and inventory as legacy.
+- Preserve `Permissive Twin + Policy Check`.
+- Preserve the artifact loop: `trace.json`, `policy_report.json`,
+  `state_diff.json`, `report.md`, `patch_hints.json`, and
+  `run_manifest.json`.
+- State POC safety boundaries: no production API keys, no customer PII, no real
+  refunds, and no real PR writes.
+
+Phase 2: Sandbox Environment Abstraction
+
+- Add `SandboxEnvironment`.
+- Add `TwinBundle`.
+- Add `ToolCallEvent`.
+- Expose `session.environment.twins["stripe"]`,
+  `session.environment.twins["slack"]`, `session.environment.twins["github"]`,
+  and `session.events`.
+- Keep `CommerceTwin` as a legacy compatibility twin until Stripe/Slack/GitHub
+  V0 implementations replace it in the active scenarios.
+
+Phase 3: StripeTwin V0
+
+- Add a narrow `StripeTwin`.
+- Support customer, subscription, invoice, payment intent, refund, and Stripe
+  event state.
+- Support failed payment, invoice payment recovery, refund creation, event
+  retrieval, and duplicate webhook delivery tracking.
+- Keep the twin permissive: refunds and failed billing states mutate sandbox
+  state first; policies evaluate the resulting state later.
+- Expose the Stripe snapshot through `session.environment.twins["stripe"]`.
+
+Phase 4: SlackTwin + GitHubTwin V0 And SAAS-001
+
+- Add narrow `SlackTwin` and `GitHubTwin` surfaces.
+- Slack V0 supports channel state, bot membership, message delivery, permission
+  failures, billing failure alerts, and success notification signals.
+- GitHub V0 supports repo context, pull requests, check runs, issues, PR
+  comments, success-check signals, and review artifacts.
+- Add `SAAS-001_failed_payment_success_notification` as the first cross-service
+  policy demo.
+- Bad path: Stripe records failed payment, Slack alert delivery fails, and the
+  agent still emits Slack/GitHub success state.
+- Good path: Stripe failure stays non-success, Slack receives a billing failure
+  alert, and GitHub records review/action-required state.
+- Policy engine reads the service twin snapshots and keeps legacy commerce
+  policies intact.
+
+Phase 5: SAAS-001 Agent-Facing HTTP/MCP Surface
+
+- Expose the SAAS-001 hero actions through HTTP and MCP so external agents no
+  longer need direct access to `session.environment.twins[...]`.
+- MCP tools:
+  - `stripe.create_customer`
+  - `stripe.create_subscription`
+  - `slack.post_message`
+  - `github.create_check_run`
+  - `github.create_issue`
+  - `github.comment_on_pr`
+- HTTP actions:
+  - `POST /sessions/{session_id}/twin/stripe_create_customer`
+  - `POST /sessions/{session_id}/twin/stripe_create_subscription`
+  - `POST /sessions/{session_id}/twin/slack_post_message`
+  - `POST /sessions/{session_id}/twin/github_create_check_run`
+  - `POST /sessions/{session_id}/twin/github_create_issue`
+  - `POST /sessions/{session_id}/twin/github_comment_on_pr`
+- `GET /sessions/{session_id}/trace` exposes `environment_state` and
+  `event_ledger` for agent-readable cross-service inspection.
 
 ## Current Non-Goals
 
 Do not build these before the relevant stage gate asks for them:
 
-- Full Shopify GraphQL implementation.
-- Full Amazon SP-API clone.
+- Full Shopify GraphQL implementation or new Shopify product work.
+- Full Amazon SP-API clone or new Amazon product work.
+- New fulfillment, warehouse, or inventory product work.
 - Hosted multi-tenant control plane.
 - Agent container, egress proxy, browser runner, or microVM runtime.
 - Buyer simulator or autonomous red-team buyer.
-- GitHub App / PR check before Stage 10.
+- Real GitHub App / real PR writes.
+- Real Stripe API compatibility.
+- Real Slack OAuth.
 - Decorative dashboard polish before the live agent sandbox core works.
 - New P0 scenario classes.
 

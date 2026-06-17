@@ -75,6 +75,12 @@ async def run():
                 "commerce.get_trace",
                 "commerce.get_policy_report",
                 "commerce.get_patch_hints",
+                "stripe.create_customer",
+                "stripe.create_subscription",
+                "slack.post_message",
+                "github.create_check_run",
+                "github.create_issue",
+                "github.comment_on_pr",
             }
             missing = required - names
             if missing:

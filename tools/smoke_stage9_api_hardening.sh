@@ -90,6 +90,7 @@ SCENARIOS = {
     "SCN-003": {"scenario_id": "SCN-003"},
     "SCN-004": {"scenario_id": "SCN-004"},
     "SCN-005": {"scenario_id": "SCN-005"},
+    "SAAS-001": {"scenario_id": "SAAS-001"},
 }
 
 
