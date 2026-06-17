@@ -79,6 +79,39 @@ def test_saas001_sample_outputs_keep_required_artifact_contract() -> None:
     assert any(event["fault"] == "not_in_channel" for event in failed_trace["event_ledger"])
 
 
+def test_saas001_sample_artifacts_are_saas_agent_validation_first() -> None:
+    failed_root = PACK / "sample_outputs" / "failed"
+    passed_root = PACK / "sample_outputs" / "passed"
+    failed_state = _load_json(failed_root / "state_diff.json")
+    passed_state = _load_json(passed_root / "state_diff.json")
+    failed_report = (failed_root / "report.md").read_text(encoding="utf-8")
+    failed_summary = (failed_root / "agent_summary.md").read_text(encoding="utf-8")
+    failed_explain = (failed_root / "failure_explain.md").read_text(encoding="utf-8")
+    passed_report = (passed_root / "report.md").read_text(encoding="utf-8")
+
+    assert failed_state["artifact_kind"] == "environment_state_diff"
+    assert failed_state["services"] == ["stripe", "slack", "github"]
+    assert failed_state["accident_signals"]["stripe_failed_payment"] is True
+    assert failed_state["accident_signals"]["slack_billing_alert_failed"] is True
+    assert failed_state["accident_signals"]["github_success_after_slack_fault"] is True
+    assert passed_state["accident_signals"]["slack_billing_alert_delivered"] is True
+    assert passed_state["accident_signals"]["github_action_required_check"] is True
+
+    assert failed_report.startswith("# SaaS Agent Validation Report")
+    assert "## Cross-Service State" in failed_report
+    assert "## Agent Behavior Timeline" in failed_report
+    assert "Stripe" in failed_report and "Slack" in failed_report and "GitHub" in failed_report
+    assert "Fulfillments before" not in failed_report
+    assert "Reserved inventory" not in failed_report
+    assert "## What Worked" in passed_report
+
+    assert "Validation surface: `Stripe + Slack + GitHub`" in failed_summary
+    assert "## Unsafe Chain" in failed_summary
+    assert "## Repair Contract" in failed_summary
+    assert "## Agent Event Ledger" in failed_explain
+    assert "github.checks.create" in failed_explain
+
+
 def test_saas001_examples_and_smoke_are_packaged() -> None:
     for relative in [
         "http_saas001_failed_payment_agent.py",

@@ -18,7 +18,13 @@ from ..artifacts import (
 from ..io import write_json, write_text
 from ..models import to_plain
 from ..policies import PolicyEngine, findings_to_plain
-from ..reporting import build_markdown_report, build_state_diff
+from ..reporting import (
+    build_environment_state_diff,
+    build_markdown_report,
+    build_saas_markdown_report,
+    build_state_diff,
+    is_saas_scenario,
+)
 from ..twin import CommerceTwin
 from .environment import SandboxEnvironment, ToolCallEvent
 from .patch_hints import (
@@ -46,6 +52,7 @@ class LiveSession:
     scenario: dict[str, Any]
     environment: SandboxEnvironment
     initial_state: dict[str, Any]
+    initial_environment_state: dict[str, Any]
     output_path: Path
     status: str = "open"
     created_at: str = ""
@@ -110,6 +117,7 @@ class SessionManager:
             scenario=scenario,
             environment=environment,
             initial_state=twin.snapshot_summary(),
+            initial_environment_state=environment.snapshot_summary(),
             output_path=output_path,
             created_at=now.isoformat(),
             created_by=created_by,
@@ -200,16 +208,25 @@ class SessionManager:
                 )
 
             final_state = session.twin.snapshot_summary()
-            state_diff = build_state_diff(
-                session.initial_state,
-                final_state,
-                high_value_refund_threshold=float(
-                    session.scenario.get("approval_rules", {}).get(
-                        "high_value_refund_threshold",
-                        100,
-                    )
-                ),
-            )
+            final_environment_state = session.environment.snapshot_summary()
+            event_ledger = [to_plain(event) for event in session.environment.events]
+            if is_saas_scenario(session.scenario):
+                state_diff = build_environment_state_diff(
+                    session.initial_environment_state,
+                    final_environment_state,
+                    events=event_ledger,
+                )
+            else:
+                state_diff = build_state_diff(
+                    session.initial_state,
+                    final_state,
+                    high_value_refund_threshold=float(
+                        session.scenario.get("approval_rules", {}).get(
+                            "high_value_refund_threshold",
+                            100,
+                        )
+                    ),
+                )
             state_diff = add_schema_version(state_diff, STATE_DIFF_SCHEMA_VERSION)
             trace = add_schema_version(
                 {
@@ -222,10 +239,10 @@ class SessionManager:
                     "generated_at": datetime.now(timezone.utc).isoformat(),
                     "initial_state": session.initial_state,
                     "final_state": final_state,
-                    "environment_state": session.environment.snapshot_summary(),
-                    "event_ledger": [
-                        to_plain(event) for event in session.environment.events
-                    ],
+                    "initial_environment_state": session.initial_environment_state,
+                    "final_environment_state": final_environment_state,
+                    "environment_state": final_environment_state,
+                    "event_ledger": event_ledger,
                     "timeline": [to_plain(event) for event in session.twin.timeline],
                 },
                 TRACE_SCHEMA_VERSION,
@@ -241,14 +258,24 @@ class SessionManager:
                 },
                 POLICY_REPORT_SCHEMA_VERSION,
             )
-            report = build_markdown_report(
-                run_id=session.session_id,
-                scenario=session.scenario,
-                runner_name=runner_name,
-                status=status,
-                findings=findings,
-                state_diff=state_diff,
-            )
+            if is_saas_scenario(session.scenario):
+                report = build_saas_markdown_report(
+                    run_id=session.session_id,
+                    scenario=session.scenario,
+                    runner_name=runner_name,
+                    status=status,
+                    findings=findings,
+                    state_diff=state_diff,
+                )
+            else:
+                report = build_markdown_report(
+                    run_id=session.session_id,
+                    scenario=session.scenario,
+                    runner_name=runner_name,
+                    status=status,
+                    findings=findings,
+                    state_diff=state_diff,
+                )
             patch_hints = build_patch_hints(
                 run_id=session.session_id,
                 scenario=session.scenario,
@@ -274,6 +301,7 @@ class SessionManager:
                 build_agent_summary_markdown(
                     patch_hints=patch_hints,
                     findings=findings,
+                    state_diff=state_diff,
                 ),
             )
             write_text(
