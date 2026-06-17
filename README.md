@@ -122,6 +122,12 @@ Minimal sandbox lifecycle is available through `POST /sessions` provisioning
 with optional `ttl_seconds`, `GET /sessions/{session_id}/status`, `POST
 /sessions/{session_id}/reset`, and `POST /sessions/{session_id}/teardown`.
 
+Reader-facing demo packs:
+
+- `demo_pack/saas_agent_validation`: SAAS-001 failed-payment baseline.
+- `demo_pack/saas003_duplicate_webhook`: SAAS-003 duplicate Stripe webhook
+  edge case.
+
 ## Quickstart
 
 ```bash

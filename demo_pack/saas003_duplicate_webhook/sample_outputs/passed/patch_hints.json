@@ -1,0 +1,10 @@
+{
+  "schema_version": "commerce_safety.patch_hints.v1",
+  "run_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
+  "scenario_id": "SAAS-003",
+  "scenario_name": "duplicate_stripe_webhook_side_effects",
+  "status": "passed",
+  "replay_command": "commerce-safety replay runs/sess_20260617T023232936786Z_SAAS-003_13272948",
+  "likely_guardrails": [],
+  "hints": []
+}

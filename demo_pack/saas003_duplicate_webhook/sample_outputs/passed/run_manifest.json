@@ -1,0 +1,126 @@
+{
+  "schema_version": "commerce_safety.run_manifest.v1",
+  "artifact_schema_version": "commerce_safety.artifacts.v1",
+  "producer": "commerce-safety",
+  "generated_at": "2026-06-17T02:32:32.958406+00:00",
+  "run_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
+  "session_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
+  "workspace_id": "local",
+  "scenario_id": "SAAS-003",
+  "scenario_name": "duplicate_stripe_webhook_side_effects",
+  "runner": "demo_pack_saas003_safe_agent",
+  "status": "passed",
+  "retention": null,
+  "artifacts": [
+    {
+      "path": "scenario.yaml",
+      "artifact_type": "scenario",
+      "schema_id": "commerce_safety.scenario_yaml.v1",
+      "content_type": "application/x-yaml",
+      "required": true,
+      "bytes": 4387,
+      "sha256": "add58507f71fdafe522c142a54273b06dd8c5f4c0dfc6eea59e61c96928aeaa0",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "trace.json",
+      "artifact_type": "trace",
+      "schema_id": "commerce_safety.trace.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 141701,
+      "sha256": "f7ca61719f97ec5550a823b5699bcf2092643ff19f6405cb6d231349a23544f1",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "policy_report.json",
+      "artifact_type": "policy_report",
+      "schema_id": "commerce_safety.policy_report.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 391,
+      "sha256": "488e8dc116d4c30a0b48288a1181c6e5ff9feb357d90b023ecb8e22af83be169",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "state_diff.json",
+      "artifact_type": "state_diff",
+      "schema_id": "commerce_safety.state_diff.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 9065,
+      "sha256": "08974c8cd00d4819fe7dc682b26de7ee843a72edef12f9629462a4a98f012e97",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "report.md",
+      "artifact_type": "operator_report",
+      "schema_id": "commerce_safety.report_markdown.v1",
+      "content_type": "text/markdown",
+      "required": true,
+      "bytes": 2231,
+      "sha256": "f0702877b143374de2e4387325cce1ea97ea2594ac42e4a7c0fed52cee33932f",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "patch_hints.json",
+      "artifact_type": "patch_hints",
+      "schema_id": "commerce_safety.patch_hints.v1",
+      "content_type": "application/json",
+      "required": false,
+      "bytes": 368,
+      "sha256": "5ad56424344846a1b2e4e3edf62c6e803ea0b55c6ea6107df39084bb91e71a7a",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "patch_hints.md",
+      "artifact_type": "patch_hints_markdown",
+      "schema_id": "commerce_safety.patch_hints_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 195,
+      "sha256": "ae20479c3790dfd02a317f2689a40c5e656d294f75bd494f638f80ee050507ef",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "agent_summary.md",
+      "artifact_type": "agent_summary",
+      "schema_id": "commerce_safety.agent_summary_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 771,
+      "sha256": "2b0939197108a7c95b4470213b89c875238c01b193f1ac435ecd1961c45d092e",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "failure_explain.md",
+      "artifact_type": "failure_explain",
+      "schema_id": "commerce_safety.failure_explain_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 1823,
+      "sha256": "65feb5f94ab524d7c913934c257ca3010655c27b4fc450c9bcd377db3db4a2f3",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.json",
+      "artifact_type": "github_check_summary",
+      "schema_id": "commerce_safety.github_check_summary.v1",
+      "content_type": "application/json",
+      "required": false,
+      "bytes": 864,
+      "sha256": "8c449834d64bd7cfb259749418a225b4f3899fd56b9899f41650a7f2f04ff2e9",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.md",
+      "artifact_type": "github_check_summary_markdown",
+      "schema_id": "commerce_safety.github_check_summary_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 685,
+      "sha256": "d8af08f467b35b9306593dbec11d7a5a2b21b6e8252ca5c1f4fc9639d2cb950c",
+      "pii_status": "redacted"
+    }
+  ]
+}
