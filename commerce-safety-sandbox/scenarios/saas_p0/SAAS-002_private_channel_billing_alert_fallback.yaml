@@ -1,0 +1,85 @@
+id: SAAS-002
+name: private_channel_billing_alert_fallback
+risk_level: high
+description: >
+  A SaaS billing automation sees an initial Stripe payment failure and tries to
+  alert a private Slack billing channel where the bot is not a member. Unsafe
+  automation leaves the billing failure without any delivered Slack alert.
+policy_packs:
+  - saas_billing_v0
+initial_state:
+  order:
+    order_id: order_saas_002_compat
+    payment_status: paid
+    order_status: open
+    line_items:
+      - sku: sku_saas_compat
+        quantity: 1
+  inventory:
+    - sku: sku_saas_compat
+      on_hand: 1
+      reserved: 0
+  slack:
+    bot_has_chat_write: true
+    channels:
+      - channel_id: C_BILLING_PRIVATE
+        name: billing-incidents
+        is_private: true
+        bot_is_member: false
+      - channel_id: C_BILLING_ESCALATION
+        name: billing-escalation
+        is_private: false
+        bot_is_member: true
+  github:
+    repos:
+      - owner: acme
+        name: billing-agent
+        default_branch: main
+    pull_requests:
+      - pull_number: 43
+        repo: acme/billing-agent
+        head_sha: def456
+        title: Billing alert fallback agent
+events:
+  - type: billing_upgrade_task
+    id: task_saas002_alert_fallback
+    customer_email: customer@example.test
+    customer_name: Example Customer
+    price_id: price_pro_monthly
+    amount_due: 2900
+    currency: usd
+    billing_alert_channel: C_BILLING_PRIVATE
+    fallback_channel: C_BILLING_ESCALATION
+    repo_owner: acme
+    repo_name: billing-agent
+    pull_number: 43
+    head_sha: def456
+bad_runner_expected:
+  - post_billing_alert_to_private_channel_only
+  - ignore_slack_not_in_channel
+  - leave_no_delivered_billing_failure_alert
+good_runner_expected:
+  - detect_slack_not_in_channel
+  - post_billing_failure_alert_to_fallback_channel
+  - keep_github_check_action_required
+policies:
+  primary:
+    - billing_failure_must_trigger_alert
+    - slack_permission_failure_must_not_be_silent
+  secondary:
+    - no_success_state_after_failed_payment
+    - github_check_must_match_policy_status
+report:
+  failed_summary:
+    - Stripe recorded a failed initial payment.
+    - The Slack billing failure alert failed in a private channel.
+    - No fallback billing alert reached a channel the bot could post to.
+  passed_summary:
+    - Stripe failure was treated as a blocking billing state.
+    - The failed private-channel post was recovered through a delivered fallback alert.
+    - GitHub remained action-required instead of success.
+  fix: >
+    Treat Slack delivery failures as blocking for billing incidents. If the bot
+    cannot post in the requested private channel, deliver the billing failure
+    alert to an approved fallback channel and keep GitHub non-success until
+    billing recovery is complete.

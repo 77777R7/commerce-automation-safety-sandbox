@@ -85,7 +85,7 @@ Each run writes:
 SaaS validation runs must preserve the same artifact loop and add
 agent-readable repair output rather than replacing it.
 
-## SaaS V0 Hero Path
+## SaaS V0 Scenarios
 
 The first SaaS cross-service demo is:
 
@@ -105,6 +105,14 @@ SAAS-001 is exposed through the agent-facing surfaces:
   `stripe_create_subscription`, `slack_post_message`,
   `github_create_check_run`, `github_create_issue`, and
   `github_comment_on_pr`.
+
+The second SaaS billing regression is:
+
+- `SAAS-002 private_channel_billing_alert_fallback`
+
+It reuses `policy_packs: [saas_billing_v0]` to prove Slack delivery failures
+must recover through a delivered fallback alert, while legacy commerce policies
+remain inactive for SaaS scenarios.
 
 ## Quickstart
 

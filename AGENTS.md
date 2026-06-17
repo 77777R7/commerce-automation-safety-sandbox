@@ -50,6 +50,10 @@ The first SaaS cross-service policy demo is
 turn into Slack/GitHub success state, and Slack delivery failures must remain
 visible.
 
+`SAAS-002_private_channel_billing_alert_fallback` is the second SaaS billing
+regression. It must keep using `policy_packs: [saas_billing_v0]` and prove
+legacy commerce findings do not leak into SaaS runs.
+
 SAAS-001 must be runnable through agent-facing HTTP/MCP actions. Do not write
 new demo code that reaches into `session.environment.twins[...]` unless it is a
 low-level unit test for a twin implementation.

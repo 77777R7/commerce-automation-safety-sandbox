@@ -106,6 +106,10 @@ Phase 4: SlackTwin + GitHubTwin V0 And SAAS-001
   alert, and GitHub records review/action-required state.
 - Policy engine reads the service twin snapshots while legacy commerce policies
   remain isolated behind the `legacy_commerce` policy pack.
+- Add `SAAS-002_private_channel_billing_alert_fallback` as the same
+  `saas_billing_v0` pack's boundary regression: Slack private-channel delivery
+  failure must recover through a delivered fallback alert, and legacy commerce
+  findings must not appear in the SaaS run.
 
 Phase 5: SAAS-001 Agent-Facing HTTP/MCP Surface
 
