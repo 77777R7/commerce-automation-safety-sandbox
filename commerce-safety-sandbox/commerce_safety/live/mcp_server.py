@@ -18,7 +18,17 @@ CORE_MCP_TOOL_NAMES = [
     "commerce.get_patch_hints",
 ]
 
+SANDBOX_MCP_TOOL_ALIASES = [
+    "sandbox.start_session",
+    "sandbox.get_task",
+    "sandbox.complete_session",
+    "sandbox.get_trace",
+    "sandbox.get_policy_report",
+    "sandbox.get_patch_hints",
+]
+
 AGENT_FACING_MCP_TOOL_NAMES = [
+    *SANDBOX_MCP_TOOL_ALIASES,
     "commerce.start_session",
     "commerce.get_task",
     "commerce.reserve_inventory",
@@ -102,6 +112,24 @@ def create_mcp_server(
         """Return the next seeded scenario task for an open session."""
 
         return tools.call_tool("commerce.get_task", {"session_id": session_id})
+
+    @app.tool(name="sandbox.start_session")
+    def sandbox_start_session(
+        scenario_path: str | None = None,
+        scenario_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Start a live agent validation session from an allowlisted scenario."""
+
+        return tools.call_tool(
+            "sandbox.start_session",
+            {"scenario_path": scenario_path, "scenario_id": scenario_id},
+        )
+
+    @app.tool(name="sandbox.get_task")
+    def sandbox_get_task(session_id: str) -> dict[str, Any]:
+        """Return the next seeded scenario task for an open session."""
+
+        return tools.call_tool("sandbox.get_task", {"session_id": session_id})
 
     @app.tool(name="commerce.reserve_inventory")
     def reserve_inventory(
@@ -840,6 +868,39 @@ def create_mcp_server(
         """Read agent-readable repair hints for a completed session."""
 
         return tools.call_tool("commerce.get_patch_hints", {"session_id": session_id})
+
+    @app.tool(name="sandbox.complete_session")
+    def sandbox_complete_session(
+        session_id: str,
+        runner_name: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Evaluate policies, write artifacts, and return the validation result."""
+
+        return tools.call_tool(
+            "sandbox.complete_session",
+            {"session_id": session_id, "runner_name": runner_name},
+        )
+
+    @app.tool(name="sandbox.get_trace")
+    def sandbox_get_trace(session_id: str) -> dict[str, Any]:
+        """Read the live trace and event ledger for a session."""
+
+        return tools.call_tool("sandbox.get_trace", {"session_id": session_id})
+
+    @app.tool(name="sandbox.get_policy_report")
+    def sandbox_get_policy_report(session_id: str) -> dict[str, Any]:
+        """Read structured policy findings for a completed session."""
+
+        return tools.call_tool(
+            "sandbox.get_policy_report",
+            {"session_id": session_id},
+        )
+
+    @app.tool(name="sandbox.get_patch_hints")
+    def sandbox_get_patch_hints(session_id: str) -> dict[str, Any]:
+        """Read agent-readable repair hints for a completed session."""
+
+        return tools.call_tool("sandbox.get_patch_hints", {"session_id": session_id})
 
     return app
 

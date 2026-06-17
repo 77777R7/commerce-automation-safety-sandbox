@@ -125,7 +125,10 @@ python -m pytest
 ```bash
 ./commerce-safety doctor
 ./commerce-safety mcp-config --python "$PWD/.venv/bin/python"
+./commerce-safety demo saas001-agent --python "$PWD/.venv/bin/python"
 ./commerce-safety demo scn002-agent --python "$PWD/.venv/bin/python"
+./commerce-safety init --path saas-mcp-agent
+./commerce-safety init --path saas-http-workflow
 ./commerce-safety init --path n8n
 ./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner bad_runner
 ./commerce-safety run commerce-safety-sandbox/scenarios/duplicate_webhook.yaml --runner good_runner
@@ -180,6 +183,10 @@ PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
 
 ## Demo And POC Materials
 
+- [SAAS-001 Stripe/Slack/GitHub demo pack](demo_pack/saas_agent_validation/README.md)
+- [SAAS-001 MCP agent test prompt](demo_pack/prompts/saas001_mcp_agent_test.md)
+- [SAAS-001 HTTP agent example](examples/agent_integrations/http_saas001_failed_payment_agent.py)
+- [SAAS-001 MCP agent example](examples/agent_integrations/mcp_saas001_failed_payment_agent.py)
 - [Static demo viewer](demo_viewer/index.html)
 - [Design Partner POC package](docs/design_partner_poc/README.md)
 - [External tester quickstart](docs/QUICKSTART_EXTERNAL_TESTER.md)

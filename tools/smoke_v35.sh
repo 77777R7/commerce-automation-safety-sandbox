@@ -39,6 +39,7 @@ PYTHON="$PYTHON_BIN" ./tools/smoke_stage15_release_hygiene.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage16_security_abuse.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage17_run_manifest.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage18_agent_examples.sh
+PYTHON="$PYTHON_BIN" ./tools/smoke_saas001_demo_pack.sh
 PYTHON="$PYTHON_BIN" ./tools/smoke_stage19_hosted_enterprise_poc.sh
 
 echo "V3.5 live agent sandbox gate passed."

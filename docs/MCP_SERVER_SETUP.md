@@ -67,6 +67,18 @@ commerce.get_policy_report
 commerce.get_patch_hints
 ```
 
+For SaaS V0 demos, the same lifecycle is also exposed through product-facing
+aliases:
+
+```txt
+sandbox.start_session
+sandbox.get_task
+sandbox.complete_session
+sandbox.get_trace
+sandbox.get_policy_report
+sandbox.get_patch_hints
+```
+
 Stage 10 expands the real MCP server with the generic commerce actions needed
 to run all five P0 scenarios through agent-facing tools:
 

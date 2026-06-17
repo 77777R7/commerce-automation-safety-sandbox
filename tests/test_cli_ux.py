@@ -4,6 +4,7 @@ from pathlib import Path
 
 from commerce_safety.cli import (
     build_parser,
+    build_saas001_agent_demo,
     build_scn002_agent_demo,
     install_mcp_config,
     mcp_config_payload,
@@ -87,11 +88,34 @@ def test_scn002_agent_demo_contains_config_prompt_and_checklist() -> None:
     assert "Safe run passes" in demo
 
 
+def test_saas001_agent_demo_contains_stripe_slack_github_checklist() -> None:
+    demo = build_saas001_agent_demo(
+        repo_root=Path("/tmp/commerce-safety-demo"),
+        python_path="/tmp/commerce-safety-demo/.venv/bin/python",
+        runs_dir="runs",
+    )
+
+    assert "SAAS-001" in demo
+    assert "demo_pack/prompts/saas001_mcp_agent_test.md" in demo
+    assert "demo_pack/saas_agent_validation/http_curl_bad_good.md" in demo
+    assert "no_success_state_after_failed_payment" in demo
+    assert "slack_permission_failure_must_not_be_silent" in demo
+    assert "No production Stripe keys" in demo
+
+
 def test_demo_scn002_agent_command_parses() -> None:
     parser = build_parser()
     args = parser.parse_args(["demo", "scn002-agent", "--runs-dir", "runs/test"])
 
     assert args.demo_command == "scn002-agent"
+    assert args.runs_dir == "runs/test"
+
+
+def test_demo_saas001_agent_command_parses() -> None:
+    parser = build_parser()
+    args = parser.parse_args(["demo", "saas001-agent", "--runs-dir", "runs/test"])
+
+    assert args.demo_command == "saas001-agent"
     assert args.runs_dir == "runs/test"
 
 
@@ -138,6 +162,8 @@ def test_init_and_wizard_commands_accept_path_selection() -> None:
 
     init_args = parser.parse_args(["init", "--path", "n8n"])
     wizard_args = parser.parse_args(["wizard", "--path", "http-workflow"])
+    saas_args = parser.parse_args(["init", "--path", "saas-mcp-agent"])
 
     assert init_args.path == "n8n"
     assert wizard_args.path == "http-workflow"
+    assert saas_args.path == "saas-mcp-agent"

@@ -11,6 +11,54 @@ They intentionally use the same scenario for unsafe and safe paths. The core
 principle is `Permissive Twin + Policy Check`: unsafe actions mutate state
 first; `PolicyEngine` catches the incident at completion.
 
+## SAAS-001 Stripe/Slack/GitHub Hero Example
+
+Run the first SaaS validation scenario through HTTP:
+
+```bash
+PYTHONPATH="$PWD/commerce-safety-sandbox" \
+./commerce-safety --runs-dir runs/saas001_http live serve --host 127.0.0.1 --port 8765
+```
+
+In another terminal:
+
+```bash
+python examples/agent_integrations/http_saas001_failed_payment_agent.py \
+  --base-url http://127.0.0.1:8765 \
+  --mode unsafe \
+  --json
+
+python examples/agent_integrations/http_saas001_failed_payment_agent.py \
+  --base-url http://127.0.0.1:8765 \
+  --mode safe \
+  --json
+```
+
+Run the same hero path through the real MCP server:
+
+```bash
+PYTHONPATH="$PWD/commerce-safety-sandbox" \
+python examples/agent_integrations/mcp_saas001_failed_payment_agent.py \
+  --root "$PWD" \
+  --runs-dir runs/saas001_mcp \
+  --mode unsafe \
+  --json
+
+PYTHONPATH="$PWD/commerce-safety-sandbox" \
+python examples/agent_integrations/mcp_saas001_failed_payment_agent.py \
+  --root "$PWD" \
+  --runs-dir runs/saas001_mcp \
+  --mode safe \
+  --json
+```
+
+Expected result:
+
+- `unsafe` fails with the SAAS-001 billing, Slack delivery, and GitHub false-success policies.
+- `safe` passes with zero findings.
+- Each run writes `trace.json`, `policy_report.json`, `state_diff.json`,
+  `report.md`, `patch_hints.json`, and `run_manifest.json`.
+
 ## MCP Example
 
 Run SCN-002 through the real MCP server using

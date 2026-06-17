@@ -13,6 +13,17 @@ External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hin
 
 ## Core Tools
 
+For SaaS V0 demos, prefer the product-facing aliases:
+
+- `sandbox.start_session`
+- `sandbox.get_task`
+- `sandbox.complete_session`
+- `sandbox.get_trace`
+- `sandbox.get_policy_report`
+- `sandbox.get_patch_hints`
+
+The legacy commerce lifecycle names remain available:
+
 - `commerce.start_session`
 - `commerce.get_task`
 - `commerce.create_fulfillment`
@@ -21,6 +32,17 @@ External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hin
 - `commerce.get_trace`
 - `commerce.get_policy_report`
 - `commerce.get_patch_hints`
+
+## SaaS V0 Action Tools
+
+SAAS-001 uses:
+
+- `stripe.create_customer`
+- `stripe.create_subscription`
+- `slack.post_message`
+- `github.create_check_run`
+- `github.create_issue`
+- `github.comment_on_pr`
 
 ## P0 Commerce Action Tools
 

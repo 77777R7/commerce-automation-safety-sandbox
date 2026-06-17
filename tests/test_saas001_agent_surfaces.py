@@ -15,6 +15,12 @@ SAAS001_POLICIES = {
 }
 
 SAAS001_TOOLS = {
+    "sandbox.start_session",
+    "sandbox.get_task",
+    "sandbox.complete_session",
+    "sandbox.get_trace",
+    "sandbox.get_policy_report",
+    "sandbox.get_patch_hints",
     "stripe.create_customer",
     "stripe.create_subscription",
     "slack.post_message",
@@ -241,9 +247,9 @@ def test_saas001_mcp_surface_runs_without_direct_twin_access(tmp_path):
     listed = {tool["name"] for tool in tools.list_tools()}
     assert SAAS001_TOOLS.issubset(listed)
 
-    bad = tools.call_tool("commerce.start_session", {"scenario_id": "SAAS-001"})
+    bad = tools.call_tool("sandbox.start_session", {"scenario_id": "SAAS-001"})
     bad_session = bad["session_id"]
-    bad_task = tools.call_tool("commerce.get_task", {"session_id": bad_session})[
+    bad_task = tools.call_tool("sandbox.get_task", {"session_id": bad_session})[
         "task"
     ]
     _mcp_create_failed_subscription(
@@ -275,7 +281,7 @@ def test_saas001_mcp_surface_runs_without_direct_twin_access(tmp_path):
         },
     )
     bad_complete = tools.call_tool(
-        "commerce.complete_session",
+        "sandbox.complete_session",
         {"session_id": bad_session, "runner_name": "mcp_bad_agent"},
     )
     assert bad_complete["status"] == "failed"
@@ -285,9 +291,9 @@ def test_saas001_mcp_surface_runs_without_direct_twin_access(tmp_path):
         "github_check_must_match_policy_status",
     }.issubset({finding["policy_id"] for finding in bad_complete["findings"]})
 
-    good = tools.call_tool("commerce.start_session", {"scenario_id": "SAAS-001"})
+    good = tools.call_tool("sandbox.start_session", {"scenario_id": "SAAS-001"})
     good_session = good["session_id"]
-    good_task = tools.call_tool("commerce.get_task", {"session_id": good_session})[
+    good_task = tools.call_tool("sandbox.get_task", {"session_id": good_session})[
         "task"
     ]
     _mcp_create_failed_subscription(
@@ -330,11 +336,11 @@ def test_saas001_mcp_surface_runs_without_direct_twin_access(tmp_path):
             "actor": "mcp_good_agent",
         },
     )
-    trace = tools.call_tool("commerce.get_trace", {"session_id": good_session})
+    trace = tools.call_tool("sandbox.get_trace", {"session_id": good_session})
     assert any(event["service"] == "stripe" for event in trace["event_ledger"])
 
     good_complete = tools.call_tool(
-        "commerce.complete_session",
+        "sandbox.complete_session",
         {"session_id": good_session, "runner_name": "mcp_good_agent"},
     )
     assert good_complete["status"] == "passed"

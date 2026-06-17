@@ -22,6 +22,12 @@ class CommerceMCPTools:
         self.manager = SessionManager(runs_dir=runs_dir)
         self.amazon = AmazonSellerOpsRouter(self)
         self._tools: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
+            "sandbox.start_session": self._start_session,
+            "sandbox.get_task": self._get_task,
+            "sandbox.complete_session": self._complete_session,
+            "sandbox.get_trace": self._get_trace,
+            "sandbox.get_policy_report": self._get_policy_report,
+            "sandbox.get_patch_hints": self._get_patch_hints,
             "commerce.start_session": self._start_session,
             "commerce.get_task": self._get_task,
             "commerce.create_fulfillment": self._create_fulfillment,
@@ -697,6 +703,12 @@ class CommerceMCPTools:
 
     def _description_for(self, name: str) -> str:
         descriptions = {
+            "sandbox.start_session": "Start a live agent validation session.",
+            "sandbox.get_task": "Return the next seeded scenario task.",
+            "sandbox.complete_session": "Evaluate policies and write artifacts.",
+            "sandbox.get_trace": "Read the live trace and event ledger.",
+            "sandbox.get_policy_report": "Read structured policy findings.",
+            "sandbox.get_patch_hints": "Read agent-readable repair hints.",
             "commerce.start_session": "Start a live commerce validation session.",
             "commerce.get_task": "Return the next seeded scenario task.",
             "commerce.create_fulfillment": "Create fulfillment in the permissive twin.",
