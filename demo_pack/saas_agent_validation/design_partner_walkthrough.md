@@ -26,6 +26,7 @@ Then we map one part of your workflow to the closest twin action path:
 - `policy_report.json`: structured policy findings.
 - `state_diff.json`: before/after business state.
 - `patch_hints.json`: agent-readable guardrails.
+- `github_check_summary.json` / `.md`: PR-check-style conclusion and annotations.
 - `run_manifest.json`: artifact contract for auditability.
 
 ## Success Criteria
@@ -34,4 +35,3 @@ Then we map one part of your workflow to the closest twin action path:
 - Safe path passes with zero findings.
 - The report names a concrete guardrail your agent or workflow can implement.
 - No production keys, customer PII, real refunds, or real platform writes are used.
-

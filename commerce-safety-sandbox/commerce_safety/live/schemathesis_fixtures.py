@@ -16,6 +16,9 @@ class SchemathesisFixtureValues:
 
 OPERATION_SCENARIOS = {
     "getNextTask": "SCN-002",
+    "getSessionStatus": "LIFECYCLE_STATUS",
+    "resetSession": "LIFECYCLE_RESET",
+    "teardownSession": "LIFECYCLE_TEARDOWN",
     "createFulfillment": "SCN-002",
     "findFulfillment": "SCN-002",
     "getTrace": "SCN-002",
@@ -34,6 +37,7 @@ OPERATION_SCENARIOS = {
     "warehouseContinueFulfillment": "SCN-005",
     "stripeCreateCustomer": "SAAS-001",
     "stripeCreateSubscription": "SAAS-001",
+    "stripeDeliverWebhook": "SAAS-003",
     "slackPostMessage": "SAAS-001",
     "githubCreateCheckRun": "SAAS-001",
     "githubCreateIssue": "SAAS-001",
@@ -164,6 +168,11 @@ REQUEST_BODY_FIXTURES: dict[str, dict[str, Any]] = {
         "amount_due": 2900,
         "currency": "usd",
         "payment_outcome": "requires_payment_method",
+        "actor": "schemathesis_fixture_agent",
+    },
+    "stripeDeliverWebhook": {
+        "event_id": "evt_000003",
+        "delivery_id": "deliv_schemathesis_1",
         "actor": "schemathesis_fixture_agent",
     },
     "slackPostMessage": {

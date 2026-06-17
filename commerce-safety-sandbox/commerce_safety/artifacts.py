@@ -14,6 +14,7 @@ TRACE_SCHEMA_VERSION = "commerce_safety.trace.v1"
 POLICY_REPORT_SCHEMA_VERSION = "commerce_safety.policy_report.v1"
 STATE_DIFF_SCHEMA_VERSION = "commerce_safety.state_diff.v1"
 PATCH_HINTS_SCHEMA_VERSION = "commerce_safety.patch_hints.v1"
+GITHUB_CHECK_SUMMARY_SCHEMA_VERSION = "commerce_safety.github_check_summary.v1"
 
 
 ARTIFACT_CONTRACT: dict[str, dict[str, Any]] = {
@@ -68,6 +69,18 @@ ARTIFACT_CONTRACT: dict[str, dict[str, Any]] = {
     "failure_explain.md": {
         "artifact_type": "failure_explain",
         "schema_id": "commerce_safety.failure_explain_markdown.v1",
+        "content_type": "text/markdown",
+        "required": False,
+    },
+    "github_check_summary.json": {
+        "artifact_type": "github_check_summary",
+        "schema_id": GITHUB_CHECK_SUMMARY_SCHEMA_VERSION,
+        "content_type": "application/json",
+        "required": False,
+    },
+    "github_check_summary.md": {
+        "artifact_type": "github_check_summary_markdown",
+        "schema_id": "commerce_safety.github_check_summary_markdown.v1",
         "content_type": "text/markdown",
         "required": False,
     },

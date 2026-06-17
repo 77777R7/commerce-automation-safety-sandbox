@@ -137,24 +137,45 @@ Phase 5 exposes SAAS-001 through agent-facing HTTP and MCP:
 - External agents can run SAAS-001 without importing Python or reading
   `session.environment.twins[...]`.
 - MCP exposes `stripe.create_customer`, `stripe.create_subscription`,
-  `slack.post_message`, `github.create_check_run`, `github.create_issue`, and
+  `stripe.deliver_webhook`, `slack.post_message`,
+  `github.create_check_run`, `github.create_issue`, and
   `github.comment_on_pr`.
 - HTTP exposes equivalent `/sessions/{session_id}/twin/...` actions.
 - `GET /sessions/{session_id}/trace` includes `environment_state` and
-  `event_ledger`.
+  `event_ledger`, with SaaS runs using `state_source = environment`.
 - Unsafe and safe SAAS-001 paths are covered through both HTTP and MCP tests.
 
 Phase 6 introduces `SAAS-002_private_channel_billing_alert_fallback`:
 
 - SAAS-002 declares `policy_packs: [saas_billing_v0]`.
-- `policy_packs/saas_billing_v0.yaml` lists SAAS-001 and SAAS-002 as applicable
-  scenarios and declares the required SaaS artifact contract.
+- `policy_packs/saas_billing_v0.yaml` lists SAAS-001, SAAS-002, and SAAS-003
+  as applicable scenarios and declares the required SaaS artifact contract.
 - Unsafe path fails when a failed Stripe payment is followed by a Slack
   private-channel delivery failure and no delivered fallback billing alert.
 - Safe path passes when the agent delivers the billing failure alert to a
   reachable fallback channel and keeps GitHub non-success/action-required.
 - Regression coverage proves a legacy commerce accident inside the compatibility
   twin does not leak `legacy_commerce` findings into the SaaS run.
+
+Phase 7 introduces `SAAS-003_duplicate_stripe_webhook_side_effects`:
+
+- Unsafe path fails when duplicate Stripe webhook delivery creates duplicate
+  Slack/GitHub recovery side effects for the same Stripe event.
+- Safe path passes when the duplicate delivery is acknowledged but downstream
+  Slack/GitHub side effects are deduped.
+- Completed runs include `github_check_summary.json` and
+  `github_check_summary.md`, a PR-check-style view of policy findings and
+  repair hints.
+
+Phase 8 introduces minimal sandbox lifecycle:
+
+- `POST /sessions` provisions a sandbox and accepts optional `ttl_seconds`.
+- `GET /sessions/{session_id}/status` returns open/completed state, TTL status,
+  and task progress.
+- `POST /sessions/{session_id}/reset` returns the same scenario to initial
+  state.
+- `POST /sessions/{session_id}/teardown` removes the in-memory session without
+  deleting run artifacts.
 
 ## Stage Gate Acceptance
 
@@ -227,6 +248,8 @@ Acceptance:
   - `report.md`
   - `patch_hints.md`
   - `patch_hints.json`
+  - `github_check_summary.md`
+  - `github_check_summary.json`
 
 ## Stage 2 HTTP Twin API Vertical Slice Acceptance
 

@@ -2,7 +2,6 @@
   "scenario_id": "SAAS-001",
   "status": "failed",
   "signals": {
-    "commerce": {},
     "stripe": {
       "has_failed_payment": true,
       "has_refund_without_approval": false

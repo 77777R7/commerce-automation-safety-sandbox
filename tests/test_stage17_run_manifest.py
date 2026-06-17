@@ -93,11 +93,16 @@ def test_live_session_manifest_includes_agent_repair_artifacts(tmp_path: Path) -
         "patch_hints.md",
         "agent_summary.md",
         "failure_explain.md",
+        "github_check_summary.json",
+        "github_check_summary.md",
     ]:
         assert path in artifacts_by_path
 
     assert _read_json(run_path / "patch_hints.json")["schema_version"] == (
         "commerce_safety.patch_hints.v1"
+    )
+    assert _read_json(run_path / "github_check_summary.json")["schema_version"] == (
+        "commerce_safety.github_check_summary.v1"
     )
     assert validate_run_manifest(run_path) == []
 

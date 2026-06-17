@@ -390,6 +390,33 @@ def _agent_event_sequence(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sequence
 
 
+def _duplicate_side_effect_groups(
+    items: list[dict[str, Any]],
+    duplicate_event_ids: set[str],
+    *,
+    side_effect_type: str,
+    dedupe_key_field: str,
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for item in items:
+        metadata = item.get("metadata") or {}
+        event_id = metadata.get("stripe_event_id")
+        if event_id not in duplicate_event_ids:
+            continue
+        dedupe_key = str(item.get(dedupe_key_field) or metadata.get("kind") or "item")
+        grouped.setdefault((event_id, dedupe_key), []).append(item)
+    return [
+        {
+            "stripe_event_id": event_id,
+            "side_effect_type": side_effect_type,
+            "dedupe_key": dedupe_key,
+            "items": group,
+        }
+        for (event_id, dedupe_key), group in grouped.items()
+        if len(group) > 1
+    ]
+
+
 def build_environment_state_diff(
     before: dict[str, Any],
     after: dict[str, Any],
@@ -407,7 +434,18 @@ def build_environment_state_diff(
     latest_invoice = _first_value(stripe_after.get("invoices", {}))
     latest_payment_intent = _first_value(stripe_after.get("payment_intents", {}))
     latest_subscription = _first_value(stripe_after.get("subscriptions", {}))
+    stripe_events = list(stripe_after.get("events", {}).values())
+    duplicate_stripe_events = [
+        event
+        for event in stripe_events
+        if int(event.get("duplicate_delivery_count", 0)) > 0
+    ]
+    duplicate_stripe_event_ids = {
+        event["event_id"] for event in duplicate_stripe_events if event.get("event_id")
+    }
     check_runs = list(github_after.get("check_runs", {}).values())
+    issues = list(github_after.get("issues", {}).values())
+    pr_comments = list(github_after.get("pr_comments", {}).values())
     success_checks = [
         check for check in check_runs if check.get("conclusion") == "success"
     ]
@@ -432,6 +470,42 @@ def build_environment_state_diff(
         for message in slack_messages
         if message.get("metadata", {}).get("kind") == "success_notification"
     ]
+    duplicate_slack_side_effects = _duplicate_side_effect_groups(
+        [
+            message
+            for message in slack_messages
+            if message.get("delivered")
+            and message.get("metadata", {}).get("kind") == "billing_failure_alert"
+        ],
+        duplicate_stripe_event_ids,
+        side_effect_type="slack_message",
+        dedupe_key_field="channel_id",
+    )
+    duplicate_github_side_effects = []
+    duplicate_github_side_effects.extend(
+        _duplicate_side_effect_groups(
+            check_runs,
+            duplicate_stripe_event_ids,
+            side_effect_type="github_check_run",
+            dedupe_key_field="name",
+        )
+    )
+    duplicate_github_side_effects.extend(
+        _duplicate_side_effect_groups(
+            issues,
+            duplicate_stripe_event_ids,
+            side_effect_type="github_issue",
+            dedupe_key_field="title",
+        )
+    )
+    duplicate_github_side_effects.extend(
+        _duplicate_side_effect_groups(
+            pr_comments,
+            duplicate_stripe_event_ids,
+            side_effect_type="github_pr_comment",
+            dedupe_key_field="body",
+        )
+    )
     event_sequence = _agent_event_sequence(events)
     slack_faults = [
         event for event in event_sequence if event.get("service") == "slack" and event.get("fault")
@@ -463,6 +537,13 @@ def build_environment_state_diff(
             github_after.get("signals", {}).get("has_pr_feedback")
         ),
         "github_success_after_slack_fault": github_success_after_slack_fault,
+        "stripe_duplicate_webhook_delivery": bool(duplicate_stripe_events),
+        "duplicate_slack_side_effects_from_stripe_webhook": bool(
+            duplicate_slack_side_effects
+        ),
+        "duplicate_github_side_effects_from_stripe_webhook": bool(
+            duplicate_github_side_effects
+        ),
     }
 
     return {
@@ -526,6 +607,10 @@ def build_environment_state_diff(
                 ).get("status"),
                 "invoice_status": (latest_invoice or {}).get("status"),
                 "subscription_status": (latest_subscription or {}).get("status"),
+                "duplicate_webhook_deliveries": stripe_after.get("counts", {}).get(
+                    "duplicate_webhook_deliveries",
+                    0,
+                ),
             },
             {
                 "service": "slack",
@@ -578,6 +663,9 @@ def build_environment_state_diff(
         "agent_behavior_signals": {
             "slack_faults": slack_faults,
             "github_success_after_slack_fault": github_success_after_slack_fault,
+            "duplicate_stripe_events": duplicate_stripe_events,
+            "duplicate_slack_side_effects": duplicate_slack_side_effects,
+            "duplicate_github_side_effects": duplicate_github_side_effects,
             "event_sequence": event_sequence,
         },
         "expected": {
@@ -646,6 +734,7 @@ def build_saas_markdown_report(
                     f"- Subscription status: `{item.get('subscription_status')}`",
                     f"- Invoice status: `{item.get('invoice_status')}`",
                     f"- Payment intent status: `{item.get('payment_intent_status')}`",
+                    f"- Duplicate webhook deliveries: `{item.get('duplicate_webhook_deliveries', 0)}`",
                 ]
             )
         elif item["service"] == "slack":

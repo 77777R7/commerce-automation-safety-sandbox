@@ -15,11 +15,13 @@ evaluation_source:
 applicable_scenarios:
   - SAAS-001
   - SAAS-002
+  - SAAS-003
 policy_ids:
   - no_success_state_after_failed_payment
   - billing_failure_must_trigger_alert
   - slack_permission_failure_must_not_be_silent
   - github_check_must_match_policy_status
+  - stripe_duplicate_webhook_side_effects_must_be_deduped
 policy_contract:
   no_success_state_after_failed_payment:
     severity: critical
@@ -33,6 +35,9 @@ policy_contract:
   github_check_must_match_policy_status:
     severity: critical
     signal: GitHub check reports success while billing policy state is failed.
+  stripe_duplicate_webhook_side_effects_must_be_deduped:
+    severity: high
+    signal: Duplicate Stripe webhook delivery produces repeated Slack or GitHub side effects for the same Stripe event.
 artifact_contract:
   required_artifacts:
     - trace.json
@@ -40,11 +45,14 @@ artifact_contract:
     - state_diff.json
     - report.md
     - patch_hints.json
+    - github_check_summary.json
+    - github_check_summary.md
     - run_manifest.json
   required_policy_report_fields:
     - policy_packs
     - findings
   required_trace_fields:
+    - state_source
     - environment_state
     - event_ledger
 safety_boundary:

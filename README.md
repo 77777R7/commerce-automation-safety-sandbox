@@ -94,29 +94,33 @@ agent-readable repair output rather than replacing it.
 The first SaaS cross-service demo is:
 
 - `SAAS-001 failed_payment_success_notification`
+- `SAAS-002 private_channel_billing_alert_fallback`
+- `SAAS-003 duplicate_stripe_webhook_side_effects`
 
 It runs against stateful Stripe, Slack, and GitHub twins. The unsafe path
 creates a failed Stripe payment, misses the Slack billing failure alert, and
 still publishes success state. The safe path delivers the billing alert and
-keeps GitHub in a non-success review state.
+keeps GitHub in a non-success review state. SAAS-003 adds the stateful edge
+case: duplicate Stripe webhook delivery must not create duplicate Slack or
+GitHub recovery side effects.
 
-SAAS-001 is exposed through the agent-facing surfaces:
+SaaS V0 is exposed through the agent-facing surfaces:
 
 - MCP: `stripe.create_customer`, `stripe.create_subscription`,
-  `slack.post_message`, `github.create_check_run`, `github.create_issue`, and
-  `github.comment_on_pr`.
+  `stripe.deliver_webhook`, `slack.post_message`, `github.create_check_run`,
+  `github.create_issue`, and `github.comment_on_pr`.
 - HTTP: `POST /sessions/{session_id}/twin/stripe_create_customer`,
-  `stripe_create_subscription`, `slack_post_message`,
+  `stripe_create_subscription`, `stripe_deliver_webhook`, `slack_post_message`,
   `github_create_check_run`, `github_create_issue`, and
   `github_comment_on_pr`.
 
-The second SaaS billing regression is:
+All SaaS scenarios reuse `policy_packs: [saas_billing_v0]`, write
+environment-first traces, and include `github_check_summary.json` / `.md` as a
+PR-check-style validation artifact.
 
-- `SAAS-002 private_channel_billing_alert_fallback`
-
-It reuses `policy_packs: [saas_billing_v0]` to prove Slack delivery failures
-must recover through a delivered fallback alert, while legacy commerce policies
-remain inactive for SaaS scenarios.
+Minimal sandbox lifecycle is available through `POST /sessions` provisioning
+with optional `ttl_seconds`, `GET /sessions/{session_id}/status`, `POST
+/sessions/{session_id}/reset`, and `POST /sessions/{session_id}/teardown`.
 
 ## Quickstart
 

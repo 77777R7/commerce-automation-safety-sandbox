@@ -1,8 +1,8 @@
 # Agent Summary: failed_payment_success_notification
 
-- Run ID: `sess_20260617T005640466578Z_SAAS-001_a140d53c`
+- Run ID: `sess_20260617T022438085966Z_SAAS-001_504f616d`
 - Status: `passed`
-- Replay: `commerce-safety replay runs/sess_20260617T005640466578Z_SAAS-001_a140d53c`
+- Replay: `commerce-safety replay runs/sess_20260617T022438085966Z_SAAS-001_504f616d`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## Cross-Service Outcome

@@ -131,6 +131,17 @@ POLICY_HINTS = {
             "Only mark the check successful after payment recovery and alert delivery are both verified.",
         ],
     },
+    "stripe_duplicate_webhook_side_effects_must_be_deduped": {
+        "root_cause": (
+            "A duplicate Stripe webhook delivery produced duplicate Slack or GitHub "
+            "side effects for the same billing incident."
+        ),
+        "guardrails": [
+            "Persist processed Stripe event IDs before creating Slack or GitHub side effects.",
+            "Skip repeated webhook deliveries when the Stripe event ID was already handled.",
+            "Use the Stripe event ID as the idempotency key for billing incident alerts and review artifacts.",
+        ],
+    },
 }
 
 

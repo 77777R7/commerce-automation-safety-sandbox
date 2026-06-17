@@ -6,8 +6,20 @@ from typing import Any, Callable
 from ..io import read_json
 from ..models import to_plain
 from ..platform_skins.amazon import AmazonPlatformBinding, AmazonSellerOpsRouter
+from ..reporting import is_saas_scenario
 from ..twin import TimeoutAfterCommit
 from .sessions import SessionManager
+
+
+SAAS_TRACE_SERVICES = ("stripe", "slack", "github")
+
+
+def _saas_environment_state(snapshot: dict[str, Any]) -> dict[str, Any]:
+    return {
+        service: snapshot[service]
+        for service in SAAS_TRACE_SERVICES
+        if service in snapshot
+    }
 
 
 class CommerceMCPTools:
@@ -23,6 +35,9 @@ class CommerceMCPTools:
         self.amazon = AmazonSellerOpsRouter(self)
         self._tools: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
             "sandbox.start_session": self._start_session,
+            "sandbox.get_session_status": self._get_session_status,
+            "sandbox.reset_session": self._reset_session,
+            "sandbox.teardown_session": self._teardown_session,
             "sandbox.get_task": self._get_task,
             "sandbox.complete_session": self._complete_session,
             "sandbox.get_trace": self._get_trace,
@@ -54,6 +69,7 @@ class CommerceMCPTools:
             "commerce.get_patch_hints": self._get_patch_hints,
             "stripe.create_customer": self._stripe_create_customer,
             "stripe.create_subscription": self._stripe_create_subscription,
+            "stripe.deliver_webhook": self._stripe_deliver_webhook,
             "slack.post_message": self._slack_post_message,
             "github.create_check_run": self._github_create_check_run,
             "github.create_issue": self._github_create_issue,
@@ -99,6 +115,8 @@ class CommerceMCPTools:
         session = self.manager.create_session(
             Path(scenario_path) if scenario_path else None,
             scenario_id=scenario_id,
+            ttl_seconds=arguments.get("ttl_seconds"),
+            retention_days=arguments.get("retention_days"),
         )
         return {
             "ok": True,
@@ -106,7 +124,17 @@ class CommerceMCPTools:
             "scenario_id": session.scenario_id,
             "scenario_name": session.scenario_name,
             "status": session.status,
+            "ttl_expires_at": session.ttl_expires_at,
         }
+
+    def _get_session_status(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return {"ok": True, **self.manager.session_status(arguments["session_id"])}
+
+    def _reset_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return {"ok": True, **self.manager.reset_session(arguments["session_id"])}
+
+    def _teardown_session(self, arguments: dict[str, Any]) -> dict[str, Any]:
+        return {"ok": True, **self.manager.teardown_session(arguments["session_id"])}
 
     def _get_task(self, arguments: dict[str, Any]) -> dict[str, Any]:
         session_id = arguments["session_id"]
@@ -339,15 +367,30 @@ class CommerceMCPTools:
         trace_path = session.output_path / "trace.json"
         if trace_path.exists():
             return read_json(trace_path)
+        saas_scenario = is_saas_scenario(session.scenario)
+        environment_state = session.environment.snapshot_summary()
         return {
             "run_id": session.session_id,
             "session_id": session.session_id,
             "scenario_id": session.scenario_id,
             "scenario_name": session.scenario_name,
             "status": session.status,
-            "initial_state": session.initial_state,
-            "current_state": session.twin.snapshot_summary(),
-            "environment_state": session.environment.snapshot_summary(),
+            "state_source": "environment" if saas_scenario else "commerce_twin",
+            "initial_state": (
+                _saas_environment_state(session.initial_environment_state)
+                if saas_scenario
+                else session.initial_state
+            ),
+            "current_state": (
+                _saas_environment_state(environment_state)
+                if saas_scenario
+                else session.twin.snapshot_summary()
+            ),
+            "environment_state": (
+                _saas_environment_state(environment_state)
+                if saas_scenario
+                else environment_state
+            ),
             "event_ledger": [to_plain(event) for event in session.environment.events],
             "timeline": [to_plain(event) for event in session.twin.timeline],
         }
@@ -439,6 +482,31 @@ class CommerceMCPTools:
             request=arguments,
             response=response,
             state_before=state_before,
+        )
+        return {"ok": True, "session_id": session.session_id, **response}
+
+    def _stripe_deliver_webhook(
+        self,
+        arguments: dict[str, Any],
+    ) -> dict[str, Any]:
+        session = self.manager.get_session(arguments["session_id"])
+        actor = arguments.get("actor", "mcp_agent")
+        state_before = session.environment.snapshot_summary()
+        delivery = session.environment.twins["stripe"].deliver_webhook(
+            event_id=arguments["event_id"],
+            delivery_id=arguments.get("delivery_id"),
+            actor=actor,
+        )
+        response = {"delivery": to_plain(delivery)}
+        self._record_agent_action(
+            session,
+            actor=actor,
+            service="stripe",
+            operation="webhooks.deliver",
+            request={**arguments, "source_event_id": arguments["event_id"]},
+            response=response,
+            state_before=state_before,
+            fault="duplicate_webhook" if delivery.get("duplicate") else None,
         )
         return {"ok": True, "session_id": session.session_id, **response}
 
@@ -704,6 +772,9 @@ class CommerceMCPTools:
     def _description_for(self, name: str) -> str:
         descriptions = {
             "sandbox.start_session": "Start a live agent validation session.",
+            "sandbox.get_session_status": "Read sandbox session lifecycle status.",
+            "sandbox.reset_session": "Reset a sandbox session to its initial state.",
+            "sandbox.teardown_session": "Tear down an in-memory sandbox session.",
             "sandbox.get_task": "Return the next seeded scenario task.",
             "sandbox.complete_session": "Evaluate policies and write artifacts.",
             "sandbox.get_trace": "Read the live trace and event ledger.",
@@ -737,6 +808,7 @@ class CommerceMCPTools:
             "stripe.create_subscription": (
                 "Create a Stripe subscription and initial invoice/payment intent."
             ),
+            "stripe.deliver_webhook": "Deliver a Stripe webhook event to the agent.",
             "slack.post_message": "Post a Slack message in the SaaS twin.",
             "github.create_check_run": "Create a GitHub check run in the SaaS twin.",
             "github.create_issue": "Create a GitHub issue in the SaaS twin.",

@@ -34,6 +34,8 @@ ARTIFACTS = [
     "patch_hints.md",
     "agent_summary.md",
     "failure_explain.md",
+    "github_check_summary.json",
+    "github_check_summary.md",
     "run_manifest.json",
 ]
 
@@ -256,15 +258,15 @@ def write_sample_readme(output_dir: Path, failed: dict[str, Any], passed: dict[s
             "",
             f"- Status: `{failed['status']}`",
             f"- Findings: `{failed_ids}`",
-            "- Open `failed/trace_excerpt.json` first, then `failed/policy_report.json` and `failed/patch_hints.json`.",
+            "- Open `failed/trace_excerpt.json` first, then `failed/github_check_summary.md`, `failed/policy_report.json`, and `failed/patch_hints.json`.",
             "",
             "## Safe Run",
             "",
             f"- Status: `{passed['status']}`",
             "- Findings: none",
-            "- Open `passed/trace_excerpt.json` and `passed/policy_report.json` for the expected safe shape.",
+            "- Open `passed/trace_excerpt.json`, `passed/github_check_summary.md`, and `passed/policy_report.json` for the expected safe shape.",
             "",
-            "Every sample run keeps the required artifact contract: `trace.json`, `policy_report.json`, `state_diff.json`, `patch_hints.json`, and `run_manifest.json`.",
+            "Every sample run keeps the required artifact contract: `trace.json`, `policy_report.json`, `state_diff.json`, `patch_hints.json`, `github_check_summary.json`, and `run_manifest.json`.",
             "",
         ]
     )

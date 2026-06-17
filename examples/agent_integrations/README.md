@@ -17,7 +17,7 @@ Run the first SaaS validation scenario through HTTP:
 
 ```bash
 PYTHONPATH="$PWD/commerce-safety-sandbox" \
-./commerce-safety --runs-dir runs/saas001_http live serve --host 127.0.0.1 --port 8765
+./commerce-safety live serve --runs-dir runs/saas001_http --host 127.0.0.1 --port 8765
 ```
 
 In another terminal:
@@ -92,7 +92,7 @@ Start the local HTTP Twin API:
 
 ```bash
 PYTHONPATH="$PWD/commerce-safety-sandbox" \
-./commerce-safety --runs-dir runs/stage18_http live serve --host 127.0.0.1 --port 8765
+./commerce-safety live serve --runs-dir runs/stage18_http --host 127.0.0.1 --port 8765
 ```
 
 In another terminal:

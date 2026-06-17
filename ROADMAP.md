@@ -121,6 +121,7 @@ Phase 5: SAAS-001 Agent-Facing HTTP/MCP Surface
 - MCP tools:
   - `stripe.create_customer`
   - `stripe.create_subscription`
+  - `stripe.deliver_webhook`
   - `slack.post_message`
   - `github.create_check_run`
   - `github.create_issue`
@@ -128,12 +129,20 @@ Phase 5: SAAS-001 Agent-Facing HTTP/MCP Surface
 - HTTP actions:
   - `POST /sessions/{session_id}/twin/stripe_create_customer`
   - `POST /sessions/{session_id}/twin/stripe_create_subscription`
+  - `POST /sessions/{session_id}/twin/stripe_deliver_webhook`
   - `POST /sessions/{session_id}/twin/slack_post_message`
   - `POST /sessions/{session_id}/twin/github_create_check_run`
   - `POST /sessions/{session_id}/twin/github_create_issue`
   - `POST /sessions/{session_id}/twin/github_comment_on_pr`
 - `GET /sessions/{session_id}/trace` exposes `environment_state` and
   `event_ledger` for agent-readable cross-service inspection.
+- Completed sessions write `github_check_summary.json` and
+  `github_check_summary.md` so policy findings and patch hints render like a PR
+  check result.
+- Minimal sandbox lifecycle is available through `POST /sessions` provision
+  with optional `ttl_seconds`, `GET /sessions/{session_id}/status`,
+  `POST /sessions/{session_id}/reset`, and
+  `POST /sessions/{session_id}/teardown`.
 
 ## Current Non-Goals
 

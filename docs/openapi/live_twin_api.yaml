@@ -90,6 +90,54 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /sessions/{session_id}/status:
+    get:
+      operationId: getSessionStatus
+      summary: Read sandbox lifecycle status
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Session lifecycle status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatusResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/reset:
+    post:
+      operationId: resetSession
+      summary: Reset a sandbox session to its initial state
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Session reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatusResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/teardown:
+    post:
+      operationId: teardownSession
+      summary: Tear down an in-memory sandbox session
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          description: Session torn down
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeardownSessionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /sessions/{session_id}/twin/create_fulfillment:
     post:
       operationId: createFulfillment
@@ -604,6 +652,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/StripeSubscriptionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /sessions/{session_id}/twin/stripe_deliver_webhook:
+    post:
+      operationId: stripeDeliverWebhook
+      summary: Deliver a Stripe webhook event in the SaaS twin
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeDeliverWebhookRequest"
+            examples:
+              saas003_duplicate_delivery:
+                value:
+                  event_id: evt_000003
+                  delivery_id: deliv_saas003_1
+                  actor: external_agent
+      responses:
+        "200":
+          description: Stripe webhook delivery recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeWebhookDeliveryResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "404":
@@ -1373,6 +1451,14 @@ components:
         scenario_path:
           type: string
           minLength: 1
+        ttl_seconds:
+          type: integer
+          minimum: 0
+          nullable: true
+        retention_days:
+          type: integer
+          minimum: 0
+          nullable: true
       additionalProperties: false
     SessionCreated:
       type: object
@@ -2347,6 +2433,18 @@ components:
         actor:
           $ref: "#/components/schemas/Actor"
       additionalProperties: false
+    StripeDeliverWebhookRequest:
+      type: object
+      required: [event_id]
+      properties:
+        event_id:
+          type: string
+        delivery_id:
+          type: string
+          nullable: true
+        actor:
+          $ref: "#/components/schemas/Actor"
+      additionalProperties: false
     SlackPostMessageRequest:
       type: object
       required: [channel_id, text]
@@ -2701,6 +2799,77 @@ components:
         session_id:
           type: string
       additionalProperties: false
+    SessionStatusResponse:
+      type: object
+      required:
+        - ok
+        - session_id
+        - scenario_id
+        - status
+        - ttl_expired
+        - tasks_total
+        - tasks_remaining
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        workspace_id:
+          type: string
+        scenario_id:
+          type: string
+        scenario_name:
+          type: string
+        status:
+          type: string
+          enum: [open, passed, failed]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        ttl_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        ttl_expired:
+          type: boolean
+        retention_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        next_event_index:
+          type: integer
+          minimum: 0
+        tasks_total:
+          type: integer
+          minimum: 0
+        tasks_remaining:
+          type: integer
+          minimum: 0
+        output_path:
+          type: string
+      additionalProperties: false
+    TeardownSessionResponse:
+      type: object
+      required: [ok, session_id, scenario_id, status]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        workspace_id:
+          type: string
+        scenario_id:
+          type: string
+        status:
+          type: string
+          enum: [torn_down]
+        output_path:
+          type: string
+      additionalProperties: false
     StripeCustomerResponse:
       type: object
       required: [ok, session_id, customer]
@@ -2726,6 +2895,27 @@ components:
           $ref: "#/components/schemas/StripeInvoice"
         payment_intent:
           $ref: "#/components/schemas/StripePaymentIntent"
+      additionalProperties: false
+    StripeWebhookDeliveryResponse:
+      type: object
+      required: [ok, session_id, delivery]
+      properties:
+        ok:
+          type: boolean
+        session_id:
+          type: string
+        delivery:
+          type: object
+          required: [event, duplicate]
+          properties:
+            event:
+              $ref: "#/components/schemas/StripeEvent"
+            delivery_id:
+              type: string
+              nullable: true
+            duplicate:
+              type: boolean
+          additionalProperties: false
       additionalProperties: false
     SlackMessageResponse:
       type: object
@@ -2943,7 +3133,7 @@ components:
       additionalProperties: false
     TraceResponse:
       type: object
-      required: [ok, session_id, scenario_id, status, timeline]
+      required: [ok, session_id, scenario_id, status, state_source, timeline]
       properties:
         ok:
           type: boolean
@@ -2954,6 +3144,9 @@ components:
         status:
           type: string
           enum: [open, passed, failed]
+        state_source:
+          type: string
+          enum: [commerce_twin, environment]
         initial_state:
           $ref: "#/components/schemas/StateSnapshot"
         current_state:
@@ -3086,6 +3279,32 @@ components:
         last_payment_error:
           type: string
           nullable: true
+      additionalProperties: false
+    StripeEvent:
+      type: object
+      required:
+        - event_id
+        - type
+        - object_id
+        - payload
+        - delivered_count
+        - duplicate_delivery_count
+      properties:
+        event_id:
+          type: string
+        type:
+          type: string
+        object_id:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        delivered_count:
+          type: integer
+          minimum: 0
+        duplicate_delivery_count:
+          type: integer
+          minimum: 0
       additionalProperties: false
     SlackMessage:
       type: object

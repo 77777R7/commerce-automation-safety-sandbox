@@ -27,6 +27,10 @@ from ..reporting import (
 )
 from ..twin import CommerceTwin
 from .environment import SandboxEnvironment, ToolCallEvent
+from .github_check_summary import (
+    build_github_check_summary,
+    build_github_check_summary_markdown,
+)
 from .patch_hints import (
     build_agent_summary_markdown,
     build_failure_explain_markdown,
@@ -72,6 +76,23 @@ class LiveSession:
     @property
     def events(self) -> list[ToolCallEvent]:
         return self.environment.events
+
+
+SAAS_TRACE_SERVICES = ("stripe", "slack", "github")
+
+
+def _environment_source_state(
+    snapshot: dict[str, Any],
+    *,
+    scenario: dict[str, Any],
+) -> dict[str, Any]:
+    if not is_saas_scenario(scenario):
+        return deepcopy(snapshot)
+    return {
+        service: deepcopy(snapshot[service])
+        for service in SAAS_TRACE_SERVICES
+        if service in snapshot
+    }
 
 
 class SessionManager:
@@ -154,12 +175,80 @@ class SessionManager:
                 "created_at": session.created_at,
                 "completed_at": session.completed_at,
                 "ttl_expires_at": session.ttl_expires_at,
+                "ttl_expired": self._ttl_expired(session),
                 "retention_expires_at": session.retention_expires_at,
                 "output_path": str(session.output_path),
             }
             for session in self._sessions.values()
             if workspace_id is None or session.workspace_id == workspace_id
         ]
+
+    def session_status(self, session_id: str) -> dict[str, Any]:
+        session = self.get_session(session_id)
+        with session.lock:
+            total_tasks = len(session.scenario.get("events", []))
+            return {
+                "session_id": session.session_id,
+                "workspace_id": session.workspace_id,
+                "scenario_id": session.scenario_id,
+                "scenario_name": session.scenario_name,
+                "status": session.status,
+                "created_at": session.created_at,
+                "completed_at": session.completed_at,
+                "ttl_expires_at": session.ttl_expires_at,
+                "ttl_expired": self._ttl_expired(session),
+                "retention_expires_at": session.retention_expires_at,
+                "next_event_index": session.next_event_index,
+                "tasks_total": total_tasks,
+                "tasks_remaining": max(total_tasks - session.next_event_index, 0),
+                "output_path": str(session.output_path),
+            }
+
+    def reset_session(self, session_id: str) -> dict[str, Any]:
+        session = self.get_session(session_id)
+        with session.lock:
+            scenario_file, scenario = self.scenario_registry.load(
+                scenario_id=session.scenario_id,
+            )
+            twin = CommerceTwin(scenario)
+            environment = SandboxEnvironment.from_legacy_commerce(twin)
+            session.scenario_path = scenario_file
+            session.scenario = scenario
+            session.environment = environment
+            session.initial_state = twin.snapshot_summary()
+            session.initial_environment_state = environment.snapshot_summary()
+            session.status = "open"
+            session.completed_at = None
+            session.next_event_index = 0
+            session.amazon_feeds = {}
+            session.next_amazon_feed = 1
+        return self.session_status(session_id)
+
+    def teardown_session(self, session_id: str) -> dict[str, Any]:
+        with self._lock:
+            session = self._sessions.pop(session_id, None)
+        if session is None:
+            return {
+                "session_id": session_id,
+                "workspace_id": "unknown",
+                "scenario_id": "unknown",
+                "status": "torn_down",
+                "output_path": "",
+            }
+        return {
+            "session_id": session.session_id,
+            "workspace_id": session.workspace_id,
+            "scenario_id": session.scenario_id,
+            "status": "torn_down",
+            "output_path": str(session.output_path),
+        }
+
+    def _ttl_expired(self, session: LiveSession) -> bool:
+        if session.ttl_expires_at is None:
+            return False
+        return datetime.now(timezone.utc) >= datetime.fromisoformat(
+            session.ttl_expires_at
+        )
 
     def get_next_task(self, session_id: str) -> dict[str, Any] | None:
         session = self.get_session(session_id)
@@ -212,13 +301,28 @@ class SessionManager:
                     details={"status": "passed"},
                 )
 
+            saas_scenario = is_saas_scenario(session.scenario)
             final_state = session.twin.snapshot_summary()
             final_environment_state = session.environment.snapshot_summary()
             event_ledger = [to_plain(event) for event in session.environment.events]
-            if is_saas_scenario(session.scenario):
+            trace_initial_environment_state = _environment_source_state(
+                session.initial_environment_state,
+                scenario=session.scenario,
+            )
+            trace_final_environment_state = _environment_source_state(
+                final_environment_state,
+                scenario=session.scenario,
+            )
+            trace_initial_state = (
+                trace_initial_environment_state if saas_scenario else session.initial_state
+            )
+            trace_final_state = (
+                trace_final_environment_state if saas_scenario else final_state
+            )
+            if saas_scenario:
                 state_diff = build_environment_state_diff(
-                    session.initial_environment_state,
-                    final_environment_state,
+                    trace_initial_environment_state,
+                    trace_final_environment_state,
                     events=event_ledger,
                 )
             else:
@@ -242,12 +346,26 @@ class SessionManager:
                     "runner": runner_name,
                     "status": status,
                     "generated_at": datetime.now(timezone.utc).isoformat(),
-                    "initial_state": session.initial_state,
-                    "final_state": final_state,
-                    "initial_environment_state": session.initial_environment_state,
-                    "final_environment_state": final_environment_state,
-                    "environment_state": final_environment_state,
+                    "state_source": "environment" if saas_scenario else "commerce_twin",
+                    "source_of_truth": {
+                        "kind": "sandbox_environment"
+                        if saas_scenario
+                        else "commerce_twin",
+                        "services": list(SAAS_TRACE_SERVICES)
+                        if saas_scenario
+                        else ["commerce"],
+                    },
+                    "initial_state": trace_initial_state,
+                    "final_state": trace_final_state,
+                    "initial_environment_state": trace_initial_environment_state,
+                    "final_environment_state": trace_final_environment_state,
+                    "environment_state": trace_final_environment_state,
                     "event_ledger": event_ledger,
+                    "timeline_source": (
+                        "legacy_session_timeline"
+                        if saas_scenario
+                        else "commerce_twin_timeline"
+                    ),
                     "timeline": [to_plain(event) for event in session.twin.timeline],
                 },
                 TRACE_SCHEMA_VERSION,
@@ -259,12 +377,17 @@ class SessionManager:
                     "scenario_id": session.scenario_id,
                     "runner": runner_name,
                     "status": status,
+                    "evaluation_source": (
+                        "sandbox_environment"
+                        if saas_scenario
+                        else "commerce_twin"
+                    ),
                     "policy_packs": policy_packs,
                     "findings": findings,
                 },
                 POLICY_REPORT_SCHEMA_VERSION,
             )
-            if is_saas_scenario(session.scenario):
+            if saas_scenario:
                 report = build_saas_markdown_report(
                     run_id=session.session_id,
                     scenario=session.scenario,
@@ -287,6 +410,10 @@ class SessionManager:
                 scenario=session.scenario,
                 status=status,
                 findings=findings,
+            )
+            github_check_summary = build_github_check_summary(
+                policy_report=policy_report,
+                patch_hints=patch_hints,
             )
 
             write_text(
@@ -319,6 +446,14 @@ class SessionManager:
                     state_diff=state_diff,
                 ),
             )
+            write_json(
+                session.output_path / "github_check_summary.json",
+                github_check_summary,
+            )
+            write_text(
+                session.output_path / "github_check_summary.md",
+                build_github_check_summary_markdown(github_check_summary),
+            )
             write_run_manifest(
                 run_path=session.output_path,
                 run_id=session.session_id,
@@ -339,6 +474,8 @@ class SessionManager:
                     "patch_hints.md",
                     "agent_summary.md",
                     "failure_explain.md",
+                    "github_check_summary.json",
+                    "github_check_summary.md",
                 ],
             )
 

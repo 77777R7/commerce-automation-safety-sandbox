@@ -15,6 +15,7 @@ SAAS_BILLING_POLICIES = {
     "billing_failure_must_trigger_alert",
     "slack_permission_failure_must_not_be_silent",
     "github_check_must_match_policy_status",
+    "stripe_duplicate_webhook_side_effects_must_be_deduped",
 }
 
 REQUIRED_ARTIFACTS = {
@@ -23,6 +24,8 @@ REQUIRED_ARTIFACTS = {
     "state_diff.json",
     "report.md",
     "patch_hints.json",
+    "github_check_summary.json",
+    "github_check_summary.md",
     "run_manifest.json",
 }
 
@@ -33,7 +36,9 @@ def test_saas_billing_v0_manifest_is_auditable_policy_pack():
     assert manifest.raw["status"] == "active"
     assert set(manifest.raw["service_twins"]) == {"stripe", "slack", "github"}
     assert set(manifest.policy_ids) == SAAS_BILLING_POLICIES
-    assert {"SAAS-001", "SAAS-002"}.issubset(set(manifest.applicable_scenarios))
+    assert {"SAAS-001", "SAAS-002", "SAAS-003"}.issubset(
+        set(manifest.applicable_scenarios)
+    )
     assert REQUIRED_ARTIFACTS.issubset(set(manifest.required_artifacts))
     assert "policy_packs" in manifest.raw["artifact_contract"][
         "required_policy_report_fields"
@@ -41,6 +46,7 @@ def test_saas_billing_v0_manifest_is_auditable_policy_pack():
     assert "environment_state" in manifest.raw["artifact_contract"][
         "required_trace_fields"
     ]
+    assert "state_source" in manifest.raw["artifact_contract"]["required_trace_fields"]
     assert any(
         "Shopify" in non_goal or "Amazon" in non_goal
         for non_goal in manifest.raw["non_goals"]

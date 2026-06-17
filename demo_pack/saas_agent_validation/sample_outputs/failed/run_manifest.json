@@ -2,9 +2,9 @@
   "schema_version": "commerce_safety.run_manifest.v1",
   "artifact_schema_version": "commerce_safety.artifacts.v1",
   "producer": "commerce-safety",
-  "generated_at": "2026-06-17T00:56:40.412071+00:00",
-  "run_id": "sess_20260617T005640394421Z_SAAS-001_36e75116",
-  "session_id": "sess_20260617T005640394421Z_SAAS-001_36e75116",
+  "generated_at": "2026-06-17T02:24:38.038288+00:00",
+  "run_id": "sess_20260617T022438009426Z_SAAS-001_c08daa9c",
+  "session_id": "sess_20260617T022438009426Z_SAAS-001_c08daa9c",
   "workspace_id": "local",
   "scenario_id": "SAAS-001",
   "scenario_name": "failed_payment_success_notification",
@@ -28,8 +28,8 @@
       "schema_id": "commerce_safety.trace.v1",
       "content_type": "application/json",
       "required": true,
-      "bytes": 138640,
-      "sha256": "077c2a94b18f46d3444ff68e54a9ada5a73158670d296501ac2b2d728cd83824",
+      "bytes": 142754,
+      "sha256": "11ae88b0babfdeaa9b437efc186aa17d704ebd570b4bb732464c668ec2c0454e",
       "pii_status": "redacted"
     },
     {
@@ -38,8 +38,8 @@
       "schema_id": "commerce_safety.policy_report.v1",
       "content_type": "application/json",
       "required": true,
-      "bytes": 4768,
-      "sha256": "ed73a18e9e508518d25b98e871e398eabbde376dac3645334b2d865ccbfcbc2a",
+      "bytes": 4814,
+      "sha256": "f02d7ebc26cd66fcc50216c3eb56f3c5c1a64fa104cf34919e8aff3ba264c41c",
       "pii_status": "redacted"
     },
     {
@@ -48,8 +48,8 @@
       "schema_id": "commerce_safety.state_diff.v1",
       "content_type": "application/json",
       "required": true,
-      "bytes": 8521,
-      "sha256": "aafbd8bf9fa20c2e45d9c35bcfb8a91025a78ccb8ef9d2ffd0bed256854e6268",
+      "bytes": 8853,
+      "sha256": "516273e472fe3d9cd62ecc876b66b9513e3bf3ff8a0b4f459b6c1acd4bcc74e6",
       "pii_status": "redacted"
     },
     {
@@ -58,8 +58,8 @@
       "schema_id": "commerce_safety.report_markdown.v1",
       "content_type": "text/markdown",
       "required": true,
-      "bytes": 6265,
-      "sha256": "0bda0b7c3449d3f532f473bda4a79f9570dd5e07baf7472e7fd95392a35f52c7",
+      "bytes": 6301,
+      "sha256": "f5f4e37826d5dfbaf83a6cb9b6edd4c07abb66c71bef7094fbc900282e67e6bb",
       "pii_status": "redacted"
     },
     {
@@ -69,7 +69,7 @@
       "content_type": "application/json",
       "required": false,
       "bytes": 6153,
-      "sha256": "a22d3b55475315d61db72e7b7b515217402d1ad7f9829a341b798356375bb9b0",
+      "sha256": "ad1938cb7373bda7169c44c20f382df2b535b1dca90a2250f77935c5910c967f",
       "pii_status": "redacted"
     },
     {
@@ -79,7 +79,7 @@
       "content_type": "text/markdown",
       "required": false,
       "bytes": 1873,
-      "sha256": "6122a15130135cf2db124aaebb095a77164ed7c16b8be2eafc0e2b56a02bd673",
+      "sha256": "fd104fe62dc0e5718621dbc64223d754f3ab199022040290d229b2a737dd990d",
       "pii_status": "redacted"
     },
     {
@@ -89,7 +89,7 @@
       "content_type": "text/markdown",
       "required": false,
       "bytes": 2243,
-      "sha256": "c5246645a3d83ef186679a03910ba405d1f2a8d04bfb38986249b74eb80f551a",
+      "sha256": "c90fc47066a5e3b4375d43216e45ca35626e08a8658974f5e89f4ae1fa0ef89b",
       "pii_status": "redacted"
     },
     {
@@ -98,8 +98,28 @@
       "schema_id": "commerce_safety.failure_explain_markdown.v1",
       "content_type": "text/markdown",
       "required": false,
-      "bytes": 2568,
-      "sha256": "c7b3f6fce48fc2826194560105e8a45ee8a5a18530122be07b4d0c8de0e399c1",
+      "bytes": 2737,
+      "sha256": "b8295e7c7ef1f64fd60d972214a4c114af9a9a949647873cd93987027626290e",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.json",
+      "artifact_type": "github_check_summary",
+      "schema_id": "commerce_safety.github_check_summary.v1",
+      "content_type": "application/json",
+      "required": false,
+      "bytes": 8030,
+      "sha256": "c6cc5e00cf038d942c112e6b55bfe5c791bc958aaac913e86bc9d16e8f1bd6a8",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.md",
+      "artifact_type": "github_check_summary_markdown",
+      "schema_id": "commerce_safety.github_check_summary_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 6465,
+      "sha256": "09250becff16643b2d0deca7603a7d99cd481e9c78ea6a203133718a00dfff4b",
       "pii_status": "redacted"
     }
   ]

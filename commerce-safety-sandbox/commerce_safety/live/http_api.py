@@ -16,6 +16,7 @@ from ..platform_skins.shopify import (
     load_shopify_coverage,
 )
 from ..platform_skins.shopify.webhook_mapper import map_shopify_webhook
+from ..reporting import is_saas_scenario
 from ..twin import TimeoutAfterCommit
 from .errors import LiveHTTPError, error_response
 from .hosted import AuthContext, HostedTrustError, HostedTrustStore
@@ -31,6 +32,24 @@ from .sessions import SessionManager, SessionNotFoundError
 
 
 MAX_JSON_BODY_BYTES = 1_048_576
+SAAS_TRACE_SERVICES = ("stripe", "slack", "github")
+
+
+def _saas_environment_state(snapshot: dict[str, Any]) -> dict[str, Any]:
+    return {
+        service: snapshot[service]
+        for service in SAAS_TRACE_SERVICES
+        if service in snapshot
+    }
+
+
+def _optional_positive_int(value: Any, field: str) -> int | None:
+    if value is None:
+        return None
+    parsed = int(value)
+    if parsed < 0:
+        raise ValueError(f"{field} must be non-negative")
+    return parsed
 
 
 def security_headers() -> dict[str, str]:
@@ -100,6 +119,7 @@ class LiveAPI:
             "skip_duplicate_webhook": "commerce.skip_duplicate_webhook",
             "stripe_create_customer": "stripe.create_customer",
             "stripe_create_subscription": "stripe.create_subscription",
+            "stripe_deliver_webhook": "stripe.deliver_webhook",
             "slack_post_message": "slack.post_message",
             "github_create_check_run": "github.create_check_run",
             "github_create_issue": "github.create_issue",
@@ -215,6 +235,12 @@ class LiveAPI:
                 "next",
             ):
                 return self._get_next_task(parts[1])
+            if method == "GET" and self._matches(parts, "sessions", "*", "status"):
+                return self._get_session_status(parts[1])
+            if method == "POST" and self._matches(parts, "sessions", "*", "reset"):
+                return self._reset_session(parts[1])
+            if method == "POST" and self._matches(parts, "sessions", "*", "teardown"):
+                return self._teardown_session(parts[1])
             if method == "POST" and self._matches(
                 parts,
                 "sessions",
@@ -445,8 +471,11 @@ class LiveAPI:
     ) -> tuple[int, dict[str, Any]]:
         workspace_id = "local"
         created_by = None
-        ttl_seconds = None
-        retention_days = None
+        ttl_seconds = _optional_positive_int(body.get("ttl_seconds"), "ttl_seconds")
+        retention_days = _optional_positive_int(
+            body.get("retention_days"),
+            "retention_days",
+        )
         if auth_context is not None and self.hosted_trust_store is not None:
             workspace_id = auth_context.workspace_id
             created_by = auth_context.actor_id or auth_context.token_id
@@ -489,6 +518,15 @@ class LiveAPI:
             "task": task,
             "done": task is None,
         }
+
+    def _get_session_status(self, session_id: str) -> tuple[int, dict[str, Any]]:
+        return 200, {"ok": True, **self.manager.session_status(session_id)}
+
+    def _reset_session(self, session_id: str) -> tuple[int, dict[str, Any]]:
+        return 200, {"ok": True, **self.manager.reset_session(session_id)}
+
+    def _teardown_session(self, session_id: str) -> tuple[int, dict[str, Any]]:
+        return 200, {"ok": True, **self.manager.teardown_session(session_id)}
 
     def _create_fulfillment(
         self,
@@ -816,14 +854,29 @@ class LiveAPI:
 
     def _get_trace(self, session_id: str) -> tuple[int, dict[str, Any]]:
         session = self.manager.get_session(session_id)
+        saas_scenario = is_saas_scenario(session.scenario)
+        environment_state = session.environment.snapshot_summary()
         return 200, {
             "ok": True,
             "session_id": session_id,
             "scenario_id": session.scenario_id,
             "status": session.status,
-            "initial_state": session.initial_state,
-            "current_state": session.twin.snapshot_summary(),
-            "environment_state": session.environment.snapshot_summary(),
+            "state_source": "environment" if saas_scenario else "commerce_twin",
+            "initial_state": (
+                _saas_environment_state(session.initial_environment_state)
+                if saas_scenario
+                else session.initial_state
+            ),
+            "current_state": (
+                _saas_environment_state(environment_state)
+                if saas_scenario
+                else session.twin.snapshot_summary()
+            ),
+            "environment_state": (
+                _saas_environment_state(environment_state)
+                if saas_scenario
+                else environment_state
+            ),
             "event_ledger": [to_plain(event) for event in session.environment.events],
             "timeline": [to_plain(event) for event in session.twin.timeline],
         }

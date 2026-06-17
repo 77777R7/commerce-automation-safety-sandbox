@@ -1,7 +1,7 @@
 # Failure Explain: failed_payment_success_notification
 
-- Run ID: `sess_20260617T005640466578Z_SAAS-001_a140d53c`
-- Replay: `commerce-safety replay runs/sess_20260617T005640466578Z_SAAS-001_a140d53c`
+- Run ID: `sess_20260617T022438085966Z_SAAS-001_504f616d`
+- Replay: `commerce-safety replay runs/sess_20260617T022438085966Z_SAAS-001_504f616d`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## What Broke
@@ -35,11 +35,14 @@
   "github_success_check_after_failed_payment": false,
   "github_action_required_check": true,
   "github_review_artifact_created": true,
-  "github_success_after_slack_fault": false
+  "github_success_after_slack_fault": false,
+  "stripe_duplicate_webhook_delivery": false,
+  "duplicate_slack_side_effects_from_stripe_webhook": false,
+  "duplicate_github_side_effects_from_stripe_webhook": false
 }
 ```
 
 ## Trace Location
 
-- Trace run id: `sess_20260617T005640466578Z_SAAS-001_a140d53c`
+- Trace run id: `sess_20260617T022438085966Z_SAAS-001_504f616d`
 - Full event ledger: `trace.json.event_ledger`

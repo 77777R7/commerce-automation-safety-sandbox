@@ -20,6 +20,9 @@ CORE_MCP_TOOL_NAMES = [
 
 SANDBOX_MCP_TOOL_ALIASES = [
     "sandbox.start_session",
+    "sandbox.get_session_status",
+    "sandbox.reset_session",
+    "sandbox.teardown_session",
     "sandbox.get_task",
     "sandbox.complete_session",
     "sandbox.get_trace",
@@ -51,6 +54,7 @@ AGENT_FACING_MCP_TOOL_NAMES = [
     "commerce.get_patch_hints",
     "stripe.create_customer",
     "stripe.create_subscription",
+    "stripe.deliver_webhook",
     "slack.post_message",
     "github.create_check_run",
     "github.create_issue",
@@ -117,12 +121,41 @@ def create_mcp_server(
     def sandbox_start_session(
         scenario_path: str | None = None,
         scenario_id: str | None = None,
+        ttl_seconds: int | None = None,
     ) -> dict[str, Any]:
         """Start a live agent validation session from an allowlisted scenario."""
 
         return tools.call_tool(
             "sandbox.start_session",
-            {"scenario_path": scenario_path, "scenario_id": scenario_id},
+            {
+                "scenario_path": scenario_path,
+                "scenario_id": scenario_id,
+                "ttl_seconds": ttl_seconds,
+            },
+        )
+
+    @app.tool(name="sandbox.get_session_status")
+    def sandbox_get_session_status(session_id: str) -> dict[str, Any]:
+        """Read sandbox session lifecycle status."""
+
+        return tools.call_tool(
+            "sandbox.get_session_status",
+            {"session_id": session_id},
+        )
+
+    @app.tool(name="sandbox.reset_session")
+    def sandbox_reset_session(session_id: str) -> dict[str, Any]:
+        """Reset a sandbox session to its initial state."""
+
+        return tools.call_tool("sandbox.reset_session", {"session_id": session_id})
+
+    @app.tool(name="sandbox.teardown_session")
+    def sandbox_teardown_session(session_id: str) -> dict[str, Any]:
+        """Tear down an in-memory sandbox session."""
+
+        return tools.call_tool(
+            "sandbox.teardown_session",
+            {"session_id": session_id},
         )
 
     @app.tool(name="sandbox.get_task")
@@ -483,6 +516,25 @@ def create_mcp_server(
                 "currency": currency,
                 "payment_outcome": payment_outcome,
                 "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="stripe.deliver_webhook")
+    def stripe_deliver_webhook(
+        session_id: str,
+        event_id: str,
+        delivery_id: str | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Deliver a Stripe webhook event in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "stripe.deliver_webhook",
+            {
+                "session_id": session_id,
+                "event_id": event_id,
+                "delivery_id": delivery_id,
                 "actor": actor,
             },
         )

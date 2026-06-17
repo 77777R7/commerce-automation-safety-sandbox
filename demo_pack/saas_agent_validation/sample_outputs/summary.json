@@ -23,6 +23,8 @@
     "patch_hints.md",
     "agent_summary.md",
     "failure_explain.md",
+    "github_check_summary.json",
+    "github_check_summary.md",
     "run_manifest.json"
   ]
 }

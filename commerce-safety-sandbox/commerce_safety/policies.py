@@ -137,6 +137,13 @@ class PolicyEngine:
             self._slack_permission_failure_must_not_be_silent(stripe, slack)
         )
         findings.extend(self._github_check_must_match_policy_status(stripe, github))
+        findings.extend(
+            self._stripe_duplicate_webhook_side_effects_must_be_deduped(
+                stripe,
+                slack,
+                github,
+            )
+        )
         return findings
 
     def _no_success_state_after_failed_payment(
@@ -292,6 +299,125 @@ class PolicyEngine:
                     "conclusion such as failure or action_required."
                 ),
             )
+        ]
+
+    def _stripe_duplicate_webhook_side_effects_must_be_deduped(
+        self,
+        stripe: Any,
+        slack: Any,
+        github: Any,
+    ) -> list[PolicyFinding]:
+        duplicate_events = [
+            event
+            for event in getattr(stripe, "events", {}).values()
+            if getattr(event, "duplicate_delivery_count", 0) > 0
+        ]
+        if not duplicate_events:
+            return []
+
+        duplicate_event_ids = {event.event_id for event in duplicate_events}
+        duplicate_slack = self._duplicate_slack_side_effects(
+            slack,
+            duplicate_event_ids,
+        )
+        duplicate_github = self._duplicate_github_side_effects(
+            github,
+            duplicate_event_ids,
+        )
+        if not duplicate_slack and not duplicate_github:
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id=(
+                    "stripe_duplicate_webhook_side_effects_must_be_deduped"
+                ),
+                severity="high",
+                status="failed",
+                evidence={
+                    "duplicate_stripe_events": [
+                        to_plain(event) for event in duplicate_events
+                    ],
+                    "duplicate_slack_side_effects": duplicate_slack,
+                    "duplicate_github_side_effects": duplicate_github,
+                },
+                business_impact=(
+                    "A repeated Stripe webhook produced duplicate Slack or GitHub "
+                    "side effects for the same billing incident. That can page a "
+                    "team twice, create duplicate recovery work, and make PR checks "
+                    "look unstable."
+                ),
+                recommendation=(
+                    "Persist the processed Stripe event ID and skip repeated "
+                    "deliveries before posting Slack alerts or creating GitHub "
+                    "review artifacts."
+                ),
+            )
+        ]
+
+    def _duplicate_slack_side_effects(
+        self,
+        slack: Any,
+        duplicate_event_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        grouped: dict[tuple[str, str], list[Any]] = defaultdict(list)
+        for message in getattr(slack, "messages", []):
+            metadata = getattr(message, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id not in duplicate_event_ids or not getattr(
+                message,
+                "delivered",
+                False,
+            ):
+                continue
+            kind = str(metadata.get("kind") or "message")
+            grouped[(event_id, kind)].append(message)
+        return [
+            {
+                "stripe_event_id": event_id,
+                "kind": kind,
+                "messages": [to_plain(message) for message in messages],
+            }
+            for (event_id, kind), messages in grouped.items()
+            if len(messages) > 1
+        ]
+
+    def _duplicate_github_side_effects(
+        self,
+        github: Any,
+        duplicate_event_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        grouped: dict[tuple[str, str, str], list[Any]] = defaultdict(list)
+        for check_run in getattr(github, "check_runs", {}).values():
+            metadata = getattr(check_run, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[(event_id, "check_run", check_run.name)].append(check_run)
+        for issue in getattr(github, "issues", {}).values():
+            metadata = getattr(issue, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[(event_id, "issue", issue.title)].append(issue)
+        for comment in getattr(github, "pr_comments", {}).values():
+            metadata = getattr(comment, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[
+                    (
+                        event_id,
+                        "pr_comment",
+                        f"{comment.pull_number}:{comment.body}",
+                    )
+                ].append(comment)
+        return [
+            {
+                "stripe_event_id": event_id,
+                "side_effect_type": side_effect_type,
+                "dedupe_key": dedupe_key,
+                "items": [to_plain(item) for item in items],
+            }
+            for (event_id, side_effect_type, dedupe_key), items in grouped.items()
+            if len(items) > 1
         ]
 
     def _ordered_quantities(self, twin: CommerceTwin) -> dict[tuple[str, str], int]:

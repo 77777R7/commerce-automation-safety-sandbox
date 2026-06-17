@@ -91,6 +91,10 @@ SCENARIOS = {
     "SCN-004": {"scenario_id": "SCN-004"},
     "SCN-005": {"scenario_id": "SCN-005"},
     "SAAS-001": {"scenario_id": "SAAS-001"},
+    "SAAS-003": {"scenario_id": "SAAS-003"},
+    "LIFECYCLE_STATUS": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
+    "LIFECYCLE_RESET": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
+    "LIFECYCLE_TEARDOWN": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
 }
 
 

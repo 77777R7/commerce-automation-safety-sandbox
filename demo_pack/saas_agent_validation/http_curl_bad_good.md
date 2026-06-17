@@ -21,7 +21,7 @@ capture IDs between requests.
 
 ```bash
 PYTHONPATH="$PWD/commerce-safety-sandbox" \
-./commerce-safety --runs-dir runs/saas001_http live serve --host 127.0.0.1 --port 8765
+./commerce-safety live serve --runs-dir runs/saas001_http --host 127.0.0.1 --port 8765
 ```
 
 ## Unsafe Path
@@ -113,4 +113,3 @@ curl -sS -X POST "$BASE_URL/sessions/$SAFE_SESSION_ID/complete" \
 ```
 
 Expected status: `passed`.
-

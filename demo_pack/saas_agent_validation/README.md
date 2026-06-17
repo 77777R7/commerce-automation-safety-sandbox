@@ -42,8 +42,10 @@ python tools/generate_saas001_demo_pack.py
 Open the generated sample outputs:
 
 - `sample_outputs/failed/trace_excerpt.json`
+- `sample_outputs/failed/github_check_summary.md`
 - `sample_outputs/failed/policy_report.json`
 - `sample_outputs/failed/patch_hints.json`
+- `sample_outputs/passed/github_check_summary.md`
 - `sample_outputs/passed/policy_report.json`
 
 ## Run Through HTTP
@@ -52,7 +54,7 @@ Start the local HTTP Twin API:
 
 ```bash
 PYTHONPATH="$PWD/commerce-safety-sandbox" \
-./commerce-safety --runs-dir runs/saas001_http live serve --host 127.0.0.1 --port 8765
+./commerce-safety live serve --runs-dir runs/saas001_http --host 127.0.0.1 --port 8765
 ```
 
 In another terminal:

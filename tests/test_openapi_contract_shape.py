@@ -41,6 +41,7 @@ def test_openapi_has_saas_v0_action_paths():
     action_names = {
         "stripe_create_customer",
         "stripe_create_subscription",
+        "stripe_deliver_webhook",
         "slack_post_message",
         "github_create_check_run",
         "github_create_issue",
@@ -49,6 +50,18 @@ def test_openapi_has_saas_v0_action_paths():
 
     for action in action_names:
         assert f"/sessions/{{session_id}}/twin/{action}" in paths
+
+
+def test_openapi_has_minimal_sandbox_lifecycle_paths():
+    paths = _spec()["paths"]
+
+    assert "/sessions/{session_id}/status" in paths
+    assert "/sessions/{session_id}/reset" in paths
+    assert "/sessions/{session_id}/teardown" in paths
+
+    schemas = _spec()["components"]["schemas"]
+    assert "ttl_seconds" in schemas["StartSessionRequest"]["properties"]
+    assert "ttl_expired" in schemas["SessionStatusResponse"]["required"]
 
 
 def test_openapi_complete_session_exposes_policy_packs():

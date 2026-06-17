@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from commerce_safety.live.sessions import SessionManager
@@ -23,6 +24,10 @@ def _create_failed_subscription(stripe, task):
         currency=task["currency"],
         payment_outcome="requires_payment_method",
     )
+
+
+def _load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def test_saas001_bad_path_fails_cross_service_policies(tmp_path):
@@ -59,6 +64,7 @@ def test_saas001_bad_path_fails_cross_service_policies(tmp_path):
     assert success_check.conclusion == "success"
 
     result = manager.complete_session(session.session_id)
+    run_path = Path(result["run_path"])
     policy_ids = {finding["policy_id"] for finding in result["findings"]}
 
     assert result["status"] == "failed"
@@ -66,6 +72,26 @@ def test_saas001_bad_path_fails_cross_service_policies(tmp_path):
         "no_success_state_after_failed_payment",
         "billing_failure_must_trigger_alert",
         "slack_permission_failure_must_not_be_silent",
+        "github_check_must_match_policy_status",
+    }
+    trace = _load_json(run_path / "trace.json")
+    assert trace["state_source"] == "environment"
+    assert trace["source_of_truth"] == {
+        "kind": "sandbox_environment",
+        "services": ["stripe", "slack", "github"],
+    }
+    assert set(trace["initial_state"]) == {"stripe", "slack", "github"}
+    assert trace["initial_state"] == trace["initial_environment_state"]
+    assert trace["final_state"] == trace["final_environment_state"]
+    assert "commerce" not in trace["environment_state"]
+
+    check_summary = _load_json(run_path / "github_check_summary.json")
+    assert check_summary["conclusion"] == "failure"
+    assert check_summary["policy_packs"] == ["saas_billing_v0"]
+    assert {
+        annotation["title"] for annotation in check_summary["annotations"]
+    } >= {
+        "no_success_state_after_failed_payment",
         "github_check_must_match_policy_status",
     }
 
@@ -109,3 +135,6 @@ def test_saas001_good_path_passes_with_alert_and_review_artifacts(tmp_path):
 
     assert result["status"] == "passed"
     assert result["findings"] == []
+    check_summary = _load_json(Path(result["run_path"]) / "github_check_summary.json")
+    assert check_summary["conclusion"] == "success"
+    assert check_summary["annotations"] == []

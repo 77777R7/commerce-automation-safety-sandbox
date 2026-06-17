@@ -208,7 +208,8 @@
       "summary": "Initial subscription payment requires a new payment method.",
       "payment_intent_status": "requires_payment_method",
       "invoice_status": "open",
-      "subscription_status": "incomplete"
+      "subscription_status": "incomplete",
+      "duplicate_webhook_deliveries": 0
     },
     {
       "service": "slack",
@@ -235,6 +236,9 @@
   "agent_behavior_signals": {
     "slack_faults": [],
     "github_success_after_slack_fault": false,
+    "duplicate_stripe_events": [],
+    "duplicate_slack_side_effects": [],
+    "duplicate_github_side_effects": [],
     "event_sequence": [
       {
         "step": 1,
@@ -306,6 +310,9 @@
     "github_success_check_after_failed_payment": false,
     "github_action_required_check": true,
     "github_review_artifact_created": true,
-    "github_success_after_slack_fault": false
+    "github_success_after_slack_fault": false,
+    "stripe_duplicate_webhook_delivery": false,
+    "duplicate_slack_side_effects_from_stripe_webhook": false,
+    "duplicate_github_side_effects_from_stripe_webhook": false
   }
 }
