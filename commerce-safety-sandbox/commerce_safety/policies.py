@@ -7,8 +7,21 @@ from .models import PolicyFinding, to_plain
 from .twin import CommerceTwin
 
 
+LEGACY_COMMERCE_POLICY_PACK = "legacy_commerce"
+SAAS_BILLING_POLICY_PACK = "saas_billing_v0"
+SUPPORTED_POLICY_PACKS = {
+    LEGACY_COMMERCE_POLICY_PACK,
+    SAAS_BILLING_POLICY_PACK,
+}
+
+
 class PolicyEngine:
-    def evaluate_environment(self, environment: Any) -> list[PolicyFinding]:
+    def evaluate_environment(
+        self,
+        environment: Any,
+        *,
+        scenario: dict[str, Any] | None = None,
+    ) -> list[PolicyFinding]:
         """Evaluate a sandbox environment.
 
         The legacy commerce policy pack still reads the commerce twin, but live
@@ -16,9 +29,62 @@ class PolicyEngine:
         can evaluate the shared event ledger and service snapshots without
         changing the session lifecycle again.
         """
-        findings = self.evaluate(environment.twins["commerce"])
-        findings.extend(self._evaluate_saas_environment(environment))
+        policy_packs = self.resolve_policy_packs(scenario)
+        findings: list[PolicyFinding] = []
+        if LEGACY_COMMERCE_POLICY_PACK in policy_packs:
+            commerce_twin = self._environment_twin(environment, "commerce")
+            if commerce_twin is not None:
+                findings.extend(self.evaluate(commerce_twin))
+        if SAAS_BILLING_POLICY_PACK in policy_packs:
+            findings.extend(self._evaluate_saas_environment(environment))
         return findings
+
+    def resolve_policy_packs(
+        self,
+        scenario: dict[str, Any] | None = None,
+    ) -> tuple[str, ...]:
+        """Return the active policy packs for a scenario.
+
+        Existing direct callers that pass no scenario keep the old environment
+        behavior of checking every environment-level pack. Scenario-backed live
+        sessions use an explicit ``policy_packs`` list when present, then fall
+        back to the current SaaS-vs-legacy naming boundary.
+        """
+        declared = self._as_list((scenario or {}).get("policy_packs"))
+        if declared:
+            unknown = sorted(set(declared) - SUPPORTED_POLICY_PACKS)
+            if unknown:
+                raise ValueError(f"Unsupported policy_packs: {unknown}")
+            return tuple(dict.fromkeys(declared))
+
+        if scenario is None:
+            return (LEGACY_COMMERCE_POLICY_PACK, SAAS_BILLING_POLICY_PACK)
+
+        scenario_id = str(scenario.get("id", ""))
+        if scenario_id.startswith("SAAS-"):
+            return (SAAS_BILLING_POLICY_PACK,)
+        return (LEGACY_COMMERCE_POLICY_PACK,)
+
+    def _environment_twin(self, environment: Any, service: str) -> Any | None:
+        twins = getattr(environment, "twins", None)
+        if twins is None:
+            return None
+        twin_map = getattr(twins, "twins", None)
+        if isinstance(twin_map, dict):
+            return twin_map.get(service)
+        if isinstance(twins, dict):
+            return twins.get(service)
+        try:
+            return twins[service]
+        except (KeyError, TypeError):
+            return None
+
+    def _as_list(self, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        return list(value)
 
     def evaluate(self, twin: CommerceTwin) -> list[PolicyFinding]:
         findings: list[PolicyFinding] = []

@@ -35,33 +35,36 @@ defines the mainline.
    ledger entries.
 7. Policy findings must make `commerce-safety run` or live `complete_session`
    return a failed validation state by default.
-8. The same scenario must exercise both safe and unsafe automation.
-9. Replay reads from `trace.json`; it must not rerun the scenario.
-10. Every run writes:
+8. Scenario-backed live sessions must evaluate only their active policy pack:
+   `saas_billing_v0` for SaaS validation scenarios and `legacy_commerce` for
+   legacy commerce scenarios.
+9. The same scenario must exercise both safe and unsafe automation.
+10. Replay reads from `trace.json`; it must not rerun the scenario.
+11. Every run writes:
    - `trace.json`
    - `policy_report.json`
    - `state_diff.json`
    - `report.md`
    - `patch_hints.json`
    - `run_manifest.json`
-11. `PolicyFinding` must include:
+12. `PolicyFinding` must include:
    - `policy_id`
    - `severity`
    - `status`
    - `evidence`
    - `business_impact`
    - `recommendation`
-12. POC mode must not use production Stripe keys, production Slack bot tokens,
+13. POC mode must not use production Stripe keys, production Slack bot tokens,
     production GitHub installation tokens, customer PII, real refunds, or real
     PR writes.
-13. Failed policy state must not be hidden behind a success GitHub check in the
+14. Failed policy state must not be hidden behind a success GitHub check in the
     SaaS validation lane.
-14. Inventory accident signals must compare actual reserved inventory to expected
+15. Inventory accident signals must compare actual reserved inventory to expected
    order quantity, not use a naive `reserved > 1` check.
-15. Duplicate webhook detection should track duplicate side effects generally.
+16. Duplicate webhook detection should track duplicate side effects generally.
     The current slice must at least include reservations and fulfillments.
-16. Every stage must define a strict gate and pass it before the next stage.
-17. V3.5 live validation must prove unsafe and safe external-agent paths without
+17. Every stage must define a strict gate and pass it before the next stage.
+18. V3.5 live validation must prove unsafe and safe external-agent paths without
     relying only on internal `bad_runner` / `good_runner`.
 
 ## SaaS Rebaseline Acceptance

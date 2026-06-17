@@ -1,10 +1,10 @@
 {
   "schema_version": "commerce_safety.patch_hints.v1",
-  "run_id": "sess_20260617T004450581641Z_SAAS-001_6d12c35b",
+  "run_id": "sess_20260617T005640394421Z_SAAS-001_36e75116",
   "scenario_id": "SAAS-001",
   "scenario_name": "failed_payment_success_notification",
   "status": "failed",
-  "replay_command": "commerce-safety replay runs/sess_20260617T004450581641Z_SAAS-001_6d12c35b",
+  "replay_command": "commerce-safety replay runs/sess_20260617T005640394421Z_SAAS-001_36e75116",
   "likely_guardrails": [
     "Treat Stripe `requires_payment_method` as a blocking billing state.",
     "Do not send success notifications after a failed initial payment.",

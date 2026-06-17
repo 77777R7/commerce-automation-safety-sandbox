@@ -11,6 +11,10 @@ from commerce_safety.twin import TimeoutAfterCommit
 
 
 SCN002 = Path("commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml")
+SAAS001 = Path(
+    "commerce-safety-sandbox/scenarios/saas_p0/"
+    "SAAS-001_failed_payment_success_notification.yaml"
+)
 
 
 def test_live_session_exposes_twin_bundle_and_event_ledger(tmp_path):
@@ -51,6 +55,77 @@ def test_policy_engine_accepts_sandbox_environment(tmp_path):
     session = manager.create_session(SCN002)
 
     assert PolicyEngine().evaluate_environment(session.environment) == []
+
+
+def test_saas_policy_pack_ignores_legacy_commerce_findings(tmp_path):
+    manager = SessionManager(runs_dir=tmp_path)
+    session = manager.create_session(SAAS001)
+
+    session.twin.create_fulfillment(
+        order_id="order_saas_001_compat",
+        sku="sku_saas_compat",
+        quantity=1,
+        actor="test_agent",
+        webhook_id=None,
+        idempotency_key=None,
+        source_event_id="synthetic_1",
+    )
+    session.twin.create_fulfillment(
+        order_id="order_saas_001_compat",
+        sku="sku_saas_compat",
+        quantity=1,
+        actor="test_agent",
+        webhook_id=None,
+        idempotency_key=None,
+        source_event_id="synthetic_2",
+    )
+
+    all_findings = PolicyEngine().evaluate_environment(session.environment)
+    saas_findings = PolicyEngine().evaluate_environment(
+        session.environment,
+        scenario=session.scenario,
+    )
+
+    assert {finding.policy_id for finding in all_findings} == {
+        "no_duplicate_fulfillment"
+    }
+    assert saas_findings == []
+
+
+def test_legacy_policy_pack_ignores_saas_billing_findings(tmp_path):
+    manager = SessionManager(runs_dir=tmp_path)
+    session = manager.create_session(SCN002)
+    stripe = session.environment.twins["stripe"]
+
+    customer = stripe.create_customer(email="buyer@example.test")
+    stripe.create_subscription(
+        customer_id=customer.customer_id,
+        price_id="price_pro",
+        amount_due=2900,
+        payment_outcome="requires_payment_method",
+    )
+
+    all_findings = PolicyEngine().evaluate_environment(session.environment)
+    legacy_findings = PolicyEngine().evaluate_environment(
+        session.environment,
+        scenario=session.scenario,
+    )
+
+    assert {
+        "billing_failure_must_trigger_alert",
+    }.issubset({finding.policy_id for finding in all_findings})
+    assert legacy_findings == []
+
+
+def test_policy_pack_resolution_is_explicit_and_backward_compatible(tmp_path):
+    manager = SessionManager(runs_dir=tmp_path)
+    legacy_session = manager.create_session(SCN002)
+    saas_session = manager.create_session(SAAS001)
+    engine = PolicyEngine()
+
+    assert engine.resolve_policy_packs() == ("legacy_commerce", "saas_billing_v0")
+    assert engine.resolve_policy_packs(legacy_session.scenario) == ("legacy_commerce",)
+    assert engine.resolve_policy_packs(saas_session.scenario) == ("saas_billing_v0",)
 
 
 def test_session_stripe_twin_state_is_visible_in_environment_snapshot(tmp_path):

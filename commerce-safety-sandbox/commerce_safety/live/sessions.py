@@ -181,8 +181,13 @@ class SessionManager:
     ) -> dict[str, Any]:
         session = self.get_session(session_id)
         with session.lock:
+            policy_engine = PolicyEngine()
+            policy_packs = list(policy_engine.resolve_policy_packs(session.scenario))
             findings = findings_to_plain(
-                PolicyEngine().evaluate_environment(session.environment)
+                policy_engine.evaluate_environment(
+                    session.environment,
+                    scenario=session.scenario,
+                )
             )
             status = "failed" if findings else "passed"
             session.status = status
@@ -254,6 +259,7 @@ class SessionManager:
                     "scenario_id": session.scenario_id,
                     "runner": runner_name,
                     "status": status,
+                    "policy_packs": policy_packs,
                     "findings": findings,
                 },
                 POLICY_REPORT_SCHEMA_VERSION,
@@ -341,6 +347,7 @@ class SessionManager:
             "session_id": session.session_id,
             "run_path": str(session.output_path),
             "status": status,
+            "policy_packs": policy_packs,
             "findings": findings,
         }
 

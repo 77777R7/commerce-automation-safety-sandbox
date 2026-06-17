@@ -1,7 +1,7 @@
 # Failure Explain: failed_payment_success_notification
 
-- Run ID: `sess_20260617T004450659389Z_SAAS-001_689e6ed1`
-- Replay: `commerce-safety replay runs/sess_20260617T004450659389Z_SAAS-001_689e6ed1`
+- Run ID: `sess_20260617T005640466578Z_SAAS-001_a140d53c`
+- Replay: `commerce-safety replay runs/sess_20260617T005640466578Z_SAAS-001_a140d53c`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## What Broke
@@ -41,5 +41,5 @@
 
 ## Trace Location
 
-- Trace run id: `sess_20260617T004450659389Z_SAAS-001_689e6ed1`
+- Trace run id: `sess_20260617T005640466578Z_SAAS-001_a140d53c`
 - Full event ledger: `trace.json.event_ledger`

@@ -4,6 +4,8 @@ risk_level: critical
 description: >
   A SaaS billing automation sees an initial Stripe payment failure, fails to
   deliver the Slack billing alert, but still emits downstream success state.
+policy_packs:
+  - saas_billing_v0
 initial_state:
   order:
     order_id: order_saas_001_compat

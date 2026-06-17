@@ -81,6 +81,9 @@ but it is no longer the mainline for V3.5 execution.
 
 - Use `Permissive Twin + Policy Check`: unsafe actions are allowed to mutate
   twin state, then policies catch the resulting business incident.
+- Scenario-backed live sessions must run only their active `policy_packs`:
+  SaaS scenarios use `saas_billing_v0`, and legacy commerce scenarios use
+  `legacy_commerce`.
 - SaaS V0 supports only Stripe, Slack, and GitHub twins. Do not add Notion,
   Linear, HubSpot, Shopify, Amazon, warehouse, or inventory as new V0 product
   surfaces.

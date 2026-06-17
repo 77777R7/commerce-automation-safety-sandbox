@@ -2918,7 +2918,7 @@ components:
       additionalProperties: false
     CompleteSessionResponse:
       type: object
-      required: [ok, run_id, session_id, run_path, status, findings]
+      required: [ok, run_id, session_id, run_path, status, policy_packs, findings]
       properties:
         ok:
           type: boolean
@@ -2931,6 +2931,11 @@ components:
         status:
           type: string
           enum: [passed, failed]
+        policy_packs:
+          type: array
+          items:
+            type: string
+            enum: [legacy_commerce, saas_billing_v0]
         findings:
           type: array
           items:

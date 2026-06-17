@@ -51,6 +51,13 @@ Shopify, Amazon, fulfillment, warehouse, and inventory flows are now legacy
 commerce surfaces. They can stay in tests and demos as regression coverage, but
 they are no longer the product direction.
 
+Scenario policy boundaries are explicit:
+
+- SaaS validation scenarios use `policy_packs: [saas_billing_v0]`.
+- Legacy commerce scenarios use `policy_packs: [legacy_commerce]`.
+- The policy engine must not mix SaaS and legacy findings for a scenario-backed
+  live session.
+
 ## Current MVP
 
 The current P0 demo covers five legacy commerce accidents:

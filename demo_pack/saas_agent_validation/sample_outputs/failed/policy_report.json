@@ -1,10 +1,13 @@
 {
   "schema_version": "commerce_safety.policy_report.v1",
-  "run_id": "sess_20260617T004450581641Z_SAAS-001_6d12c35b",
-  "session_id": "sess_20260617T004450581641Z_SAAS-001_6d12c35b",
+  "run_id": "sess_20260617T005640394421Z_SAAS-001_36e75116",
+  "session_id": "sess_20260617T005640394421Z_SAAS-001_36e75116",
   "scenario_id": "SAAS-001",
   "runner": "demo_pack_saas001_unsafe_agent",
   "status": "failed",
+  "policy_packs": [
+    "saas_billing_v0"
+  ],
   "findings": [
     {
       "policy_id": "no_success_state_after_failed_payment",

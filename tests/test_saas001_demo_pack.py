@@ -68,10 +68,12 @@ def test_saas001_sample_outputs_keep_required_artifact_contract() -> None:
     failed_trace = _load_json(PACK / "sample_outputs" / "failed" / "trace_excerpt.json")
 
     assert failed_policy["status"] == "failed"
+    assert failed_policy["policy_packs"] == ["saas_billing_v0"]
     assert EXPECTED_POLICIES.issubset(
         {finding["policy_id"] for finding in failed_policy["findings"]}
     )
     assert passed_policy["status"] == "passed"
+    assert passed_policy["policy_packs"] == ["saas_billing_v0"]
     assert passed_policy["findings"] == []
     assert {"stripe", "slack", "github"}.issubset(
         {event["service"] for event in failed_trace["event_ledger"]}

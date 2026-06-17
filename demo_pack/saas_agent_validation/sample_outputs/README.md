@@ -15,3 +15,5 @@ These artifacts are generated from the agent-facing HTTP action surface, not by 
 - Open `passed/trace_excerpt.json` and `passed/policy_report.json` for the expected safe shape.
 
 Every sample run keeps the required artifact contract: `trace.json`, `policy_report.json`, `state_diff.json`, `patch_hints.json`, and `run_manifest.json`.
+
+Both sample runs use only the `saas_billing_v0` policy pack.

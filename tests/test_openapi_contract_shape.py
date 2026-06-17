@@ -49,6 +49,16 @@ def test_openapi_has_saas_v0_action_paths():
         assert f"/sessions/{{session_id}}/twin/{action}" in paths
 
 
+def test_openapi_complete_session_exposes_policy_packs():
+    schema = _spec()["components"]["schemas"]["CompleteSessionResponse"]
+
+    assert "policy_packs" in schema["required"]
+    assert schema["properties"]["policy_packs"]["items"]["enum"] == [
+        "legacy_commerce",
+        "saas_billing_v0",
+    ]
+
+
 def test_openapi_has_stage12_shopify_like_skin_paths():
     paths = _spec()["paths"]
 

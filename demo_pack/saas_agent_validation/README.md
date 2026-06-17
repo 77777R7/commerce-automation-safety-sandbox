@@ -19,6 +19,10 @@ The unsafe path is intentionally allowed to mutate state:
 The policy engine catches the cross-service incident after the actions happen.
 That is the point of the product: `Permissive Twin + Policy Check`.
 
+This demo runs only the `saas_billing_v0` policy pack. Legacy commerce policies
+remain available for older P0 regression scenarios, but they are not active in
+SAAS-001.
+
 ## Audience Angles
 
 - Agent builders: prove your agent does not hide failed billing as success.

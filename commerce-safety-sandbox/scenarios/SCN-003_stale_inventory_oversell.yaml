@@ -5,6 +5,8 @@ description: >
   Automation sees a stale local inventory snapshot with one unit available,
   while true availability is zero. Unsafe automation promises fulfillment
   without reserving fresh inventory.
+policy_packs:
+  - legacy_commerce
 initial_state:
   order:
     order_id: order_3001
