@@ -32,12 +32,17 @@ in a safe cross-service state?
 
 ## Included Scenarios
 
+Buyer-facing scenario catalog:
+
+- `docs/scenarios/saas_billing_agent_safety_catalog.md`
+
 ### Failed Payment False Success
 
 - Engineering ID: `SAAS-001_failed_payment_success_notification`
 - Product-facing name: `Failed payment incorrectly marked successful`
 - Twins: `Stripe`, `Slack`, `GitHub`
 - Artifact path: `demo_pack/saas_agent_validation`
+- Scenario card: `docs/scenarios/cards/failed_payment_marked_successful.md`
 
 ### Slack Billing Alert Fallback
 
@@ -45,6 +50,7 @@ in a safe cross-service state?
 - Product-facing name: `Billing alert blocked by Slack permissions`
 - Twins: `Stripe`, `Slack`, `GitHub`
 - Artifact path: scenario YAML and generated run artifacts
+- Scenario card: `docs/scenarios/cards/billing_alert_blocked_by_slack_permissions.md`
 
 ### Duplicate Stripe Webhook Side Effects
 
@@ -52,6 +58,7 @@ in a safe cross-service state?
 - Product-facing name: `Duplicate webhook created duplicate recovery work`
 - Twins: `Stripe`, `Slack`, `GitHub`
 - Artifact path: `demo_pack/saas003_duplicate_webhook`
+- Scenario card: `docs/scenarios/cards/duplicate_webhook_created_duplicate_recovery_work.md`
 
 ## Artifact Contract
 

@@ -36,6 +36,37 @@ required surfaces, but MCP is the native interface for Codex, Claude, and other
 agent builders. `Offline Fulfillment Automation Audit` remains as a supporting
 entrypoint, not the mainline.
 
+## Start Here By Reader
+
+Investor demo:
+
+- Start with the [SAAS-003 investor-facing demo viewer](demo_pack/saas003_duplicate_webhook/index.html).
+- Then read the [SAAS-003 scenario card](demo_pack/saas003_duplicate_webhook/scenario_card.md).
+- The 30-second story is: one Stripe event created duplicate Slack and GitHub
+  recovery work, and the sandbox caught it before production.
+
+Design partner POC:
+
+- Start with the [SaaS billing scenario catalog](docs/scenarios/saas_billing_agent_safety_catalog.md).
+- Pick the closest scenario card under [docs/scenarios/cards](docs/scenarios/cards).
+- Use the [SAAS-003 design partner walkthrough](demo_pack/saas003_duplicate_webhook/design_partner_walkthrough.md)
+  if your workflow has Stripe webhooks, Slack alerts, or GitHub recovery checks.
+
+External agent builder:
+
+- Start with the [SAAS-003 external agent prompt](demo_pack/saas003_duplicate_webhook/external_agent_prompt.md).
+- Then use the [SAAS-003 runbook](demo_pack/saas003_duplicate_webhook/runbook.md)
+  to run the unsafe path and safe repair path.
+- Stay on MCP/HTTP tools; do not depend on Python internals or direct twin
+  object access.
+
+Engineer or auditor:
+
+- Start with [policy_packs/saas_billing_v0.yaml](policy_packs/saas_billing_v0.yaml)
+  and [policy_packs/saas_billing_v0.md](policy_packs/saas_billing_v0.md).
+- Validate the artifact contract: `trace`, `policy_report`, `state_diff`,
+  `patch_hints`, `github_check_summary`, and `run_manifest`.
+
 ## SaaS V0 Boundary
 
 Only these twins are V0 mainline:
@@ -126,6 +157,8 @@ with optional `ttl_seconds`, `GET /sessions/{session_id}/status`, `POST
 
 Reader-facing demo packs:
 
+- `docs/scenarios/saas_billing_agent_safety_catalog.md`: buyer-facing catalog
+  for the three SaaS billing risk templates.
 - `demo_pack/saas_agent_validation`: SAAS-001 failed-payment baseline.
 - `demo_pack/saas003_duplicate_webhook`: SAAS-003 duplicate Stripe webhook
   edge case. Open `demo_pack/saas003_duplicate_webhook/index.html` first for
@@ -215,7 +248,10 @@ PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
 
 ## Demo And POC Materials
 
+- [SaaS billing scenario catalog](docs/scenarios/saas_billing_agent_safety_catalog.md)
 - [SAAS-001 Stripe/Slack/GitHub demo pack](demo_pack/saas_agent_validation/README.md)
+- [SAAS-003 scenario card](demo_pack/saas003_duplicate_webhook/scenario_card.md)
+- [SAAS-003 external agent prompt](demo_pack/saas003_duplicate_webhook/external_agent_prompt.md)
 - [SAAS-003 investor-facing demo viewer](demo_pack/saas003_duplicate_webhook/index.html)
 - [SAAS-003 duplicate webhook demo pack](demo_pack/saas003_duplicate_webhook/README.md)
 - [SaaS Billing Agent Safety Pack V0](policy_packs/saas_billing_v0.md)

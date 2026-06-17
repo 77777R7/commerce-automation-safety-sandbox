@@ -48,6 +48,8 @@ Fix: persist Stripe event ID before side effects
 ## Read First
 
 - `index.html`
+- `scenario_card.md`
+- `external_agent_prompt.md`
 - `runbook.md`
 - `sample_outputs/failed/github_check_summary.md`
 - `sample_outputs/failed/state_diff.json`
@@ -57,10 +59,27 @@ Fix: persist Stripe event ID before side effects
 Investor 5-minute path:
 
 1. `index.html`
-2. `investor_demo_script.md`
-3. `sample_outputs/failed/github_check_summary.md`
-4. `sample_outputs/failed/trace_excerpt.json`
-5. `sample_outputs/passed/github_check_summary.md`
+2. `scenario_card.md`
+3. `investor_demo_script.md`
+4. `sample_outputs/failed/github_check_summary.md`
+5. `sample_outputs/failed/trace_excerpt.json`
+6. `sample_outputs/passed/github_check_summary.md`
+
+Design partner path:
+
+1. `../../docs/scenarios/saas_billing_agent_safety_catalog.md`
+2. `scenario_card.md`
+3. `design_partner_walkthrough.md`
+4. `sample_outputs/failed/state_diff.json`
+5. `sample_outputs/failed/patch_hints.md`
+
+External agent builder path:
+
+1. `external_agent_prompt.md`
+2. `runbook.md`
+3. Run the unsafe path.
+4. Read `sample_outputs/failed/github_check_summary.md`.
+5. Run the safe repair path.
 
 ## Generated Artifacts
 

@@ -1,5 +1,14 @@
 # Design Partner Walkthrough
 
+## Choose This Scenario If
+
+Choose SAAS-003 when a Stripe webhook can trigger Slack alerts, GitHub checks,
+issues, PR comments, or any recovery action that should happen exactly once.
+
+Start with `scenario_card.md` if you need the business version, or
+`../../docs/scenarios/saas_billing_agent_safety_catalog.md` if you want to
+compare this scenario with the other SaaS billing risk templates.
+
 ## Bring This Workflow
 
 Bring one staging or planned workflow where a Stripe webhook can trigger:
@@ -18,6 +27,14 @@ write access.
 - GitHub check or issue -> engineering/recovery artifact.
 - Duplicate delivery -> repeated external-service edge case.
 
+## What We Customize
+
+- Stripe event type and idempotency key.
+- Slack primary and fallback channels.
+- GitHub check, issue, or PR-comment target.
+- The exact side effect that must not happen twice.
+- The policy wording your team wants in a PR-check-style result.
+
 ## What You Receive
 
 - `trace.json`: event ledger with both Stripe deliveries.
@@ -33,3 +50,11 @@ write access.
 - Safe path still receives the duplicate webhook but creates no duplicate side effects.
 - The recommended guardrail names the concrete idempotency key.
 - No real platform writes are used.
+
+## Discovery Questions
+
+- Which Stripe webhook does your agent already handle or plan to handle?
+- What downstream Slack or GitHub action does it trigger?
+- What would be expensive, confusing, or risky if that action happened twice?
+- Where should the validation result appear for your team: PR check, Slack
+  summary, audit log, or run dashboard?
