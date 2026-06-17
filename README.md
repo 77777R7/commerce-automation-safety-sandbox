@@ -55,6 +55,8 @@ Scenario policy boundaries are explicit:
 
 - SaaS validation scenarios use `policy_packs: [saas_billing_v0]`, backed by
   [policy_packs/saas_billing_v0.yaml](policy_packs/saas_billing_v0.yaml).
+- The product-facing SaaS billing pack overview is
+  [policy_packs/saas_billing_v0.md](policy_packs/saas_billing_v0.md).
 - Legacy commerce scenarios use `policy_packs: [legacy_commerce]`, backed by
   [policy_packs/legacy_commerce.yaml](policy_packs/legacy_commerce.yaml).
 - The policy engine must not mix SaaS and legacy findings for a scenario-backed
@@ -126,7 +128,8 @@ Reader-facing demo packs:
 
 - `demo_pack/saas_agent_validation`: SAAS-001 failed-payment baseline.
 - `demo_pack/saas003_duplicate_webhook`: SAAS-003 duplicate Stripe webhook
-  edge case.
+  edge case. Open `demo_pack/saas003_duplicate_webhook/index.html` first for
+  the investor-facing result page.
 
 ## Quickstart
 
@@ -213,6 +216,9 @@ PYTHON=python3.12 ./tools/smoke_stage18_agent_examples.sh
 ## Demo And POC Materials
 
 - [SAAS-001 Stripe/Slack/GitHub demo pack](demo_pack/saas_agent_validation/README.md)
+- [SAAS-003 investor-facing demo viewer](demo_pack/saas003_duplicate_webhook/index.html)
+- [SAAS-003 duplicate webhook demo pack](demo_pack/saas003_duplicate_webhook/README.md)
+- [SaaS Billing Agent Safety Pack V0](policy_packs/saas_billing_v0.md)
 - [SAAS-001 MCP agent test prompt](demo_pack/prompts/saas001_mcp_agent_test.md)
 - [SAAS-001 HTTP agent example](examples/agent_integrations/http_saas001_failed_payment_agent.py)
 - [SAAS-001 MCP agent example](examples/agent_integrations/mcp_saas001_failed_payment_agent.py)

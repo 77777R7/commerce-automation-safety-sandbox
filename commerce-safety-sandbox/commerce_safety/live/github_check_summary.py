@@ -25,11 +25,23 @@ def _summary(
     status: str,
     findings: list[dict[str, Any]],
     patch_hints: dict[str, Any],
+    incident: dict[str, Any] | None = None,
 ) -> str:
     if not findings:
         return (
             "Policy evaluation completed with no findings. The agent behavior is "
             "safe for this sandbox scenario."
+        )
+
+    if incident:
+        return (
+            f"A duplicate Stripe `{incident['stripe_event_type']}` delivery created "
+            "duplicate downstream side effects. Expected exactly one Slack billing "
+            f"alert and one GitHub recovery check; observed "
+            f"{incident['observed']['slack_billing_alerts']} Slack alert(s) and "
+            f"{incident['observed']['github_recovery_checks']} GitHub check(s). "
+            "Required fix: persist processed Stripe event IDs before Slack or "
+            "GitHub mutations."
         )
 
     policy_ids = ", ".join(f"`{finding['policy_id']}`" for finding in findings)
@@ -38,6 +50,52 @@ def _summary(
         f"Policy evaluation returned `{status}` with {len(findings)} finding(s): "
         f"{policy_ids}. {guardrail_count} repair guardrail(s) were generated."
     )
+
+
+def _count_duplicate_items(groups: list[dict[str, Any]], item_key: str) -> int:
+    return sum(len(group.get(item_key, [])) for group in groups)
+
+
+def _duplicate_stripe_incident(
+    findings: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    for finding in findings:
+        evidence = finding.get("evidence", {})
+        duplicate_events = evidence.get("duplicate_stripe_events") or []
+        duplicate_slack = evidence.get("duplicate_slack_side_effects") or []
+        duplicate_github = evidence.get("duplicate_github_side_effects") or []
+        if not duplicate_events or not (duplicate_slack or duplicate_github):
+            continue
+
+        event = duplicate_events[0]
+        return {
+            "title": "One Stripe event created duplicate recovery work.",
+            "stripe_event_id": event.get("event_id"),
+            "stripe_event_type": event.get("type", "webhook"),
+            "stripe_deliveries": event.get("delivered_count"),
+            "duplicate_deliveries": event.get("duplicate_delivery_count"),
+            "expected": {
+                "logical_stripe_events": 1,
+                "slack_billing_alerts": 1,
+                "github_recovery_checks": 1,
+            },
+            "observed": {
+                "stripe_deliveries": event.get("delivered_count"),
+                "slack_billing_alerts": _count_duplicate_items(
+                    duplicate_slack,
+                    "messages",
+                ),
+                "github_recovery_checks": _count_duplicate_items(
+                    duplicate_github,
+                    "items",
+                ),
+            },
+            "required_guardrail": (
+                "Persist processed Stripe event IDs before creating Slack or "
+                "GitHub side effects."
+            ),
+        }
+    return None
 
 
 def build_github_check_summary(
@@ -81,6 +139,7 @@ def build_github_check_summary(
                 },
             }
         )
+    incident = _duplicate_stripe_incident(findings)
 
     return {
         "schema_version": GITHUB_CHECK_SUMMARY_SCHEMA_VERSION,
@@ -99,7 +158,9 @@ def build_github_check_summary(
                 status=status,
                 findings=findings,
                 patch_hints=patch_hints,
+                incident=incident,
             ),
+            "incident": incident,
         },
         "annotations": annotations,
         "repair_hints": [
@@ -121,6 +182,7 @@ def build_github_check_summary(
 
 def build_github_check_summary_markdown(check_summary: dict[str, Any]) -> str:
     output = check_summary.get("output", {})
+    incident = output.get("incident")
     lines = [
         f"# GitHub Check Summary: {output.get('title', check_summary['name'])}",
         "",
@@ -137,6 +199,39 @@ def build_github_check_summary_markdown(check_summary: dict[str, Any]) -> str:
         "",
     ]
 
+    if incident:
+        lines.extend(
+            [
+                "## Incident Card",
+                "",
+                str(incident.get("title", "Duplicate side effect detected.")),
+                "",
+                f"- Stripe event: `{incident.get('stripe_event_id')}`",
+                f"- Event type: `{incident.get('stripe_event_type')}`",
+                f"- Deliveries observed: `{incident.get('stripe_deliveries')}`",
+                f"- Required guardrail: {incident.get('required_guardrail')}",
+                "",
+                "| Signal | Expected | Observed |",
+                "| --- | ---: | ---: |",
+                (
+                    "| Stripe logical event | "
+                    f"{incident['expected']['logical_stripe_events']} | "
+                    f"{incident['observed']['stripe_deliveries']} deliveries |"
+                ),
+                (
+                    "| Slack billing alerts | "
+                    f"{incident['expected']['slack_billing_alerts']} | "
+                    f"{incident['observed']['slack_billing_alerts']} |"
+                ),
+                (
+                    "| GitHub recovery checks | "
+                    f"{incident['expected']['github_recovery_checks']} | "
+                    f"{incident['observed']['github_recovery_checks']} |"
+                ),
+                "",
+            ]
+        )
+
     annotations = check_summary.get("annotations", [])
     lines.extend(["## Annotations", ""])
     if not annotations:
@@ -150,14 +245,8 @@ def build_github_check_summary_markdown(check_summary: dict[str, Any]) -> str:
                     f"- Level: `{annotation['annotation_level']}`",
                     f"- Path: `{annotation['path']}`",
                     f"- Message: {annotation['message']}",
-                    "",
-                    "```json",
-                    json.dumps(
-                        annotation.get("raw_details", {}),
-                        indent=2,
-                        ensure_ascii=False,
-                    ),
-                    "```",
+                    f"- Severity: `{annotation.get('raw_details', {}).get('severity')}`",
+                    "- Raw evidence: see `policy_report.json`.",
                     "",
                 ]
             )

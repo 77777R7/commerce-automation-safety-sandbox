@@ -1,10 +1,13 @@
 {
+  "product_name": "Agent Integration Safety Sandbox",
+  "product_surface": "SaaS Agent Validation Sandbox",
+  "artifact_schema_alias": "agent_validation.artifacts.v1",
   "schema_version": "commerce_safety.run_manifest.v1",
   "artifact_schema_version": "commerce_safety.artifacts.v1",
   "producer": "commerce-safety",
-  "generated_at": "2026-06-17T02:32:32.958406+00:00",
-  "run_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
-  "session_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
+  "generated_at": "2026-06-17T05:39:57.458572+00:00",
+  "run_id": "sess_20260617T053957448830Z_SAAS-003_693ae57f",
+  "session_id": "sess_20260617T053957448830Z_SAAS-003_693ae57f",
   "workspace_id": "local",
   "scenario_id": "SAAS-003",
   "scenario_name": "duplicate_stripe_webhook_side_effects",
@@ -29,7 +32,7 @@
       "content_type": "application/json",
       "required": true,
       "bytes": 141701,
-      "sha256": "f7ca61719f97ec5550a823b5699bcf2092643ff19f6405cb6d231349a23544f1",
+      "sha256": "883d8c54f9e3b6c31a3dcfcc9bb0b5f990c7f73b8ccf0594227c88f5944e9d50",
       "pii_status": "redacted"
     },
     {
@@ -39,7 +42,7 @@
       "content_type": "application/json",
       "required": true,
       "bytes": 391,
-      "sha256": "488e8dc116d4c30a0b48288a1181c6e5ff9feb357d90b023ecb8e22af83be169",
+      "sha256": "d55b3db724eaaad7e0fac4608d6fb18791e1a251de10dc57b26dc2584f4ec147",
       "pii_status": "redacted"
     },
     {
@@ -48,8 +51,8 @@
       "schema_id": "commerce_safety.state_diff.v1",
       "content_type": "application/json",
       "required": true,
-      "bytes": 9065,
-      "sha256": "08974c8cd00d4819fe7dc682b26de7ee843a72edef12f9629462a4a98f012e97",
+      "bytes": 9101,
+      "sha256": "e21b4123cd08fbd0182c2127f3311ef25575892be462b02bd9199d30586934f5",
       "pii_status": "redacted"
     },
     {
@@ -58,8 +61,8 @@
       "schema_id": "commerce_safety.report_markdown.v1",
       "content_type": "text/markdown",
       "required": true,
-      "bytes": 2231,
-      "sha256": "f0702877b143374de2e4387325cce1ea97ea2594ac42e4a7c0fed52cee33932f",
+      "bytes": 2260,
+      "sha256": "38597427605a9b7365b0ffe9cd1bc3d191655662ac2731b657ca6ffcdaa23113",
       "pii_status": "redacted"
     },
     {
@@ -69,7 +72,7 @@
       "content_type": "application/json",
       "required": false,
       "bytes": 368,
-      "sha256": "5ad56424344846a1b2e4e3edf62c6e803ea0b55c6ea6107df39084bb91e71a7a",
+      "sha256": "02fdebbb6379103adc85d68114cf35d7c518020c34771e2ffbc4bec3ed43930a",
       "pii_status": "redacted"
     },
     {
@@ -79,7 +82,7 @@
       "content_type": "text/markdown",
       "required": false,
       "bytes": 195,
-      "sha256": "ae20479c3790dfd02a317f2689a40c5e656d294f75bd494f638f80ee050507ef",
+      "sha256": "cfe4b983b08054bec3e9a147217c895cfa704af2ef932963aba414e710345ed4",
       "pii_status": "redacted"
     },
     {
@@ -89,7 +92,7 @@
       "content_type": "text/markdown",
       "required": false,
       "bytes": 771,
-      "sha256": "2b0939197108a7c95b4470213b89c875238c01b193f1ac435ecd1961c45d092e",
+      "sha256": "38a49ba526c9d4446e6719ff4cf1288422c1c4cd6794dda23b3fded1770ecc30",
       "pii_status": "redacted"
     },
     {
@@ -98,8 +101,8 @@
       "schema_id": "commerce_safety.failure_explain_markdown.v1",
       "content_type": "text/markdown",
       "required": false,
-      "bytes": 1823,
-      "sha256": "65feb5f94ab524d7c913934c257ca3010655c27b4fc450c9bcd377db3db4a2f3",
+      "bytes": 1822,
+      "sha256": "7198ce88e4e360a9ecf66bb5c135c61fb184b22ef97421633dd0a118937030d9",
       "pii_status": "redacted"
     },
     {
@@ -108,8 +111,8 @@
       "schema_id": "commerce_safety.github_check_summary.v1",
       "content_type": "application/json",
       "required": false,
-      "bytes": 864,
-      "sha256": "8c449834d64bd7cfb259749418a225b4f3899fd56b9899f41650a7f2f04ff2e9",
+      "bytes": 886,
+      "sha256": "8150ac902dfa4348462b7646cc80fd23cd4a3c50c4d91862c208b45f15e98f39",
       "pii_status": "redacted"
     },
     {
@@ -119,7 +122,7 @@
       "content_type": "text/markdown",
       "required": false,
       "bytes": 685,
-      "sha256": "d8af08f467b35b9306593dbec11d7a5a2b21b6e8252ca5c1f4fc9639d2cb950c",
+      "sha256": "b137f0d986b00a1f3206d28ce37bc05001ddc9dd0a9730bab0412d3d9dbd4d48",
       "pii_status": "redacted"
     }
   ]

@@ -1,5 +1,9 @@
 {
+  "product_name": "Agent Integration Safety Sandbox",
+  "product_surface": "SaaS Agent Validation Sandbox",
   "scenario_id": "SAAS-003",
+  "scenario_name": "Duplicate webhook created duplicate recovery work",
+  "policy_pack": "saas_billing_v0",
   "failed": {
     "status": "failed",
     "findings": [

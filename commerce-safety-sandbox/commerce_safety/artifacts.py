@@ -15,6 +15,8 @@ POLICY_REPORT_SCHEMA_VERSION = "commerce_safety.policy_report.v1"
 STATE_DIFF_SCHEMA_VERSION = "commerce_safety.state_diff.v1"
 PATCH_HINTS_SCHEMA_VERSION = "commerce_safety.patch_hints.v1"
 GITHUB_CHECK_SUMMARY_SCHEMA_VERSION = "commerce_safety.github_check_summary.v1"
+PRODUCT_NAME = "Agent Integration Safety Sandbox"
+AGENT_VALIDATION_ARTIFACT_SCHEMA_ALIAS = "agent_validation.artifacts.v1"
 
 
 ARTIFACT_CONTRACT: dict[str, dict[str, Any]] = {
@@ -134,7 +136,15 @@ def build_run_manifest(
             "expires_at": retention_expires_at,
             "delete_after_expiry": True,
         }
+    product_surface = (
+        "SaaS Agent Validation Sandbox"
+        if scenario_id.startswith("SAAS-")
+        else "Legacy Commerce Safety Sandbox"
+    )
     return {
+        "product_name": PRODUCT_NAME,
+        "product_surface": product_surface,
+        "artifact_schema_alias": AGENT_VALIDATION_ARTIFACT_SCHEMA_ALIAS,
         "schema_version": RUN_MANIFEST_SCHEMA_VERSION,
         "artifact_schema_version": ARTIFACT_SCHEMA_VERSION,
         "producer": "commerce-safety",

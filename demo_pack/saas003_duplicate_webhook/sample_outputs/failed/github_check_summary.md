@@ -4,12 +4,27 @@
 - Status: `completed`
 - Conclusion: `failure`
 - Policy status: `failed`
-- Run ID: `sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
+- Run ID: `sess_20260617T053957415334Z_SAAS-003_cafc8120`
 - Policy packs: `['saas_billing_v0']`
 
 ## Summary
 
-Policy evaluation returned `failed` with 1 finding(s): `stripe_duplicate_webhook_side_effects_must_be_deduped`. 3 repair guardrail(s) were generated.
+A duplicate Stripe `invoice.payment_failed` delivery created duplicate downstream side effects. Expected exactly one Slack billing alert and one GitHub recovery check; observed 2 Slack alert(s) and 2 GitHub check(s). Required fix: persist processed Stripe event IDs before Slack or GitHub mutations.
+
+## Incident Card
+
+One Stripe event created duplicate recovery work.
+
+- Stripe event: `evt_000003`
+- Event type: `invoice.payment_failed`
+- Deliveries observed: `2`
+- Required guardrail: Persist processed Stripe event IDs before creating Slack or GitHub side effects.
+
+| Signal | Expected | Observed |
+| --- | ---: | ---: |
+| Stripe logical event | 1 | 2 deliveries |
+| Slack billing alerts | 1 | 2 |
+| GitHub recovery checks | 1 | 2 |
 
 ## Annotations
 
@@ -18,123 +33,8 @@ Policy evaluation returned `failed` with 1 finding(s): `stripe_duplicate_webhook
 - Level: `failure`
 - Path: `policy_report.json`
 - Message: A repeated Stripe webhook produced duplicate Slack or GitHub side effects for the same billing incident. That can page a team twice, create duplicate recovery work, and make PR checks look unstable.
-
-```json
-{
-  "severity": "high",
-  "recommendation": "Persist the processed Stripe event ID and skip repeated deliveries before posting Slack alerts or creating GitHub review artifacts.",
-  "evidence": {
-    "duplicate_stripe_events": [
-      {
-        "event_id": "evt_000003",
-        "type": "invoice.payment_failed",
-        "object_id": "in_000003",
-        "payload": {
-          "invoice": {
-            "invoice_id": "in_000003",
-            "customer_id": "cus_000003",
-            "subscription_id": "sub_000003",
-            "payment_intent_id": "pi_000003",
-            "amount_due": 2900,
-            "amount_paid": 0,
-            "currency": "usd",
-            "status": "open"
-          },
-          "subscription": {
-            "subscription_id": "sub_000003",
-            "customer_id": "cus_000003",
-            "price_id": "price_pro_monthly",
-            "latest_invoice_id": "in_000003",
-            "status": "incomplete"
-          },
-          "payment_intent": {
-            "payment_intent_id": "pi_000003",
-            "customer_id": "cus_000003",
-            "invoice_id": "in_000003",
-            "amount": 2900,
-            "currency": "usd",
-            "status": "requires_payment_method",
-            "last_payment_error": "card_declined"
-          }
-        },
-        "delivered_count": 2,
-        "duplicate_delivery_count": 1
-      }
-    ],
-    "duplicate_slack_side_effects": [
-      {
-        "stripe_event_id": "evt_000003",
-        "kind": "billing_failure_alert",
-        "messages": [
-          {
-            "message_id": "slack_msg_000001",
-            "channel_id": "C_BILLING_ESCALATION",
-            "text": "Billing failure: Stripe invoice payment failed.",
-            "delivered": true,
-            "error": null,
-            "thread_ts": null,
-            "metadata": {
-              "kind": "billing_failure_alert",
-              "stripe_event_id": "evt_000003"
-            },
-            "actor": "demo_pack_saas003_unsafe_agent"
-          },
-          {
-            "message_id": "slack_msg_000002",
-            "channel_id": "C_BILLING_ESCALATION",
-            "text": "Billing failure: Stripe invoice payment failed.",
-            "delivered": true,
-            "error": null,
-            "thread_ts": null,
-            "metadata": {
-              "kind": "billing_failure_alert",
-              "stripe_event_id": "evt_000003"
-            },
-            "actor": "demo_pack_saas003_unsafe_agent"
-          }
-        ]
-      }
-    ],
-    "duplicate_github_side_effects": [
-      {
-        "stripe_event_id": "evt_000003",
-        "side_effect_type": "check_run",
-        "dedupe_key": "agent-policy/saas-validation",
-        "items": [
-          {
-            "check_run_id": "check_000001",
-            "name": "agent-policy/saas-validation",
-            "repo": "acme/billing-agent",
-            "head_sha": "fed789",
-            "status": "completed",
-            "conclusion": "action_required",
-            "output_summary": "Stripe payment failed; billing recovery required.",
-            "details_url": null,
-            "metadata": {
-              "kind": "billing_recovery_check",
-              "stripe_event_id": "evt_000003"
-            }
-          },
-          {
-            "check_run_id": "check_000002",
-            "name": "agent-policy/saas-validation",
-            "repo": "acme/billing-agent",
-            "head_sha": "fed789",
-            "status": "completed",
-            "conclusion": "action_required",
-            "output_summary": "Stripe payment failed; billing recovery required.",
-            "details_url": null,
-            "metadata": {
-              "kind": "billing_recovery_check",
-              "stripe_event_id": "evt_000003"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+- Severity: `high`
+- Raw evidence: see `policy_report.json`.
 
 
 ## Repair Hints

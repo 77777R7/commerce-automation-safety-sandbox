@@ -4,8 +4,8 @@
   "status": "completed",
   "conclusion": "failure",
   "policy_status": "failed",
-  "run_id": "sess_20260617T023232837310Z_SAAS-003_7f40d5ad",
-  "session_id": "sess_20260617T023232837310Z_SAAS-003_7f40d5ad",
+  "run_id": "sess_20260617T053957415334Z_SAAS-003_cafc8120",
+  "session_id": "sess_20260617T053957415334Z_SAAS-003_cafc8120",
   "scenario_id": "SAAS-003",
   "runner": "demo_pack_saas003_unsafe_agent",
   "policy_packs": [
@@ -13,7 +13,25 @@
   ],
   "output": {
     "title": "Agent validation failed: duplicate_stripe_webhook_side_effects",
-    "summary": "Policy evaluation returned `failed` with 1 finding(s): `stripe_duplicate_webhook_side_effects_must_be_deduped`. 3 repair guardrail(s) were generated."
+    "summary": "A duplicate Stripe `invoice.payment_failed` delivery created duplicate downstream side effects. Expected exactly one Slack billing alert and one GitHub recovery check; observed 2 Slack alert(s) and 2 GitHub check(s). Required fix: persist processed Stripe event IDs before Slack or GitHub mutations.",
+    "incident": {
+      "title": "One Stripe event created duplicate recovery work.",
+      "stripe_event_id": "evt_000003",
+      "stripe_event_type": "invoice.payment_failed",
+      "stripe_deliveries": 2,
+      "duplicate_deliveries": 1,
+      "expected": {
+        "logical_stripe_events": 1,
+        "slack_billing_alerts": 1,
+        "github_recovery_checks": 1
+      },
+      "observed": {
+        "stripe_deliveries": 2,
+        "slack_billing_alerts": 2,
+        "github_recovery_checks": 2
+      },
+      "required_guardrail": "Persist processed Stripe event IDs before creating Slack or GitHub side effects."
+    }
   },
   "annotations": [
     {

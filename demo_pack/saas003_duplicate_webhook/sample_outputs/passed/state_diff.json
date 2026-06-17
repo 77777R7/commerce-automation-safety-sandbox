@@ -213,6 +213,7 @@
         "action_required"
       ],
       "review_artifacts": {
+        "action_required_checks": 1,
         "issues": 0,
         "pr_comments": 0
       }
@@ -314,7 +315,7 @@
     "slack_success_notification_after_failed_payment": false,
     "github_success_check_after_failed_payment": false,
     "github_action_required_check": true,
-    "github_review_artifact_created": false,
+    "github_review_artifact_created": true,
     "github_success_after_slack_fault": false,
     "stripe_duplicate_webhook_delivery": true,
     "duplicate_slack_side_effects_from_stripe_webhook": false,

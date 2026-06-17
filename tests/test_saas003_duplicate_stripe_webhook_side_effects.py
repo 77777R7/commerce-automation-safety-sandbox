@@ -135,8 +135,16 @@ def test_saas003_http_duplicate_stripe_webhook_side_effects_fail(tmp_path):
         ]
         is True
     )
+    assert state_diff["accident_signals"]["github_review_artifact_created"] is True
+    summaries = {
+        item["service"]: item for item in state_diff.get("service_summaries", [])
+    }
+    assert summaries["slack"]["state"] == "duplicate_alerts_delivered"
+    assert summaries["github"]["state"] == "duplicate_action_required_checks"
+    assert summaries["github"]["review_artifacts"]["action_required_checks"] == 2
     check_summary = _load_json(run_path / "github_check_summary.json")
     assert check_summary["conclusion"] == "failure"
+    assert check_summary["output"]["incident"]["stripe_event_id"] == "evt_000003"
     assert {annotation["title"] for annotation in check_summary["annotations"]} == {
         DUPLICATE_POLICY
     }
@@ -202,3 +210,4 @@ def test_saas003_mcp_duplicate_delivery_passes_when_side_effects_are_deduped(tmp
         ]
         is False
     )
+    assert state_diff["accident_signals"]["github_review_artifact_created"] is True

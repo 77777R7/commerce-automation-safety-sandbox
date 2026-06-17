@@ -225,8 +225,8 @@
     },
     {
       "service": "slack",
-      "state": "alert_delivered",
-      "summary": "Billing alert reached a deliverable channel.",
+      "state": "duplicate_alerts_delivered",
+      "summary": "Duplicate billing alerts were delivered for the same Stripe event.",
       "failed_alert_channels": [],
       "delivered_alert_channels": [
         "C_BILLING_ESCALATION",
@@ -235,13 +235,14 @@
     },
     {
       "service": "github",
-      "state": "action_required",
-      "summary": "GitHub check kept the workflow in action-required state.",
+      "state": "duplicate_action_required_checks",
+      "summary": "Duplicate GitHub recovery checks were created for the same Stripe event.",
       "check_conclusions": [
         "action_required",
         "action_required"
       ],
       "review_artifacts": {
+        "action_required_checks": 2,
         "issues": 0,
         "pr_comments": 0
       }
@@ -431,7 +432,7 @@
     "slack_success_notification_after_failed_payment": false,
     "github_success_check_after_failed_payment": false,
     "github_action_required_check": true,
-    "github_review_artifact_created": false,
+    "github_review_artifact_created": true,
     "github_success_after_slack_fault": false,
     "stripe_duplicate_webhook_delivery": true,
     "duplicate_slack_side_effects_from_stripe_webhook": true,

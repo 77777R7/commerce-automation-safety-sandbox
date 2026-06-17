@@ -15,6 +15,20 @@ The safe path still receives the duplicate Stripe delivery, but the agent uses
 the Stripe event ID as the idempotency key and skips the second Slack/GitHub
 side effect.
 
+## Thirty-Second Product View
+
+Open `index.html` first.
+
+It shows the investor-facing incident result:
+
+```txt
+One Stripe event created duplicate recovery work.
+
+Expected: 1 Slack alert, 1 GitHub recovery check
+Observed: 2 Slack alerts, 2 GitHub recovery checks
+Fix: persist Stripe event ID before side effects
+```
+
 ## Audience
 
 - Agent builders validating billing and incident-response agents.
@@ -33,11 +47,20 @@ side effect.
 
 ## Read First
 
+- `index.html`
 - `runbook.md`
 - `sample_outputs/failed/github_check_summary.md`
 - `sample_outputs/failed/state_diff.json`
 - `sample_outputs/passed/github_check_summary.md`
 - `sample_outputs/passed/state_diff.json`
+
+Investor 5-minute path:
+
+1. `index.html`
+2. `investor_demo_script.md`
+3. `sample_outputs/failed/github_check_summary.md`
+4. `sample_outputs/failed/trace_excerpt.json`
+5. `sample_outputs/passed/github_check_summary.md`
 
 ## Generated Artifacts
 
@@ -60,3 +83,7 @@ The sample outputs are generated from the HTTP action surface:
 This is the kind of bug that simple unit tests miss. Stripe can deliver the same
 event more than once. A permissive twin lets the agent make the mistake, while
 the policy pack judges the final cross-service state.
+
+Static mocks can return fixture responses, but they do not remember duplicate
+delivery counts or downstream Slack/GitHub mutations. This demo records those
+state changes and turns them into a reviewer-facing safety result.

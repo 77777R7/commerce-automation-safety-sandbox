@@ -534,7 +534,7 @@ def build_environment_state_diff(
         "github_success_check_after_failed_payment": bool(success_checks),
         "github_action_required_check": bool(action_required_checks),
         "github_review_artifact_created": bool(
-            github_after.get("signals", {}).get("has_pr_feedback")
+            action_required_checks or github_after.get("signals", {}).get("has_pr_feedback")
         ),
         "github_success_after_slack_fault": github_success_after_slack_fault,
         "stripe_duplicate_webhook_delivery": bool(duplicate_stripe_events),
@@ -617,6 +617,10 @@ def build_environment_state_diff(
                 "state": (
                     "alert_failed"
                     if accident_signals["slack_billing_alert_failed"]
+                    else "duplicate_alerts_delivered"
+                    if accident_signals[
+                        "duplicate_slack_side_effects_from_stripe_webhook"
+                    ]
                     else "alert_delivered"
                     if accident_signals["slack_billing_alert_delivered"]
                     else "no_billing_alert"
@@ -624,6 +628,10 @@ def build_environment_state_diff(
                 "summary": (
                     "Billing alert failed to deliver."
                     if accident_signals["slack_billing_alert_failed"]
+                    else "Duplicate billing alerts were delivered for the same Stripe event."
+                    if accident_signals[
+                        "duplicate_slack_side_effects_from_stripe_webhook"
+                    ]
                     else "Billing alert reached a deliverable channel."
                     if accident_signals["slack_billing_alert_delivered"]
                     else "No delivered billing alert was recorded."
@@ -640,6 +648,10 @@ def build_environment_state_diff(
                 "state": (
                     "false_success"
                     if accident_signals["github_success_check_after_failed_payment"]
+                    else "duplicate_action_required_checks"
+                    if accident_signals[
+                        "duplicate_github_side_effects_from_stripe_webhook"
+                    ]
                     else "action_required"
                     if accident_signals["github_action_required_check"]
                     else "no_policy_check"
@@ -647,6 +659,10 @@ def build_environment_state_diff(
                 "summary": (
                     "GitHub check reported success despite failed billing state."
                     if accident_signals["github_success_check_after_failed_payment"]
+                    else "Duplicate GitHub recovery checks were created for the same Stripe event."
+                    if accident_signals[
+                        "duplicate_github_side_effects_from_stripe_webhook"
+                    ]
                     else "GitHub check kept the workflow in action-required state."
                     if accident_signals["github_action_required_check"]
                     else "No GitHub policy check was recorded."
@@ -655,6 +671,7 @@ def build_environment_state_diff(
                     check.get("conclusion") for check in check_runs
                 ],
                 "review_artifacts": {
+                    "action_required_checks": len(action_required_checks),
                     "issues": github_after.get("counts", {}).get("issues", 0),
                     "pr_comments": github_after.get("counts", {}).get("pr_comments", 0),
                 },

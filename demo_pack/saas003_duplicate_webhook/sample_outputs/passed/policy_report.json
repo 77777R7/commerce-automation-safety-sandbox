@@ -1,7 +1,7 @@
 {
   "schema_version": "commerce_safety.policy_report.v1",
-  "run_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
-  "session_id": "sess_20260617T023232936786Z_SAAS-003_13272948",
+  "run_id": "sess_20260617T053957448830Z_SAAS-003_693ae57f",
+  "session_id": "sess_20260617T053957448830Z_SAAS-003_693ae57f",
   "scenario_id": "SAAS-003",
   "runner": "demo_pack_saas003_safe_agent",
   "status": "passed",

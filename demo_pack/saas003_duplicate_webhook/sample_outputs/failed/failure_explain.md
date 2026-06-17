@@ -1,7 +1,7 @@
 # Failure Explain: duplicate_stripe_webhook_side_effects
 
-- Run ID: `sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
-- Replay: `commerce-safety replay runs/sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
+- Run ID: `sess_20260617T053957415334Z_SAAS-003_cafc8120`
+- Replay: `commerce-safety replay runs/sess_20260617T053957415334Z_SAAS-003_cafc8120`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## What Broke
@@ -11,8 +11,8 @@
 ## Service State
 
 - Stripe: Initial subscription payment requires a new payment method.
-- Slack: Billing alert reached a deliverable channel.
-- GitHub: GitHub check kept the workflow in action-required state.
+- Slack: Duplicate billing alerts were delivered for the same Stripe event.
+- GitHub: Duplicate GitHub recovery checks were created for the same Stripe event.
 
 ## Agent Event Ledger
 
@@ -34,7 +34,7 @@
   "slack_success_notification_after_failed_payment": false,
   "github_success_check_after_failed_payment": false,
   "github_action_required_check": true,
-  "github_review_artifact_created": false,
+  "github_review_artifact_created": true,
   "github_success_after_slack_fault": false,
   "stripe_duplicate_webhook_delivery": true,
   "duplicate_slack_side_effects_from_stripe_webhook": true,
@@ -44,5 +44,5 @@
 
 ## Trace Location
 
-- Trace run id: `sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
+- Trace run id: `sess_20260617T053957415334Z_SAAS-003_cafc8120`
 - Full event ledger: `trace.json.event_ledger`

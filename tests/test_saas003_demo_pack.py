@@ -17,6 +17,7 @@ def _load_json(path: Path) -> dict:
 def test_saas003_demo_pack_reader_materials_exist() -> None:
     for relative in [
         "README.md",
+        "index.html",
         "runbook.md",
         "investor_demo_script.md",
         "design_partner_walkthrough.md",
@@ -36,6 +37,22 @@ def test_saas003_demo_pack_is_stateful_external_service_story() -> None:
     assert "stripe_deliver_webhook" in runbook
     assert "stripe_event_id = evt_000003" in runbook
     assert "No production Stripe keys" in readme
+    assert "External Agent Prompt" in runbook
+    assert "Do not inspect Python objects" in runbook
+
+
+def test_saas003_demo_pack_has_investor_first_viewer() -> None:
+    viewer = (PACK / "index.html").read_text(encoding="utf-8")
+    investor_script = (PACK / "investor_demo_script.md").read_text(encoding="utf-8")
+
+    assert "One Stripe event created duplicate recovery work." in viewer
+    assert "Expected" in viewer
+    assert "Observed" in viewer
+    assert "Why this is not a mock" in viewer
+    assert "sample_outputs/failed/github_check_summary.md" in viewer
+    assert "Who Pays" in investor_script
+    assert "Why Now" in investor_script
+    assert "Why This Is Not A Mock" in investor_script
 
 
 def test_saas003_sample_outputs_keep_required_artifact_contract() -> None:
@@ -61,6 +78,9 @@ def test_saas003_sample_outputs_keep_required_artifact_contract() -> None:
     passed_check = _load_json(
         PACK / "sample_outputs" / "passed" / "github_check_summary.json"
     )
+    failed_manifest = _load_json(
+        PACK / "sample_outputs" / "failed" / "run_manifest.json"
+    )
 
     assert failed_policy["status"] == "failed"
     assert failed_policy["policy_packs"] == ["saas_billing_v0"]
@@ -68,6 +88,11 @@ def test_saas003_sample_outputs_keep_required_artifact_contract() -> None:
         DUPLICATE_POLICY
     }
     assert failed_check["conclusion"] == "failure"
+    assert failed_check["output"]["incident"]["stripe_event_id"] == "evt_000003"
+    assert failed_check["output"]["incident"]["observed"]["slack_billing_alerts"] == 2
+    assert failed_manifest["product_name"] == "Agent Integration Safety Sandbox"
+    assert failed_manifest["product_surface"] == "SaaS Agent Validation Sandbox"
+    assert failed_manifest["artifact_schema_alias"] == "agent_validation.artifacts.v1"
     assert passed_policy["status"] == "passed"
     assert passed_policy["policy_packs"] == ["saas_billing_v0"]
     assert passed_policy["findings"] == []
@@ -81,6 +106,9 @@ def test_saas003_sample_artifacts_show_duplicate_delivery_without_safe_side_effe
     passed_excerpt = _load_json(PACK / "sample_outputs" / "passed" / "trace_excerpt.json")
     failed_summary = (
         PACK / "sample_outputs" / "failed" / "agent_summary.md"
+    ).read_text(encoding="utf-8")
+    failed_check_markdown = (
+        PACK / "sample_outputs" / "failed" / "github_check_summary.md"
     ).read_text(encoding="utf-8")
 
     assert failed_state["artifact_kind"] == "environment_state_diff"
@@ -117,6 +145,19 @@ def test_saas003_sample_artifacts_show_duplicate_delivery_without_safe_side_effe
         for event in failed_excerpt["event_ledger"]
     )
     assert DUPLICATE_POLICY in failed_summary
+    assert "## Incident Card" in failed_check_markdown
+    assert "| Slack billing alerts | 1 | 2 |" in failed_check_markdown
+    assert "Raw evidence: see `policy_report.json`." in failed_check_markdown
+
+
+def test_saas_billing_policy_pack_has_commercial_page() -> None:
+    policy_page = ROOT / "policy_packs" / "saas_billing_v0.md"
+    text = policy_page.read_text(encoding="utf-8")
+
+    assert policy_page.is_file()
+    assert "SaaS Billing Agent Safety Pack V0" in text
+    assert "Duplicate webhook created duplicate recovery work" in text
+    assert "Five-Minute Demo Path" in text
 
 
 def test_saas003_generator_is_packaged() -> None:

@@ -1,15 +1,15 @@
 # Agent Summary: duplicate_stripe_webhook_side_effects
 
-- Run ID: `sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
+- Run ID: `sess_20260617T053957415334Z_SAAS-003_cafc8120`
 - Status: `failed`
-- Replay: `commerce-safety replay runs/sess_20260617T023232837310Z_SAAS-003_7f40d5ad`
+- Replay: `commerce-safety replay runs/sess_20260617T053957415334Z_SAAS-003_cafc8120`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## Cross-Service Outcome
 
 - Stripe: Initial subscription payment requires a new payment method. (`failed_payment`)
-- Slack: Billing alert reached a deliverable channel. (`alert_delivered`)
-- GitHub: GitHub check kept the workflow in action-required state. (`action_required`)
+- Slack: Duplicate billing alerts were delivered for the same Stripe event. (`duplicate_alerts_delivered`)
+- GitHub: Duplicate GitHub recovery checks were created for the same Stripe event. (`duplicate_action_required_checks`)
 
 ## Unsafe Chain
 

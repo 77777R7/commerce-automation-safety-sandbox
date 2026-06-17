@@ -30,6 +30,9 @@ def test_cli_run_writes_versioned_manifest_and_artifact_schemas(tmp_path: Path) 
     assert manifest["scenario_id"] == "SCN-002"
     assert manifest["runner"] == "bad_runner"
     assert manifest["status"] == "failed"
+    assert manifest["product_name"] == "Agent Integration Safety Sandbox"
+    assert manifest["product_surface"] == "Legacy Commerce Safety Sandbox"
+    assert manifest["artifact_schema_alias"] == "agent_validation.artifacts.v1"
 
     artifacts_by_path = {artifact["path"]: artifact for artifact in manifest["artifacts"]}
     for required_path, schema_id in {
