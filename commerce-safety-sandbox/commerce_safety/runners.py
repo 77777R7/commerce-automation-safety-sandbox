@@ -22,6 +22,11 @@ class Runner(Protocol):
     def handle_refund_request(self, twin: CommerceTwin, request: dict[str, Any]) -> None:
         ...
 
+    def handle_tracking_upload_task(
+        self, twin: CommerceTwin, task: dict[str, Any]
+    ) -> None:
+        ...
+
     def handle_cancel_request(self, twin: CommerceTwin, request: dict[str, Any]) -> None:
         ...
 
@@ -165,6 +170,44 @@ class BadRunner:
             approval_id=None,
             approved_by=None,
         )
+
+    def handle_tracking_upload_task(
+        self, twin: CommerceTwin, task: dict[str, Any]
+    ) -> None:
+        order = twin.orders[task["order_id"]]
+        twin.add_event(
+            actor=self.name,
+            event="tracking_upload_processing_started",
+            message=(
+                f"{self.name} uploads tracking for order {order.order_id} as soon "
+                "as the label is created."
+            ),
+            details={
+                "task_id": task["id"],
+                "order_id": order.order_id,
+                "tracking_number": task["tracking_number"],
+                "carrier_status": task.get("carrier_status"),
+                "first_carrier_scan_seen": task.get("first_carrier_scan_seen"),
+            },
+        )
+        upload = twin.upload_tracking(
+            order_id=order.order_id,
+            tracking_number=task["tracking_number"],
+            carrier_status=task.get("carrier_status", "unknown"),
+            first_carrier_scan_seen=bool(task.get("first_carrier_scan_seen", False)),
+            actor=self.name,
+            source_event_id=task["id"],
+            customer_notified=bool(task.get("customer_notified", True)),
+        )
+        if not upload.first_carrier_scan_seen and upload.customer_notified:
+            twin.create_support_ticket(
+                order_id=order.order_id,
+                reason="tracking_visible_before_first_carrier_scan",
+                actor=self.name,
+                source_event_id=task["id"],
+                tracking_upload_id=upload.tracking_upload_id,
+                carrier_status=upload.carrier_status_at_upload,
+            )
 
     def handle_cancel_request(self, twin: CommerceTwin, request: dict[str, Any]) -> None:
         order = twin.orders[request["order_id"]]
@@ -416,6 +459,55 @@ class GoodRunner:
             source_event_id=request["id"],
             approval_id=None,
             approved_by=None,
+        )
+
+    def handle_tracking_upload_task(
+        self, twin: CommerceTwin, task: dict[str, Any]
+    ) -> None:
+        order = twin.orders[task["order_id"]]
+        line_item = order.line_items[0]
+        carrier_status = task.get("carrier_status", "unknown")
+        first_scan_seen = bool(task.get("first_carrier_scan_seen", False))
+        twin.add_event(
+            actor=self.name,
+            event="tracking_upload_processing_started",
+            message=(
+                f"{self.name} checks carrier scan state before notifying "
+                f"customer for order {order.order_id}."
+            ),
+            details={
+                "task_id": task["id"],
+                "order_id": order.order_id,
+                "tracking_number": task["tracking_number"],
+                "carrier_status": carrier_status,
+                "first_carrier_scan_seen": first_scan_seen,
+            },
+        )
+        if not first_scan_seen:
+            twin.hold_tracking_until_first_scan(
+                order_id=order.order_id,
+                tracking_number=task["tracking_number"],
+                carrier_status=carrier_status,
+                actor=self.name,
+                source_event_id=task["id"],
+            )
+            twin.route_manual_review(
+                order_id=order.order_id,
+                sku=line_item.sku,
+                actor=self.name,
+                reason="carrier_first_scan_missing",
+                source_event_id=task["id"],
+            )
+            return
+
+        twin.upload_tracking(
+            order_id=order.order_id,
+            tracking_number=task["tracking_number"],
+            carrier_status=carrier_status,
+            first_carrier_scan_seen=first_scan_seen,
+            actor=self.name,
+            source_event_id=task["id"],
+            customer_notified=bool(task.get("customer_notified", True)),
         )
 
     def handle_cancel_request(self, twin: CommerceTwin, request: dict[str, Any]) -> None:

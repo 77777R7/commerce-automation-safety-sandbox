@@ -4,10 +4,96 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from .models import PolicyFinding, to_plain
+from .policy_packs import PolicyPackRegistry
 from .twin import CommerceTwin
 
 
+LEGACY_COMMERCE_POLICY_PACK = "legacy_commerce"
+SAAS_BILLING_POLICY_PACK = "saas_billing_v0"
+
+
 class PolicyEngine:
+    def __init__(
+        self,
+        *,
+        policy_pack_registry: PolicyPackRegistry | None = None,
+    ):
+        self.policy_pack_registry = policy_pack_registry or PolicyPackRegistry()
+
+    @property
+    def supported_policy_packs(self) -> set[str]:
+        return set(self.policy_pack_registry.ids())
+
+    def evaluate_environment(
+        self,
+        environment: Any,
+        *,
+        scenario: dict[str, Any] | None = None,
+    ) -> list[PolicyFinding]:
+        """Evaluate a sandbox environment.
+
+        The legacy commerce policy pack still reads the commerce twin, but live
+        sessions now call this environment-level entrypoint so SaaS policy packs
+        can evaluate the shared event ledger and service snapshots without
+        changing the session lifecycle again.
+        """
+        policy_packs = self.resolve_policy_packs(scenario)
+        findings: list[PolicyFinding] = []
+        if LEGACY_COMMERCE_POLICY_PACK in policy_packs:
+            commerce_twin = self._environment_twin(environment, "commerce")
+            if commerce_twin is not None:
+                findings.extend(self.evaluate(commerce_twin))
+        if SAAS_BILLING_POLICY_PACK in policy_packs:
+            findings.extend(self._evaluate_saas_environment(environment))
+        return findings
+
+    def resolve_policy_packs(
+        self,
+        scenario: dict[str, Any] | None = None,
+    ) -> tuple[str, ...]:
+        """Return the active policy packs for a scenario.
+
+        Existing direct callers that pass no scenario keep the old environment
+        behavior of checking every environment-level pack. Scenario-backed live
+        sessions use an explicit ``policy_packs`` list when present, then fall
+        back to the current SaaS-vs-legacy naming boundary.
+        """
+        declared = self._as_list((scenario or {}).get("policy_packs"))
+        if declared:
+            unknown = sorted(set(declared) - self.supported_policy_packs)
+            if unknown:
+                raise ValueError(f"Unsupported policy_packs: {unknown}")
+            return tuple(dict.fromkeys(declared))
+
+        if scenario is None:
+            return self.policy_pack_registry.ids()
+
+        scenario_id = str(scenario.get("id", ""))
+        if scenario_id.startswith("SAAS-"):
+            return (SAAS_BILLING_POLICY_PACK,)
+        return (LEGACY_COMMERCE_POLICY_PACK,)
+
+    def _environment_twin(self, environment: Any, service: str) -> Any | None:
+        twins = getattr(environment, "twins", None)
+        if twins is None:
+            return None
+        twin_map = getattr(twins, "twins", None)
+        if isinstance(twin_map, dict):
+            return twin_map.get(service)
+        if isinstance(twins, dict):
+            return twins.get(service)
+        try:
+            return twins[service]
+        except (KeyError, TypeError):
+            return None
+
+    def _as_list(self, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        return list(value)
+
     def evaluate(self, twin: CommerceTwin) -> list[PolicyFinding]:
         findings: list[PolicyFinding] = []
         findings.extend(self._idempotency_required_for_mutating_retries(twin))
@@ -15,6 +101,7 @@ class PolicyEngine:
         findings.extend(self._no_inventory_commit_from_stale_snapshot(twin))
         findings.extend(self._no_oversell(twin))
         findings.extend(self._amazon_no_promise_from_stale_inventory_summary(twin))
+        findings.extend(self._no_tracking_upload_before_first_carrier_scan(twin))
         findings.extend(self._no_refund_after_shipment_without_approval(twin))
         findings.extend(self._high_value_refund_requires_approval(twin))
         findings.extend(self._warehouse_conflict_requires_hold(twin))
@@ -26,6 +113,312 @@ class PolicyEngine:
         findings.extend(self._no_duplicate_fulfillment(twin))
         findings.extend(self._webhook_dedup_required(twin))
         return findings
+
+    def _evaluate_saas_environment(self, environment: Any) -> list[PolicyFinding]:
+        twin_map = getattr(getattr(environment, "twins", None), "twins", {})
+        stripe = twin_map.get("stripe")
+        slack = twin_map.get("slack")
+        github = twin_map.get("github")
+        if not all(
+            (
+                hasattr(stripe, "has_failed_payment"),
+                hasattr(slack, "delivered_messages"),
+                hasattr(github, "success_check_runs"),
+            )
+        ):
+            return []
+
+        findings: list[PolicyFinding] = []
+        findings.extend(
+            self._no_success_state_after_failed_payment(stripe, slack, github)
+        )
+        findings.extend(self._billing_failure_must_trigger_alert(stripe, slack))
+        findings.extend(
+            self._slack_permission_failure_must_not_be_silent(stripe, slack)
+        )
+        findings.extend(self._github_check_must_match_policy_status(stripe, github))
+        findings.extend(
+            self._stripe_duplicate_webhook_side_effects_must_be_deduped(
+                stripe,
+                slack,
+                github,
+            )
+        )
+        return findings
+
+    def _no_success_state_after_failed_payment(
+        self,
+        stripe: Any,
+        slack: Any,
+        github: Any,
+    ) -> list[PolicyFinding]:
+        if not stripe.has_failed_payment():
+            return []
+
+        success_messages = [to_plain(message) for message in slack.success_messages()]
+        success_check_runs = [
+            to_plain(check_run) for check_run in github.success_check_runs()
+        ]
+        if not success_messages and not success_check_runs:
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id="no_success_state_after_failed_payment",
+                severity="critical",
+                status="failed",
+                evidence={
+                    "stripe_failed_payment": True,
+                    "success_slack_messages": success_messages,
+                    "success_github_check_runs": success_check_runs,
+                },
+                business_impact=(
+                    "The agent observed a failed payment but still left a success "
+                    "signal in downstream systems. That can mislead support, release "
+                    "automation, or customer-facing workflow state."
+                ),
+                recommendation=(
+                    "After a failed payment, block success notifications and success "
+                    "checks until the billing state is recovered or explicitly reviewed."
+                ),
+            )
+        ]
+
+    def _billing_failure_must_trigger_alert(
+        self,
+        stripe: Any,
+        slack: Any,
+    ) -> list[PolicyFinding]:
+        if (
+            not stripe.has_failed_payment()
+            or slack.has_delivered_message_kind("billing_failure_alert")
+        ):
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id="billing_failure_must_trigger_alert",
+                severity="high",
+                status="failed",
+                evidence={
+                    "stripe_failed_payment": True,
+                    "delivered_billing_failure_alerts": [
+                        to_plain(message)
+                        for message in slack.delivered_messages(
+                            "billing_failure_alert"
+                        )
+                    ],
+                    "failed_billing_failure_alerts": [
+                        to_plain(message)
+                        for message in slack.failed_messages(
+                            "billing_failure_alert"
+                        )
+                    ],
+                },
+                business_impact=(
+                    "A failed payment did not produce a delivered internal alert, "
+                    "so revenue recovery or customer support work can silently stall."
+                ),
+                recommendation=(
+                    "Send a billing failure alert to a reachable Slack channel, and "
+                    "verify delivery before marking the task complete."
+                ),
+            )
+        ]
+
+    def _slack_permission_failure_must_not_be_silent(
+        self,
+        stripe: Any,
+        slack: Any,
+    ) -> list[PolicyFinding]:
+        if not stripe.has_failed_payment():
+            return []
+        failed_alerts = slack.failed_messages("billing_failure_alert")
+        if not failed_alerts or slack.has_delivered_message_kind(
+            "billing_failure_alert"
+        ):
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id="slack_permission_failure_must_not_be_silent",
+                severity="high",
+                status="failed",
+                evidence={
+                    "failed_billing_failure_alerts": [
+                        to_plain(message) for message in failed_alerts
+                    ],
+                    "slack_errors": sorted(
+                        {
+                            message.error
+                            for message in failed_alerts
+                            if message.error is not None
+                        }
+                    ),
+                },
+                business_impact=(
+                    "The agent hit a Slack delivery or permission failure and did "
+                    "not recover through another delivered alert path."
+                ),
+                recommendation=(
+                    "Treat Slack post failures as blocking for billing incidents: "
+                    "join the required channel, choose a fallback channel, or create "
+                    "a GitHub/manual review artifact."
+                ),
+            )
+        ]
+
+    def _github_check_must_match_policy_status(
+        self,
+        stripe: Any,
+        github: Any,
+    ) -> list[PolicyFinding]:
+        if not stripe.has_failed_payment():
+            return []
+        success_check_runs = github.success_check_runs()
+        if not success_check_runs:
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id="github_check_must_match_policy_status",
+                severity="critical",
+                status="failed",
+                evidence={
+                    "stripe_failed_payment": True,
+                    "success_check_runs": [
+                        to_plain(check_run) for check_run in success_check_runs
+                    ],
+                },
+                business_impact=(
+                    "A GitHub check reported success even though policy-relevant "
+                    "billing state was failed. That can let unsafe automation pass CI."
+                ),
+                recommendation=(
+                    "Map failed billing policy state to a non-success GitHub check "
+                    "conclusion such as failure or action_required."
+                ),
+            )
+        ]
+
+    def _stripe_duplicate_webhook_side_effects_must_be_deduped(
+        self,
+        stripe: Any,
+        slack: Any,
+        github: Any,
+    ) -> list[PolicyFinding]:
+        duplicate_events = [
+            event
+            for event in getattr(stripe, "events", {}).values()
+            if getattr(event, "duplicate_delivery_count", 0) > 0
+        ]
+        if not duplicate_events:
+            return []
+
+        duplicate_event_ids = {event.event_id for event in duplicate_events}
+        duplicate_slack = self._duplicate_slack_side_effects(
+            slack,
+            duplicate_event_ids,
+        )
+        duplicate_github = self._duplicate_github_side_effects(
+            github,
+            duplicate_event_ids,
+        )
+        if not duplicate_slack and not duplicate_github:
+            return []
+
+        return [
+            PolicyFinding(
+                policy_id=(
+                    "stripe_duplicate_webhook_side_effects_must_be_deduped"
+                ),
+                severity="high",
+                status="failed",
+                evidence={
+                    "duplicate_stripe_events": [
+                        to_plain(event) for event in duplicate_events
+                    ],
+                    "duplicate_slack_side_effects": duplicate_slack,
+                    "duplicate_github_side_effects": duplicate_github,
+                },
+                business_impact=(
+                    "A repeated Stripe webhook produced duplicate Slack or GitHub "
+                    "side effects for the same billing incident. That can page a "
+                    "team twice, create duplicate recovery work, and make PR checks "
+                    "look unstable."
+                ),
+                recommendation=(
+                    "Persist the processed Stripe event ID and skip repeated "
+                    "deliveries before posting Slack alerts or creating GitHub "
+                    "review artifacts."
+                ),
+            )
+        ]
+
+    def _duplicate_slack_side_effects(
+        self,
+        slack: Any,
+        duplicate_event_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        grouped: dict[tuple[str, str], list[Any]] = defaultdict(list)
+        for message in getattr(slack, "messages", []):
+            metadata = getattr(message, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id not in duplicate_event_ids or not getattr(
+                message,
+                "delivered",
+                False,
+            ):
+                continue
+            kind = str(metadata.get("kind") or "message")
+            grouped[(event_id, kind)].append(message)
+        return [
+            {
+                "stripe_event_id": event_id,
+                "kind": kind,
+                "messages": [to_plain(message) for message in messages],
+            }
+            for (event_id, kind), messages in grouped.items()
+            if len(messages) > 1
+        ]
+
+    def _duplicate_github_side_effects(
+        self,
+        github: Any,
+        duplicate_event_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        grouped: dict[tuple[str, str, str], list[Any]] = defaultdict(list)
+        for check_run in getattr(github, "check_runs", {}).values():
+            metadata = getattr(check_run, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[(event_id, "check_run", check_run.name)].append(check_run)
+        for issue in getattr(github, "issues", {}).values():
+            metadata = getattr(issue, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[(event_id, "issue", issue.title)].append(issue)
+        for comment in getattr(github, "pr_comments", {}).values():
+            metadata = getattr(comment, "metadata", {}) or {}
+            event_id = metadata.get("stripe_event_id")
+            if event_id in duplicate_event_ids:
+                grouped[
+                    (
+                        event_id,
+                        "pr_comment",
+                        f"{comment.pull_number}:{comment.body}",
+                    )
+                ].append(comment)
+        return [
+            {
+                "stripe_event_id": event_id,
+                "side_effect_type": side_effect_type,
+                "dedupe_key": dedupe_key,
+                "items": [to_plain(item) for item in items],
+            }
+            for (event_id, side_effect_type, dedupe_key), items in grouped.items()
+            if len(items) > 1
+        ]
 
     def _ordered_quantities(self, twin: CommerceTwin) -> dict[tuple[str, str], int]:
         ordered: dict[tuple[str, str], int] = {}
@@ -308,6 +701,61 @@ class PolicyEngine:
                         ),
                     )
                 )
+        return findings
+
+    def _no_tracking_upload_before_first_carrier_scan(
+        self, twin: CommerceTwin
+    ) -> list[PolicyFinding]:
+        findings: list[PolicyFinding] = []
+        visible_carrier_states = {
+            "first_scan",
+            "carrier_scanned",
+            "accepted",
+            "in_transit",
+            "shipped",
+        }
+        for upload in twin.tracking_uploads:
+            carrier_status = upload.carrier_status_at_upload
+            scan_visible = (
+                upload.first_carrier_scan_seen
+                or carrier_status in visible_carrier_states
+            )
+            if scan_visible:
+                continue
+            related_tickets = [
+                ticket
+                for ticket in twin.support_tickets
+                if ticket.tracking_upload_id == upload.tracking_upload_id
+            ]
+            findings.append(
+                PolicyFinding(
+                    policy_id="no_tracking_upload_before_first_carrier_scan",
+                    severity="medium",
+                    status="failed",
+                    evidence={
+                        "tracking_upload_id": upload.tracking_upload_id,
+                        "order_id": upload.order_id,
+                        "tracking_number": upload.tracking_number,
+                        "carrier_status_at_upload": carrier_status,
+                        "first_carrier_scan_seen": upload.first_carrier_scan_seen,
+                        "customer_notified": upload.customer_notified,
+                        "support_ticket_ids": [
+                            ticket.support_ticket_id for ticket in related_tickets
+                        ],
+                        "source_event_id": upload.source_event_id,
+                    },
+                    business_impact=(
+                        "The automation notified the buyer before the carrier had "
+                        "a visible first scan. Customers can see only a label-created "
+                        "state, triggering avoidable support tickets and trust loss."
+                    ),
+                    recommendation=(
+                        "Gate customer-facing tracking upload or notification on the "
+                        "first carrier scan. If the scan is not visible, delay the "
+                        "update or route the shipment to a manual review queue."
+                    ),
+                )
+            )
         return findings
 
     def _no_refund_after_shipment_without_approval(

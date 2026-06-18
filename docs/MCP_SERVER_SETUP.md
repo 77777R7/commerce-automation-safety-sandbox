@@ -40,6 +40,13 @@ PYTHONPATH="$PWD/commerce-safety-sandbox" \
 ./commerce-safety live mcp --runs-dir runs
 ```
 
+For external testers, use the self-check and generated config first:
+
+```bash
+./commerce-safety doctor
+./commerce-safety mcp-config --python "$PWD/.venv-mcp/bin/python"
+```
+
 The default transport is `stdio`, which is the right mode for local agent
 clients such as Codex or Claude Desktop. The server also accepts
 `--transport streamable-http` for later hosted experiments, but V3.5 does not
@@ -58,6 +65,18 @@ commerce.complete_session
 commerce.get_trace
 commerce.get_policy_report
 commerce.get_patch_hints
+```
+
+For SaaS V0 demos, the same lifecycle is also exposed through product-facing
+aliases:
+
+```txt
+sandbox.start_session
+sandbox.get_task
+sandbox.complete_session
+sandbox.get_trace
+sandbox.get_policy_report
+sandbox.get_patch_hints
 ```
 
 Stage 10 expands the real MCP server with the generic commerce actions needed

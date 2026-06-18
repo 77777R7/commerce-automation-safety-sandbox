@@ -66,6 +66,8 @@ def test_live_session_completes_bad_scn002_with_artifacts_and_patch_hints(tmp_pa
         "report.md",
         "patch_hints.md",
         "patch_hints.json",
+        "github_check_summary.md",
+        "github_check_summary.json",
     ]:
         assert (run_path / artifact).exists(), artifact
 
@@ -85,6 +87,11 @@ def test_live_session_completes_bad_scn002_with_artifacts_and_patch_hints(tmp_pa
     assert "Use a stable idempotency key" in (run_path / "patch_hints.md").read_text(
         encoding="utf-8"
     )
+    github_check = _load_json(run_path / "github_check_summary.json")
+    assert github_check["conclusion"] == "failure"
+    assert "no_duplicate_fulfillment" in {
+        annotation["title"] for annotation in github_check["annotations"]
+    }
 
     state_diff = _load_json(run_path / "state_diff.json")
     assert state_diff["after"]["fulfillments"] == 2

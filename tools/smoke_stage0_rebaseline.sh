@@ -2,10 +2,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON:-python3}"
 
 cd "$ROOT_DIR"
 
-python3 - <<'PY'
+"$PYTHON_BIN" - <<'PY'
 from pathlib import Path
 
 required_files = [
@@ -23,9 +24,18 @@ docs = {str(path): path.read_text(encoding="utf-8") for path in required_files}
 combined = "\n".join(docs.values())
 
 required_global_snippets = [
+    "SaaS Agent Validation-first",
+    "Stripe, Slack, and GitHub are the only V0",
+    "Shopify, Amazon, fulfillment, warehouse, and inventory",
     "Live Agent Sandbox-first",
     "MCP is not optional for V3.5",
     "External Agent -> MCP/HTTP Twin -> Scenario Fault -> Policy Finding -> Patch Hints",
+    "Permissive Twin + Policy Check",
+    "patch_hints.json",
+    "run_manifest.json",
+    "no production API keys",
+    "no customer PII",
+    "no real refunds",
 ]
 
 missing_snippets = []
@@ -44,7 +54,7 @@ if offline_support_count < 3:
     )
 
 roadmap = docs["ROADMAP.md"]
-for stage in range(0, 14):
+for stage in range(0, 19):
     if f"## Stage {stage}:" not in roadmap:
         missing_snippets.append(f"ROADMAP.md missing Stage {stage} section")
 
@@ -65,6 +75,10 @@ stage_gate_snippets = [
     "./tools/smoke_stage12_shopify_skin_v0.sh",
     "./tools/smoke_stage13_amazon_skin_v0.sh",
     "./tools/smoke_stage13_amazon_mcp_v0.sh",
+    "./tools/smoke_stage15_release_hygiene.sh",
+    "./tools/smoke_stage16_security_abuse.sh",
+    "./tools/smoke_stage17_run_manifest.sh",
+    "./tools/smoke_stage18_agent_examples.sh",
     "./tools/smoke_v35.sh",
 ]
 for snippet in stage_gate_snippets:

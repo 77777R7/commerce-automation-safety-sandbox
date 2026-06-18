@@ -1,0 +1,129 @@
+{
+  "product_name": "Agent Integration Safety Sandbox",
+  "product_surface": "SaaS Agent Validation Sandbox",
+  "artifact_schema_alias": "agent_validation.artifacts.v1",
+  "schema_version": "commerce_safety.run_manifest.v1",
+  "artifact_schema_version": "commerce_safety.artifacts.v1",
+  "producer": "commerce-safety",
+  "generated_at": "2026-06-18T21:43:15.861940+00:00",
+  "run_id": "sess_20260618T214315848823Z_SAAS-003_46386c6a",
+  "session_id": "sess_20260618T214315848823Z_SAAS-003_46386c6a",
+  "workspace_id": "local",
+  "scenario_id": "SAAS-003",
+  "scenario_name": "duplicate_stripe_webhook_side_effects",
+  "runner": "demo_pack_saas003_safe_agent",
+  "status": "passed",
+  "retention": null,
+  "artifacts": [
+    {
+      "path": "scenario.yaml",
+      "artifact_type": "scenario",
+      "schema_id": "commerce_safety.scenario_yaml.v1",
+      "content_type": "application/x-yaml",
+      "required": true,
+      "bytes": 4387,
+      "sha256": "add58507f71fdafe522c142a54273b06dd8c5f4c0dfc6eea59e61c96928aeaa0",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "trace.json",
+      "artifact_type": "trace",
+      "schema_id": "commerce_safety.trace.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 141701,
+      "sha256": "7370d960961f56d1541a53f4910993b33ca90fd35cd1bb310104dfde6b15c9c7",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "policy_report.json",
+      "artifact_type": "policy_report",
+      "schema_id": "commerce_safety.policy_report.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 391,
+      "sha256": "178e6e9648dd90ff0b68e652b25edf7f6c89bf6b711a09d54d181f1681f37522",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "state_diff.json",
+      "artifact_type": "state_diff",
+      "schema_id": "commerce_safety.state_diff.v1",
+      "content_type": "application/json",
+      "required": true,
+      "bytes": 9101,
+      "sha256": "e21b4123cd08fbd0182c2127f3311ef25575892be462b02bd9199d30586934f5",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "report.md",
+      "artifact_type": "operator_report",
+      "schema_id": "commerce_safety.report_markdown.v1",
+      "content_type": "text/markdown",
+      "required": true,
+      "bytes": 2260,
+      "sha256": "ca39b12e71e2828ddba654a36adcac80ce448c3fba91b49ea22d3e5359a8db08",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "patch_hints.json",
+      "artifact_type": "patch_hints",
+      "schema_id": "commerce_safety.patch_hints.v1",
+      "content_type": "application/json",
+      "required": false,
+      "bytes": 368,
+      "sha256": "102b06ec56630aedff896465af75f77deabd1ff9669cd106775de93c635b8bce",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "patch_hints.md",
+      "artifact_type": "patch_hints_markdown",
+      "schema_id": "commerce_safety.patch_hints_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 195,
+      "sha256": "9eee61be2c637ebf788328ba7b49e5355bb18e9e8dbb26356d4d7802bb301093",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "agent_summary.md",
+      "artifact_type": "agent_summary",
+      "schema_id": "commerce_safety.agent_summary_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 771,
+      "sha256": "007c7e599ae067512e28c162c2d5f40eaf195781646a98e4277ca92bfb444b33",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "failure_explain.md",
+      "artifact_type": "failure_explain",
+      "schema_id": "commerce_safety.failure_explain_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 1822,
+      "sha256": "07345a05ea810f67dc87ea1eaa51525bb46b2d134a8fe62213f1a38434416476",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.json",
+      "artifact_type": "github_check_summary",
+      "schema_id": "commerce_safety.github_check_summary.v1",
+      "content_type": "application/json",
+      "required": false,
+      "bytes": 886,
+      "sha256": "a439e3e10ca74c752bb6b53e7b268b41d6b28b484323bb71b83e0b12baf32724",
+      "pii_status": "redacted"
+    },
+    {
+      "path": "github_check_summary.md",
+      "artifact_type": "github_check_summary_markdown",
+      "schema_id": "commerce_safety.github_check_summary_markdown.v1",
+      "content_type": "text/markdown",
+      "required": false,
+      "bytes": 685,
+      "sha256": "2ab2ab9df58b6bccdc17698f2158c4553e22a665e802c7db3cdf16678c8aa53e",
+      "pii_status": "redacted"
+    }
+  ]
+}

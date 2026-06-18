@@ -68,6 +68,31 @@ def test_webhook_mapper_resolves_shopify_order_id_through_binding():
     assert event["shopify_order_id"] == "1001"
 
 
+def test_orders_cancelled_webhook_maps_to_cancel_request_event():
+    event = map_shopify_webhook(
+        {
+            "X-Shopify-Topic": "orders/cancelled",
+            "X-Shopify-Webhook-Id": "wh_cancel_5001",
+        },
+        {
+            "id": 5001,
+            "admin_graphql_api_id": "gid://shopify/Order/5001",
+            "total_price": "80",
+            "cancel_reason": "customer",
+        },
+        order_id_binding={
+            "5001": "order_5001",
+            "gid://shopify/Order/5001": "order_5001",
+        },
+    )
+
+    assert event["topic"] == "cancel_request"
+    assert event["type"] == "cancel_request"
+    assert event["order_id"] == "order_5001"
+    assert event["amount"] == "80"
+    assert event["reason"] == "customer"
+
+
 def test_webhook_mapper_rejects_unsupported_topics_explicitly():
     with pytest.raises(ShopifyWebhookMappingError) as error:
         map_shopify_webhook(

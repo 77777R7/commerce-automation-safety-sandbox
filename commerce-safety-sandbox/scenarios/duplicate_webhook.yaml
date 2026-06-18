@@ -3,6 +3,8 @@ name: Duplicate webhook creates duplicate fulfillment
 description: >
   The same paid-order webhook is delivered twice. Unsafe automation processes
   both deliveries and creates duplicate fulfillment.
+policy_packs:
+  - legacy_commerce
 initial_state:
   order:
     order_id: order_1001

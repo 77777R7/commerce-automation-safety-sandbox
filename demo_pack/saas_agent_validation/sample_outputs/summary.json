@@ -1,0 +1,30 @@
+{
+  "scenario_id": "SAAS-001",
+  "failed": {
+    "status": "failed",
+    "findings": [
+      "no_success_state_after_failed_payment",
+      "billing_failure_must_trigger_alert",
+      "slack_permission_failure_must_not_be_silent",
+      "github_check_must_match_policy_status"
+    ]
+  },
+  "passed": {
+    "status": "passed",
+    "findings": []
+  },
+  "required_artifacts": [
+    "scenario.yaml",
+    "trace.json",
+    "policy_report.json",
+    "state_diff.json",
+    "report.md",
+    "patch_hints.json",
+    "patch_hints.md",
+    "agent_summary.md",
+    "failure_explain.md",
+    "github_check_summary.json",
+    "github_check_summary.md",
+    "run_manifest.json"
+  ]
+}

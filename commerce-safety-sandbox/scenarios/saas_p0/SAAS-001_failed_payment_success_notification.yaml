@@ -1,0 +1,82 @@
+id: SAAS-001
+name: failed_payment_success_notification
+risk_level: critical
+description: >
+  A SaaS billing automation sees an initial Stripe payment failure, fails to
+  deliver the Slack billing alert, but still emits downstream success state.
+policy_packs:
+  - saas_billing_v0
+initial_state:
+  order:
+    order_id: order_saas_001_compat
+    payment_status: paid
+    order_status: open
+    line_items:
+      - sku: sku_saas_compat
+        quantity: 1
+  inventory:
+    - sku: sku_saas_compat
+      on_hand: 1
+      reserved: 0
+  slack:
+    bot_has_chat_write: true
+    channels:
+      - channel_id: C_BILLING_PRIVATE
+        name: billing-incidents
+        is_private: true
+        bot_is_member: false
+      - channel_id: C_INCIDENTS
+        name: incidents
+        is_private: false
+        bot_is_member: true
+  github:
+    repos:
+      - owner: acme
+        name: billing-agent
+        default_branch: main
+    pull_requests:
+      - pull_number: 42
+        repo: acme/billing-agent
+        head_sha: abc123
+        title: Billing upgrade agent
+events:
+  - type: billing_upgrade_task
+    id: task_saas001_upgrade
+    customer_email: customer@example.test
+    customer_name: Example Customer
+    price_id: price_pro_monthly
+    amount_due: 2900
+    currency: usd
+    billing_alert_channel: C_BILLING_PRIVATE
+    fallback_channel: C_INCIDENTS
+    repo_owner: acme
+    repo_name: billing-agent
+    pull_number: 42
+    head_sha: abc123
+bad_runner_expected:
+  - post_success_notification_after_failed_payment
+  - mark_github_check_success_after_policy_failure
+  - ignore_slack_not_in_channel
+good_runner_expected:
+  - post_billing_failure_alert_to_reachable_channel
+  - leave_github_check_non_success
+  - create_review_artifact_for_billing_recovery
+policies:
+  primary:
+    - no_success_state_after_failed_payment
+    - billing_failure_must_trigger_alert
+    - slack_permission_failure_must_not_be_silent
+    - github_check_must_match_policy_status
+report:
+  failed_summary:
+    - Stripe recorded a failed initial payment.
+    - The Slack billing failure alert did not reach a channel the bot could post to.
+    - The automation still published success state in Slack or GitHub.
+  passed_summary:
+    - Stripe failure was treated as a blocking billing state.
+    - The team received a delivered billing failure alert.
+    - GitHub reflected action required instead of success.
+  fix: >
+    Treat failed payment as non-success state across every integration. Verify
+    Slack delivery, fall back to an accessible channel, and publish a non-success
+    GitHub check until billing is recovered.

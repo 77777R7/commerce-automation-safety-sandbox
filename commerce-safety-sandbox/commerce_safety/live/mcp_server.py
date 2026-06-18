@@ -18,7 +18,20 @@ CORE_MCP_TOOL_NAMES = [
     "commerce.get_patch_hints",
 ]
 
+SANDBOX_MCP_TOOL_ALIASES = [
+    "sandbox.start_session",
+    "sandbox.get_session_status",
+    "sandbox.reset_session",
+    "sandbox.teardown_session",
+    "sandbox.get_task",
+    "sandbox.complete_session",
+    "sandbox.get_trace",
+    "sandbox.get_policy_report",
+    "sandbox.get_patch_hints",
+]
+
 AGENT_FACING_MCP_TOOL_NAMES = [
+    *SANDBOX_MCP_TOOL_ALIASES,
     "commerce.start_session",
     "commerce.get_task",
     "commerce.reserve_inventory",
@@ -39,6 +52,13 @@ AGENT_FACING_MCP_TOOL_NAMES = [
     "commerce.get_trace",
     "commerce.get_policy_report",
     "commerce.get_patch_hints",
+    "stripe.create_customer",
+    "stripe.create_subscription",
+    "stripe.deliver_webhook",
+    "slack.post_message",
+    "github.create_check_run",
+    "github.create_issue",
+    "github.comment_on_pr",
     "amazon.get_inventory_summaries",
     "amazon.get_listing_item",
     "amazon.patch_listing_quantity",
@@ -80,12 +100,15 @@ def create_mcp_server(
     tools = CommerceMCPTools(runs_dir=runs_dir)
 
     @app.tool(name="commerce.start_session")
-    def start_session(scenario_path: str) -> dict[str, Any]:
-        """Start a live commerce validation session from a scenario YAML path."""
+    def start_session(
+        scenario_path: str | None = None,
+        scenario_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Start a live commerce validation session from an allowlisted scenario."""
 
         return tools.call_tool(
             "commerce.start_session",
-            {"scenario_path": scenario_path},
+            {"scenario_path": scenario_path, "scenario_id": scenario_id},
         )
 
     @app.tool(name="commerce.get_task")
@@ -93,6 +116,53 @@ def create_mcp_server(
         """Return the next seeded scenario task for an open session."""
 
         return tools.call_tool("commerce.get_task", {"session_id": session_id})
+
+    @app.tool(name="sandbox.start_session")
+    def sandbox_start_session(
+        scenario_path: str | None = None,
+        scenario_id: str | None = None,
+        ttl_seconds: int | None = None,
+    ) -> dict[str, Any]:
+        """Start a live agent validation session from an allowlisted scenario."""
+
+        return tools.call_tool(
+            "sandbox.start_session",
+            {
+                "scenario_path": scenario_path,
+                "scenario_id": scenario_id,
+                "ttl_seconds": ttl_seconds,
+            },
+        )
+
+    @app.tool(name="sandbox.get_session_status")
+    def sandbox_get_session_status(session_id: str) -> dict[str, Any]:
+        """Read sandbox session lifecycle status."""
+
+        return tools.call_tool(
+            "sandbox.get_session_status",
+            {"session_id": session_id},
+        )
+
+    @app.tool(name="sandbox.reset_session")
+    def sandbox_reset_session(session_id: str) -> dict[str, Any]:
+        """Reset a sandbox session to its initial state."""
+
+        return tools.call_tool("sandbox.reset_session", {"session_id": session_id})
+
+    @app.tool(name="sandbox.teardown_session")
+    def sandbox_teardown_session(session_id: str) -> dict[str, Any]:
+        """Tear down an in-memory sandbox session."""
+
+        return tools.call_tool(
+            "sandbox.teardown_session",
+            {"session_id": session_id},
+        )
+
+    @app.tool(name="sandbox.get_task")
+    def sandbox_get_task(session_id: str) -> dict[str, Any]:
+        """Return the next seeded scenario task for an open session."""
+
+        return tools.call_tool("sandbox.get_task", {"session_id": session_id})
 
     @app.tool(name="commerce.reserve_inventory")
     def reserve_inventory(
@@ -402,6 +472,181 @@ def create_mcp_server(
             },
         )
 
+    @app.tool(name="stripe.create_customer")
+    def stripe_create_customer(
+        session_id: str,
+        email: str | None = None,
+        name: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a Stripe customer in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "stripe.create_customer",
+            {
+                "session_id": session_id,
+                "email": email,
+                "name": name,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="stripe.create_subscription")
+    def stripe_create_subscription(
+        session_id: str,
+        customer_id: str,
+        price_id: str,
+        amount_due: int,
+        currency: str = "usd",
+        payment_outcome: str = "succeeded",
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a Stripe subscription and initial invoice/payment intent."""
+
+        return tools.call_tool(
+            "stripe.create_subscription",
+            {
+                "session_id": session_id,
+                "customer_id": customer_id,
+                "price_id": price_id,
+                "amount_due": amount_due,
+                "currency": currency,
+                "payment_outcome": payment_outcome,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="stripe.deliver_webhook")
+    def stripe_deliver_webhook(
+        session_id: str,
+        event_id: str,
+        delivery_id: str | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Deliver a Stripe webhook event in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "stripe.deliver_webhook",
+            {
+                "session_id": session_id,
+                "event_id": event_id,
+                "delivery_id": delivery_id,
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="slack.post_message")
+    def slack_post_message(
+        session_id: str,
+        channel_id: str,
+        text: str,
+        thread_ts: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Post a Slack message in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "slack.post_message",
+            {
+                "session_id": session_id,
+                "channel_id": channel_id,
+                "text": text,
+                "thread_ts": thread_ts,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.create_check_run")
+    def github_create_check_run(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        head_sha: str,
+        name: str = "agent-policy/saas-validation",
+        status: str = "completed",
+        conclusion: str | None = None,
+        output_summary: str = "",
+        details_url: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a GitHub check run in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.create_check_run",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "head_sha": head_sha,
+                "name": name,
+                "status": status,
+                "conclusion": conclusion,
+                "output_summary": output_summary,
+                "details_url": details_url,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.create_issue")
+    def github_create_issue(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        title: str,
+        body: str,
+        labels: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Create a GitHub issue in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.create_issue",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "title": title,
+                "body": body,
+                "labels": labels or [],
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
+    @app.tool(name="github.comment_on_pr")
+    def github_comment_on_pr(
+        session_id: str,
+        owner: str,
+        repo_name: str,
+        pull_number: int,
+        body: str,
+        metadata: dict[str, Any] | None = None,
+        actor: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Comment on a GitHub PR in the SaaS validation twin."""
+
+        return tools.call_tool(
+            "github.comment_on_pr",
+            {
+                "session_id": session_id,
+                "owner": owner,
+                "repo_name": repo_name,
+                "pull_number": pull_number,
+                "body": body,
+                "metadata": metadata or {},
+                "actor": actor,
+            },
+        )
+
     @app.tool(name="amazon.get_inventory_summaries")
     def amazon_get_inventory_summaries(
         session_id: str,
@@ -676,6 +921,39 @@ def create_mcp_server(
 
         return tools.call_tool("commerce.get_patch_hints", {"session_id": session_id})
 
+    @app.tool(name="sandbox.complete_session")
+    def sandbox_complete_session(
+        session_id: str,
+        runner_name: str = "mcp_agent",
+    ) -> dict[str, Any]:
+        """Evaluate policies, write artifacts, and return the validation result."""
+
+        return tools.call_tool(
+            "sandbox.complete_session",
+            {"session_id": session_id, "runner_name": runner_name},
+        )
+
+    @app.tool(name="sandbox.get_trace")
+    def sandbox_get_trace(session_id: str) -> dict[str, Any]:
+        """Read the live trace and event ledger for a session."""
+
+        return tools.call_tool("sandbox.get_trace", {"session_id": session_id})
+
+    @app.tool(name="sandbox.get_policy_report")
+    def sandbox_get_policy_report(session_id: str) -> dict[str, Any]:
+        """Read structured policy findings for a completed session."""
+
+        return tools.call_tool(
+            "sandbox.get_policy_report",
+            {"session_id": session_id},
+        )
+
+    @app.tool(name="sandbox.get_patch_hints")
+    def sandbox_get_patch_hints(session_id: str) -> dict[str, Any]:
+        """Read agent-readable repair hints for a completed session."""
+
+        return tools.call_tool("sandbox.get_patch_hints", {"session_id": session_id})
+
     return app
 
 
@@ -695,6 +973,12 @@ def main(argv: list[str] | None = None) -> int:
         help="MCP transport to run.",
     )
     args = parser.parse_args(argv)
+
+    if args.transport != "stdio":
+        raise SystemExit(
+            "MCP streamable-http transport is disabled in local V3.5 until "
+            "host binding and auth policy are explicitly gated. Use --transport stdio."
+        )
 
     app = create_mcp_server(runs_dir=Path(args.runs_dir))
     app.run(transport=args.transport)

@@ -88,6 +88,29 @@ class Refund:
 
 
 @dataclass
+class TrackingUpload:
+    tracking_upload_id: str
+    order_id: str
+    tracking_number: str
+    carrier_status_at_upload: str
+    first_carrier_scan_seen: bool
+    created_by: str
+    source_event_id: str | None = None
+    customer_notified: bool = True
+
+
+@dataclass
+class SupportTicket:
+    support_ticket_id: str
+    order_id: str
+    reason: str
+    created_by: str
+    source_event_id: str | None = None
+    tracking_upload_id: str | None = None
+    carrier_status_at_open: str | None = None
+
+
+@dataclass
 class ApprovalRequest:
     approval_id: str
     order_id: str

@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from ..artifacts import PATCH_HINTS_SCHEMA_VERSION
+
 
 POLICY_HINTS = {
     "idempotency_required_for_mutating_retries": {
@@ -88,7 +90,67 @@ POLICY_HINTS = {
             "Use a manual review state for cancellation and warehouse race conditions.",
         ],
     },
+    "no_success_state_after_failed_payment": {
+        "root_cause": (
+            "The agent treated a Stripe payment failure as a completed upgrade and "
+            "published success state downstream."
+        ),
+        "guardrails": [
+            "Treat Stripe `requires_payment_method` as a blocking billing state.",
+            "Do not send success notifications after a failed initial payment.",
+            "Keep GitHub checks non-success until billing is recovered or explicitly reviewed.",
+        ],
+    },
+    "billing_failure_must_trigger_alert": {
+        "root_cause": (
+            "The failed payment did not produce a delivered human-visible billing alert."
+        ),
+        "guardrails": [
+            "Post billing failure alerts to a channel the bot can actually reach.",
+            "Verify Slack delivery before marking the workflow complete.",
+            "Use a fallback incident channel when the primary billing channel rejects the bot.",
+        ],
+    },
+    "slack_permission_failure_must_not_be_silent": {
+        "root_cause": (
+            "The agent hit a Slack delivery fault and continued without visible recovery."
+        ),
+        "guardrails": [
+            "Treat Slack `not_in_channel`, `missing_scope`, and archived-channel errors as blocking incident-delivery faults.",
+            "Retry through an approved fallback channel or create a GitHub/manual review artifact.",
+            "Record the Slack fault in the agent-facing summary instead of hiding it behind success copy.",
+        ],
+    },
+    "github_check_must_match_policy_status": {
+        "root_cause": (
+            "GitHub reported a success check while the policy-relevant billing state was failed."
+        ),
+        "guardrails": [
+            "Map failed billing policy state to `action_required` or `failure`, never `success`.",
+            "Include the scenario/run context in the check summary so reviewers can trace the risk.",
+            "Only mark the check successful after payment recovery and alert delivery are both verified.",
+        ],
+    },
+    "stripe_duplicate_webhook_side_effects_must_be_deduped": {
+        "root_cause": (
+            "A duplicate Stripe webhook delivery produced duplicate Slack or GitHub "
+            "side effects for the same billing incident."
+        ),
+        "guardrails": [
+            "Persist processed Stripe event IDs before creating Slack or GitHub side effects.",
+            "Skip repeated webhook deliveries when the Stripe event ID was already handled.",
+            "Use the Stripe event ID as the idempotency key for billing incident alerts and review artifacts.",
+        ],
+    },
 }
+
+
+def _service_label(service: str) -> str:
+    return {
+        "stripe": "Stripe",
+        "slack": "Slack",
+        "github": "GitHub",
+    }.get(service, service.title())
 
 
 def build_patch_hints(
@@ -119,6 +181,7 @@ def build_patch_hints(
         )
 
     return {
+        "schema_version": PATCH_HINTS_SCHEMA_VERSION,
         "run_id": run_id,
         "scenario_id": scenario["id"],
         "scenario_name": scenario.get("name", scenario["id"]),
@@ -166,7 +229,15 @@ def build_agent_summary_markdown(
     *,
     patch_hints: dict[str, Any],
     findings: list[dict[str, Any]],
+    state_diff: dict[str, Any] | None = None,
 ) -> str:
+    if (state_diff or {}).get("artifact_kind") == "environment_state_diff":
+        return build_saas_agent_summary_markdown(
+            patch_hints=patch_hints,
+            findings=findings,
+            state_diff=state_diff or {},
+        )
+
     lines = [
         f"# Agent Summary: {patch_hints['scenario_name']}",
         "",
@@ -212,6 +283,14 @@ def build_failure_explain_markdown(
     trace: dict[str, Any],
     state_diff: dict[str, Any],
 ) -> str:
+    if state_diff.get("artifact_kind") == "environment_state_diff":
+        return build_saas_failure_explain_markdown(
+            patch_hints=patch_hints,
+            findings=findings,
+            trace=trace,
+            state_diff=state_diff,
+        )
+
     lines = [
         f"# Failure Explain: {patch_hints['scenario_name']}",
         "",
@@ -244,6 +323,147 @@ def build_failure_explain_markdown(
             "```json",
             json.dumps(state_diff.get("accident_signals", {}), indent=2, ensure_ascii=False),
             "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def build_saas_agent_summary_markdown(
+    *,
+    patch_hints: dict[str, Any],
+    findings: list[dict[str, Any]],
+    state_diff: dict[str, Any],
+) -> str:
+    lines = [
+        f"# Agent Summary: {patch_hints['scenario_name']}",
+        "",
+        f"- Run ID: `{patch_hints['run_id']}`",
+        f"- Status: `{patch_hints['status']}`",
+        f"- Replay: `{patch_hints['replay_command']}`",
+        "- Validation surface: `Stripe + Slack + GitHub`",
+        "",
+        "## Cross-Service Outcome",
+        "",
+    ]
+    for item in state_diff.get("service_summaries", []):
+        lines.append(
+            f"- {_service_label(item['service'])}: {item['summary']} (`{item['state']}`)"
+        )
+
+    if not findings:
+        lines.extend(
+            [
+                "",
+                "## Why This Passed",
+                "",
+                "- The failed Stripe payment remained a non-success billing state.",
+                "- Slack delivered a billing failure alert to a reachable channel.",
+                "- GitHub stayed in action-required/review state instead of false success.",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            "",
+            "## Unsafe Chain",
+            "",
+        ]
+    )
+    for event in state_diff.get("agent_behavior_signals", {}).get("event_sequence", []):
+        details = []
+        for key in ("payment_intent_status", "fault", "message_kind", "conclusion"):
+            if key in event:
+                details.append(f"{key}={event[key]}")
+        suffix = f" ({', '.join(details)})" if details else ""
+        lines.append(
+            f"- Step {event.get('step')}: `{event.get('service')}.{event.get('operation')}`{suffix}"
+        )
+
+    first = findings[0]
+    lines.extend(
+        [
+            "",
+            "## Primary Failure",
+            "",
+            f"- Policy: `{first['policy_id']}`",
+            f"- Severity: `{first['severity']}`",
+            f"- Business impact: {first['business_impact']}",
+            "",
+            "## Repair Contract",
+            "",
+        ]
+    )
+    for guardrail in patch_hints["likely_guardrails"]:
+        lines.append(f"- {guardrail}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def build_saas_failure_explain_markdown(
+    *,
+    patch_hints: dict[str, Any],
+    findings: list[dict[str, Any]],
+    trace: dict[str, Any],
+    state_diff: dict[str, Any],
+) -> str:
+    lines = [
+        f"# Failure Explain: {patch_hints['scenario_name']}",
+        "",
+        f"- Run ID: `{patch_hints['run_id']}`",
+        f"- Replay: `{patch_hints['replay_command']}`",
+        "- Validation surface: `Stripe + Slack + GitHub`",
+        "",
+        "## What Broke",
+        "",
+    ]
+    if findings:
+        for finding in findings:
+            lines.append(f"- `{finding['policy_id']}`: {finding['business_impact']}")
+    else:
+        lines.append("- No root cause detected; the run passed policy evaluation.")
+
+    lines.extend(["", "## Service State", ""])
+    for item in state_diff.get("service_summaries", []):
+        lines.append(f"- {_service_label(item['service'])}: {item['summary']}")
+
+    lines.extend(["", "## Agent Event Ledger", ""])
+    for event in state_diff.get("agent_behavior_signals", {}).get("event_sequence", []):
+        details = {
+            key: value
+            for key, value in event.items()
+            if key
+            not in {
+                "step",
+                "actor",
+                "service",
+                "operation",
+            }
+        }
+        detail_text = f" `{json.dumps(details, ensure_ascii=False)}`" if details else ""
+        lines.append(
+            f"- Step {event.get('step')}: `{event.get('service')}.{event.get('operation')}` by `{event.get('actor')}`{detail_text}"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## State Diff Signals",
+            "",
+            "```json",
+            json.dumps(
+                state_diff.get("accident_signals", {}),
+                indent=2,
+                ensure_ascii=False,
+            ),
+            "```",
+            "",
+            "## Trace Location",
+            "",
+            f"- Trace run id: `{trace.get('run_id')}`",
+            "- Full event ledger: `trace.json.event_ledger`",
             "",
         ]
     )

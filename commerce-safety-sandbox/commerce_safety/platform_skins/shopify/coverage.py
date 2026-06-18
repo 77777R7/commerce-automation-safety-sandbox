@@ -13,6 +13,8 @@ class ShopifyCoverage:
     stage: str
     webhooks: dict[str, dict[str, Any]]
     mutations: dict[str, dict[str, Any]]
+    routes: dict[str, dict[str, Any]]
+    actions: dict[str, dict[str, Any]]
     supported_scenarios: list[str]
     binding: dict[str, Any]
 
@@ -21,6 +23,12 @@ class ShopifyCoverage:
 
     def mutation_status(self, mutation_name: str) -> str:
         return self.mutations.get(mutation_name, {}).get("status", "unsupported")
+
+    def route_status(self, route_name: str) -> str:
+        return self.routes.get(route_name, {}).get("status", "unsupported")
+
+    def action_status(self, action_name: str) -> str:
+        return self.actions.get(action_name, {}).get("status", "unsupported")
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -34,6 +42,14 @@ class ShopifyCoverage:
             "mutations": {
                 name: spec.get("status", "unsupported")
                 for name, spec in self.mutations.items()
+            },
+            "routes": {
+                name: spec.get("status", "unsupported")
+                for name, spec in self.routes.items()
+            },
+            "actions": {
+                name: spec.get("status", "unsupported")
+                for name, spec in self.actions.items()
             },
             "binding_principle": self.binding.get("principle"),
         }
@@ -56,6 +72,8 @@ def load_shopify_coverage() -> ShopifyCoverage:
         stage=str(coverage["stage"]),
         webhooks=dict(coverage.get("webhooks", {})),
         mutations=dict(coverage.get("mutations", {})),
+        routes=dict(coverage.get("routes", {})),
+        actions=dict(coverage.get("actions", {})),
         supported_scenarios=list(coverage.get("supported_scenarios", [])),
         binding=binding,
     )

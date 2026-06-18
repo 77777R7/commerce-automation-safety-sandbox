@@ -4,6 +4,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .artifacts import (
+    POLICY_REPORT_SCHEMA_VERSION,
+    STATE_DIFF_SCHEMA_VERSION,
+    TRACE_SCHEMA_VERSION,
+    add_schema_version,
+    write_run_manifest,
+)
 from .io import load_yaml, write_json, write_text
 from .models import to_plain
 from .policies import PolicyEngine, findings_to_plain
@@ -40,6 +47,9 @@ def run_scenario(
         elif event["type"] == "refund_request":
             twin.receive_refund_request(event)
             runner.handle_refund_request(twin, event)
+        elif event["type"] == "tracking_upload_task":
+            twin.receive_tracking_upload_task(event)
+            runner.handle_tracking_upload_task(twin, event)
         elif event["type"] == "cancel_request":
             twin.receive_cancel_request(event)
             runner.handle_cancel_request(twin, event)
@@ -76,27 +86,34 @@ def run_scenario(
             scenario.get("approval_rules", {}).get("high_value_refund_threshold", 100)
         ),
     )
+    state_diff = add_schema_version(state_diff, STATE_DIFF_SCHEMA_VERSION)
     run_id = make_run_id(scenario["id"], runner_name)
     run_path = runs_dir / run_id
 
-    trace = {
-        "run_id": run_id,
-        "scenario_id": scenario["id"],
-        "scenario_name": scenario.get("name", scenario["id"]),
-        "runner": runner_name,
-        "status": status,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "initial_state": before,
-        "final_state": after,
-        "timeline": [to_plain(event) for event in twin.timeline],
-    }
-    policy_report = {
-        "run_id": run_id,
-        "scenario_id": scenario["id"],
-        "runner": runner_name,
-        "status": status,
-        "findings": findings,
-    }
+    trace = add_schema_version(
+        {
+            "run_id": run_id,
+            "scenario_id": scenario["id"],
+            "scenario_name": scenario.get("name", scenario["id"]),
+            "runner": runner_name,
+            "status": status,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "initial_state": before,
+            "final_state": after,
+            "timeline": [to_plain(event) for event in twin.timeline],
+        },
+        TRACE_SCHEMA_VERSION,
+    )
+    policy_report = add_schema_version(
+        {
+            "run_id": run_id,
+            "scenario_id": scenario["id"],
+            "runner": runner_name,
+            "status": status,
+            "findings": findings,
+        },
+        POLICY_REPORT_SCHEMA_VERSION,
+    )
     report = build_markdown_report(
         run_id=run_id,
         scenario=scenario,
@@ -111,6 +128,21 @@ def run_scenario(
     write_json(run_path / "policy_report.json", policy_report)
     write_json(run_path / "state_diff.json", state_diff)
     write_text(run_path / "report.md", report)
+    write_run_manifest(
+        run_path=run_path,
+        run_id=run_id,
+        scenario_id=scenario["id"],
+        scenario_name=scenario.get("name", scenario["id"]),
+        runner=runner_name,
+        status=status,
+        artifacts=[
+            "scenario.yaml",
+            "trace.json",
+            "policy_report.json",
+            "state_diff.json",
+            "report.md",
+        ],
+    )
 
     return {
         "run_id": run_id,

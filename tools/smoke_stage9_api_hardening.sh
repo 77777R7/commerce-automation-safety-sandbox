@@ -42,7 +42,7 @@ import urllib.error
 import urllib.request
 
 base_url = sys.argv[1]
-deadline = time.time() + 30
+deadline = time.time() + 90
 while time.time() < deadline:
     try:
         urllib.request.urlopen(f"{base_url}/sessions/not-real/trace", timeout=0.5)
@@ -66,7 +66,89 @@ if [[ -z "$SCHEMATHESIS_BIN" || ! -x "$SCHEMATHESIS_BIN" ]]; then
   exit 1
 fi
 
-"$SCHEMATHESIS_BIN" run docs/openapi/live_twin_api.yaml \
+FIXTURE_VALUES="$RUNS_DIR/schemathesis-fixtures.json"
+FIXTURE_SPEC="$RUNS_DIR/live_twin_api.schemathesis.yaml"
+SCHEMATHESIS_LOG="$RUNS_DIR/schemathesis.log"
+
+"$PYTHON_BIN" - "$BASE_URL" "$FIXTURE_VALUES" <<'PY'
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+import urllib.error
+import urllib.request
+
+
+BASE_URL = sys.argv[1]
+FIXTURE_VALUES = pathlib.Path(sys.argv[2])
+SCENARIOS = {
+    "SCN-001": {
+        "scenario_path": "commerce-safety-sandbox/scenarios/duplicate_webhook.yaml"
+    },
+    "SCN-002": {"scenario_id": "SCN-002"},
+    "SCN-003": {"scenario_id": "SCN-003"},
+    "SCN-004": {"scenario_id": "SCN-004"},
+    "SCN-005": {"scenario_id": "SCN-005"},
+    "SAAS-001": {"scenario_id": "SAAS-001"},
+    "SAAS-003": {"scenario_id": "SAAS-003"},
+    "LIFECYCLE_STATUS": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
+    "LIFECYCLE_RESET": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
+    "LIFECYCLE_TEARDOWN": {"scenario_id": "SAAS-003", "ttl_seconds": 300},
+}
+
+
+def request(method: str, path: str, payload: dict | None = None):
+    data = None if payload is None else json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        f"{BASE_URL}{path}",
+        data=data,
+        method=method,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return response.status, json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        return error.code, json.loads(error.read().decode("utf-8"))
+
+
+sessions = {}
+for scenario_id, payload in SCENARIOS.items():
+    status, body = request("POST", "/sessions", payload)
+    assert status == 201, body
+    sessions[scenario_id] = body["session_id"]
+
+status, feed = request(
+    "POST",
+    f"/sessions/{sessions['SCN-003']}/amazon/sp-api/feeds/2021-06-30/feeds",
+    {
+        "feedType": "POST_INVENTORY_AVAILABILITY_DATA",
+        "messages": [{"sellerSku": "SELLER-0001", "quantity": 0}],
+        "actor": "schemathesis_fixture_setup",
+    },
+)
+assert status == 202, feed
+
+FIXTURE_VALUES.write_text(
+    json.dumps(
+        {
+            "sessions": sessions,
+            "feed_id": feed["payload"]["feedId"],
+        },
+        indent=2,
+        sort_keys=True,
+    ),
+    encoding="utf-8",
+)
+PY
+
+"$PYTHON_BIN" tools/build_schemathesis_fixture_spec.py \
+  --source docs/openapi/live_twin_api.yaml \
+  --fixtures-json "$FIXTURE_VALUES" \
+  --output "$FIXTURE_SPEC"
+
+if ! "$SCHEMATHESIS_BIN" run "$FIXTURE_SPEC" \
   --url "$BASE_URL" \
   --phases=examples,coverage,stateful \
   --checks=status_code_conformance,content_type_conformance,response_schema_conformance \
@@ -74,7 +156,19 @@ fi
   --max-examples=2 \
   --generation-deterministic \
   --request-timeout=5 \
-  --no-color
+  --no-color \
+  >"$SCHEMATHESIS_LOG" 2>&1
+then
+  cat "$SCHEMATHESIS_LOG" >&2
+  exit 1
+fi
+
+cat "$SCHEMATHESIS_LOG"
+
+if grep -qE "WARNINGS|Missing test data|Schema validation mismatch" "$SCHEMATHESIS_LOG"; then
+  echo "Schemathesis emitted contract warnings; update fixtures or schema instead of allowlisting." >&2
+  exit 1
+fi
 
 "$PYTHON_BIN" - "$BASE_URL" "$RUNS_DIR" <<'PY'
 from __future__ import annotations

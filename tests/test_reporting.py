@@ -47,6 +47,23 @@ def test_report_places_business_summary_before_json_evidence(tmp_path: Path) -> 
     assert "- Recommended control:" in report
 
 
+def test_report_renders_incident_cards_for_policy_findings(tmp_path: Path) -> None:
+    result = run_scenario(
+        scenario_path=ROOT
+        / "commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml",
+        runner_name="bad_runner",
+        runs_dir=tmp_path,
+    )
+    report = (Path(result["run_path"]) / "report.md").read_text(encoding="utf-8")
+
+    assert "## Incident Cards" in report
+    assert "### Incident Card: idempotency_required_for_mutating_retries" in report
+    assert "- What happened:" in report
+    assert "- Why it matters:" in report
+    assert "- Recommended guardrail:" in report
+    assert "- How to retest:" in report
+
+
 def test_build_state_diff_uses_order_quantity_for_expected_reservation() -> None:
     before = {
         "counts": {

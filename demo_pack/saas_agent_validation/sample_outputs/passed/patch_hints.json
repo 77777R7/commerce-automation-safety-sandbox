@@ -1,0 +1,10 @@
+{
+  "schema_version": "commerce_safety.patch_hints.v1",
+  "run_id": "sess_20260617T022438085966Z_SAAS-001_504f616d",
+  "scenario_id": "SAAS-001",
+  "scenario_name": "failed_payment_success_notification",
+  "status": "passed",
+  "replay_command": "commerce-safety replay runs/sess_20260617T022438085966Z_SAAS-001_504f616d",
+  "likely_guardrails": [],
+  "hints": []
+}

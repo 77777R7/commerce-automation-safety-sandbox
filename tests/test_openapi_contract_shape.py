@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from commerce_safety.policy_packs import PolicyPackRegistry
+
 
 SPEC_PATH = Path(__file__).resolve().parents[1] / "docs/openapi/live_twin_api.yaml"
 
@@ -34,12 +36,52 @@ def test_openapi_has_stage10_generic_commerce_action_paths():
         assert f"/sessions/{{session_id}}/twin/{action}" in spec["paths"]
 
 
+def test_openapi_has_saas_v0_action_paths():
+    paths = _spec()["paths"]
+    action_names = {
+        "stripe_create_customer",
+        "stripe_create_subscription",
+        "stripe_deliver_webhook",
+        "slack_post_message",
+        "github_create_check_run",
+        "github_create_issue",
+        "github_comment_on_pr",
+    }
+
+    for action in action_names:
+        assert f"/sessions/{{session_id}}/twin/{action}" in paths
+
+
+def test_openapi_has_minimal_sandbox_lifecycle_paths():
+    paths = _spec()["paths"]
+
+    assert "/sessions/{session_id}/status" in paths
+    assert "/sessions/{session_id}/reset" in paths
+    assert "/sessions/{session_id}/teardown" in paths
+
+    schemas = _spec()["components"]["schemas"]
+    assert "ttl_seconds" in schemas["StartSessionRequest"]["properties"]
+    assert "ttl_expired" in schemas["SessionStatusResponse"]["required"]
+
+
+def test_openapi_complete_session_exposes_policy_packs():
+    schema = _spec()["components"]["schemas"]["CompleteSessionResponse"]
+
+    assert "policy_packs" in schema["required"]
+    assert schema["properties"]["policy_packs"]["items"]["enum"] == list(
+        PolicyPackRegistry().ids()
+    )
+
+
 def test_openapi_has_stage12_shopify_like_skin_paths():
     paths = _spec()["paths"]
 
     assert "/sessions/{session_id}/shopify/webhooks" in paths
     assert "/sessions/{session_id}/shopify/webhooks/skip_duplicate" in paths
     assert "/sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json" in paths
+    assert "/sessions/{session_id}/shopify/admin/api/{api_version}/inventory_levels.json" in paths
+    assert "/sessions/{session_id}/shopify/admin/api/{api_version}/inventory_levels/adjust.json" in paths
+    assert "/sessions/{session_id}/shopify/actions/{shopify_action}" in paths
     assert "/sessions/{session_id}/shopify/coverage" in paths
 
 
@@ -78,8 +120,8 @@ def test_openapi_stage11_tightens_trace_timeline_and_policy_evidence():
     assert "additionalProperties" not in schemas["TraceEvent"]
 
     evidence = schemas["PolicyFinding"]["properties"]["evidence"]
-    assert "oneOf" in evidence
-    assert evidence["oneOf"]
+    assert "anyOf" in evidence
+    assert evidence["anyOf"]
     assert not evidence.get("additionalProperties")
 
 
@@ -89,37 +131,6 @@ def test_schemathesis_warning_allowlist_is_explicit_and_narrow():
     ).read_text(encoding="utf-8")
     data = yaml.safe_load(allowlist)
 
-    assert data["allowed_warnings"] == ["schema_validation_mismatch_for_session_bound_paths"]
-    assert set(data["session_bound_paths"]) == {
-        "/sessions/{session_id}/tasks/next",
-        "/sessions/{session_id}/trace",
-        "/sessions/{session_id}/complete",
-        "/sessions/{session_id}/twin/create_fulfillment",
-        "/sessions/{session_id}/twin/reserve_inventory",
-        "/sessions/{session_id}/twin/promise_fulfillment",
-        "/sessions/{session_id}/twin/refresh_inventory",
-        "/sessions/{session_id}/twin/route_manual_review",
-        "/sessions/{session_id}/twin/find_fulfillment",
-        "/sessions/{session_id}/twin/create_refund",
-        "/sessions/{session_id}/twin/create_approval_request",
-        "/sessions/{session_id}/twin/cancel_order",
-        "/sessions/{session_id}/twin/release_inventory",
-        "/sessions/{session_id}/twin/place_workflow_hold",
-        "/sessions/{session_id}/twin/submit_warehouse_cancellation_request",
-        "/sessions/{session_id}/twin/warehouse_continue_fulfillment",
-        "/sessions/{session_id}/twin/skip_duplicate_webhook",
-        "/sessions/{session_id}/shopify/webhooks",
-        "/sessions/{session_id}/shopify/webhooks/skip_duplicate",
-        "/sessions/{session_id}/shopify/admin/api/{api_version}/graphql.json",
-        "/sessions/{session_id}/shopify/coverage",
-        "/sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries",
-        "/sessions/{session_id}/amazon/sp-api/listings/{api_version}/items/{seller_id}/{sku}",
-        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}",
-        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems",
-        "/sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation",
-        "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds",
-        "/sessions/{session_id}/amazon/sp-api/feeds/{api_version}/feeds/{feed_id}",
-        "/sessions/{session_id}/amazon/notifications",
-        "/sessions/{session_id}/amazon/actions/{amazon_action}",
-        "/sessions/{session_id}/amazon/coverage",
-    }
+    assert data["allowed_warnings"] == []
+    assert data["policy"] == "zero_schemathesis_warnings"
+    assert data["fixture_generator"] == "commerce_safety.live.schemathesis_fixtures"

@@ -5,6 +5,8 @@ description: >
   A buyer cancellation arrives after the warehouse has already picked the order.
   Unsafe automation treats cancellation as simple, releases inventory, issues a
   refund, and the warehouse still ships the parcel.
+policy_packs:
+  - legacy_commerce
 approval_rules:
   high_value_refund_threshold: 100
 initial_state:

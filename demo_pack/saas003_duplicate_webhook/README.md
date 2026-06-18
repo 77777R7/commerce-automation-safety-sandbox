@@ -1,0 +1,108 @@
+# SAAS-003 Demo Pack: Duplicate Stripe Webhook Side Effects
+
+## What This Shows
+
+SAAS-003 is the stateful external-service edge case:
+
+```txt
+duplicate Stripe invoice.payment_failed webhook
+-> duplicate Slack billing alerts
+-> duplicate GitHub recovery checks
+-> policy failure
+```
+
+The safe path still receives the duplicate Stripe delivery, but the agent uses
+the Stripe event ID as the idempotency key and skips the second Slack/GitHub
+side effect.
+
+## Thirty-Second Product View
+
+Open `index.html` first.
+
+It shows the investor-facing incident result:
+
+```txt
+One Stripe event created duplicate recovery work.
+
+Expected: 1 Slack alert, 1 GitHub recovery check
+Observed: 2 Slack alerts, 2 GitHub recovery checks
+Fix: persist Stripe event ID before side effects
+```
+
+## Audience
+
+- Agent builders validating billing and incident-response agents.
+- Investors evaluating whether this is more than a static mock.
+- Design partners with workflows that touch Stripe webhooks, Slack alerts, or
+  GitHub checks.
+
+## Safety Boundary
+
+- No production Stripe keys.
+- No production Slack bot tokens.
+- No production GitHub installation tokens.
+- No customer PII.
+- No real refunds.
+- No real PR writes.
+
+## Read First
+
+- `index.html`
+- `scenario_card.md`
+- `external_agent_prompt.md`
+- `runbook.md`
+- `sample_outputs/failed/github_check_summary.md`
+- `sample_outputs/failed/state_diff.json`
+- `sample_outputs/passed/github_check_summary.md`
+- `sample_outputs/passed/state_diff.json`
+
+Investor 5-minute path:
+
+1. `index.html`
+2. `scenario_card.md`
+3. `investor_demo_script.md`
+4. `sample_outputs/failed/github_check_summary.md`
+5. `sample_outputs/failed/trace_excerpt.json`
+6. `sample_outputs/passed/github_check_summary.md`
+
+Design partner path:
+
+1. `../../docs/scenarios/saas_billing_agent_safety_catalog.md`
+2. `scenario_card.md`
+3. `design_partner_walkthrough.md`
+4. `sample_outputs/failed/state_diff.json`
+5. `sample_outputs/failed/patch_hints.md`
+
+External agent builder path:
+
+1. `external_agent_prompt.md`
+2. `runbook.md`
+3. Run the unsafe path.
+4. Read `sample_outputs/failed/github_check_summary.md`.
+5. Run the safe repair path.
+
+## Generated Artifacts
+
+The sample outputs are generated from the HTTP action surface:
+
+- `trace.json`
+- `policy_report.json`
+- `state_diff.json`
+- `report.md`
+- `patch_hints.json`
+- `patch_hints.md`
+- `agent_summary.md`
+- `failure_explain.md`
+- `github_check_summary.json`
+- `github_check_summary.md`
+- `run_manifest.json`
+
+## Why This Matters
+
+This is the kind of bug that simple unit tests miss. Stripe can deliver the same
+event more than once. A permissive twin lets the agent make the mistake, while
+the policy pack judges the final cross-service state.
+
+Static mocks can return fixture responses, but they do not remember duplicate
+delivery counts or downstream Slack/GitHub mutations. This demo records those
+state changes and turns them into a reviewer-facing safety result.

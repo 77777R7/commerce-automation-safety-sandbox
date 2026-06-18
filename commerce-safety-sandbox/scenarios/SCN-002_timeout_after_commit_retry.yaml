@@ -4,6 +4,8 @@ risk_level: critical
 description: >
   The twin commits create_fulfillment, then returns a timeout. Unsafe automation
   retries as a new mutation and creates duplicate fulfillment.
+policy_packs:
+  - legacy_commerce
 initial_state:
   order:
     order_id: order_2001

@@ -42,6 +42,14 @@ def compact_counts(state_diff: dict[str, Any]) -> dict[str, Any]:
             "before": state_diff["before"]["refunds"],
             "after": state_diff["after"]["refunds"],
         },
+        "trackingUploads": {
+            "before": state_diff["before"].get("tracking_uploads", 0),
+            "after": state_diff["after"].get("tracking_uploads", 0),
+        },
+        "supportTickets": {
+            "before": state_diff["before"].get("support_tickets", 0),
+            "after": state_diff["after"].get("support_tickets", 0),
+        },
         "approvalRequests": {
             "before": state_diff["before"]["approval_requests"],
             "after": state_diff["after"]["approval_requests"],
@@ -75,6 +83,8 @@ def scenario_payload(meta: dict[str, Any]) -> dict[str, Any]:
         "id": meta["id"],
         "slug": meta["slug"],
         "title": meta["title"],
+        "tier": meta.get("tier", "P0"),
+        "parent": meta.get("parent"),
         "accident": meta["accident"],
         "businessLoss": meta["business_loss"],
         "badBehavior": meta["bad_behavior"],
@@ -166,10 +176,12 @@ INDEX_HTML = """<!doctype html>
           <p class="eyebrow">Pre-production crash test layer</p>
           <h1 id="hero-title">Commerce Automation Safety Sandbox</h1>
           <p class="hero-subtitle">
-            A boardroom-readable demo of five commerce automation accidents:
-            duplicate fulfillment, unsafe retry, oversell, refund bypass, and
-            warehouse conflict. Each case uses the same scenario to compare a
-            bad automation path against a safe one.
+            A boardroom-readable demo of five P0 commerce automation accidents
+            plus three Shopify-friendly P1 variants: duplicate fulfillment,
+            unsafe retry, oversell, refund bypass, warehouse conflict, shared
+            inventory, refund approval boundaries, and tracking visibility.
+            Each case uses the same scenario to compare a bad automation path
+            against a safe one.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#scenarios">Review accidents</a>
@@ -193,8 +205,8 @@ INDEX_HTML = """<!doctype html>
       </section>
 
       <section class="viewer-shell" id="scenarios" aria-label="Scenario viewer">
-        <aside class="scenario-rail" aria-label="P0 scenarios">
-          <p class="section-label">P0 accident library</p>
+        <aside class="scenario-rail" aria-label="P0 and P1 scenarios">
+          <p class="section-label">P0 core + P1 variants</p>
           <div id="scenarioNav" class="scenario-nav"></div>
         </aside>
 
@@ -1018,7 +1030,7 @@ function metricHtml(value, label) {
 
 function renderHero() {
   el("heroMetrics").innerHTML = [
-    metricHtml(data.summary.scenarioCount, "P0 accident classes"),
+    metricHtml(data.summary.scenarioCount, "P0/P1 demo scenarios"),
     metricHtml(data.summary.badFailures, "bad flows caught"),
     metricHtml(data.summary.goodPasses, "good flows passed"),
     metricHtml(data.summary.totalFindings, "policy findings"),
@@ -1030,6 +1042,7 @@ function renderNav() {
     .map((scenario, index) => `
       <button class="scenario-button ${index === activeScenario ? "active" : ""}" type="button" data-index="${index}" aria-current="${index === activeScenario ? "true" : "false"}">
         <strong>${escapeHtml(scenario.id)} ${escapeHtml(scenario.title)}</strong>
+        <span>${escapeHtml(scenario.tier)}${scenario.parent ? ` · ${escapeHtml(scenario.parent)}` : ""}</span>
         <span>${escapeHtml(scenario.businessLoss)}</span>
       </button>
     `)
@@ -1095,6 +1108,8 @@ function renderStateDiff(scenario) {
     ["Fulfillments", counts.fulfillments.before, counts.fulfillments.after],
     ["Promises", counts.promises.before, counts.promises.after],
     ["Refunds", counts.refunds.before, counts.refunds.after],
+    ["Tracking uploads", counts.trackingUploads.before, counts.trackingUploads.after],
+    ["Support tickets", counts.supportTickets.before, counts.supportTickets.after],
     ["Approvals", counts.approvalRequests.before, counts.approvalRequests.after],
     ["Inventory releases", counts.inventoryReleases.before, counts.inventoryReleases.after],
     ["Workflow holds", counts.workflowHolds.before, counts.workflowHolds.after],
@@ -1132,7 +1147,7 @@ function renderScenario() {
   const scenario = data.scenarios[activeScenario];
   renderNav();
   setRunnerButtons();
-  el("caseId").textContent = `${scenario.id} / ${activeRunner === "bad" ? "Failure path" : "Safe path"}`;
+  el("caseId").textContent = `${scenario.id} · ${scenario.tier}${scenario.parent ? ` / ${scenario.parent}` : ""} / ${activeRunner === "bad" ? "Failure path" : "Safe path"}`;
   el("caseTitle").textContent = scenario.title;
   el("risk-title").textContent = scenario.accident;
   el("riskPolicy").textContent = `Primary policy: ${scenario.risk}`;

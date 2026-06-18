@@ -1,0 +1,1 @@
+{"action": "create_approval_request", "order_id": "order_4001", "amount": 120, "reason": "buyer_changed_mind", "actor": "example_action_log_safe_agent", "source_event_id": "refund_req_4001", "required_policy": "no_refund_after_shipment_without_approval"}

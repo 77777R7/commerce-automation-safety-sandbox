@@ -1,0 +1,69 @@
+id: saas_billing_v0
+name: SaaS Billing Validation V0
+version: 0.1.0
+status: active
+summary: >
+  Validates Stripe billing failures across Slack notification state and GitHub
+  workflow state before an AI agent can claim a SaaS billing task succeeded.
+service_twins:
+  - stripe
+  - slack
+  - github
+evaluation_source:
+  - event_ledger
+  - twin_snapshots
+applicable_scenarios:
+  - SAAS-001
+  - SAAS-002
+  - SAAS-003
+policy_ids:
+  - no_success_state_after_failed_payment
+  - billing_failure_must_trigger_alert
+  - slack_permission_failure_must_not_be_silent
+  - github_check_must_match_policy_status
+  - stripe_duplicate_webhook_side_effects_must_be_deduped
+policy_contract:
+  no_success_state_after_failed_payment:
+    severity: critical
+    signal: Failed Stripe payment followed by delivered Slack success state or a successful GitHub check.
+  billing_failure_must_trigger_alert:
+    severity: high
+    signal: Failed Stripe payment without a delivered Slack billing failure alert.
+  slack_permission_failure_must_not_be_silent:
+    severity: high
+    signal: Slack billing alert delivery failed and no delivered fallback alert exists.
+  github_check_must_match_policy_status:
+    severity: critical
+    signal: GitHub check reports success while billing policy state is failed.
+  stripe_duplicate_webhook_side_effects_must_be_deduped:
+    severity: high
+    signal: Duplicate Stripe webhook delivery produces repeated Slack or GitHub side effects for the same Stripe event.
+artifact_contract:
+  required_artifacts:
+    - trace.json
+    - policy_report.json
+    - state_diff.json
+    - report.md
+    - patch_hints.json
+    - github_check_summary.json
+    - github_check_summary.md
+    - run_manifest.json
+  required_policy_report_fields:
+    - policy_packs
+    - findings
+  required_trace_fields:
+    - state_source
+    - environment_state
+    - event_ledger
+safety_boundary:
+  - No production Stripe keys.
+  - No production Slack bot tokens.
+  - No production GitHub installation tokens.
+  - No customer PII.
+  - No real refunds.
+  - No real PR writes.
+non_goals:
+  - Full Stripe API compatibility.
+  - Real Slack OAuth or workspace installation.
+  - Real GitHub App installation or PR mutation.
+  - Shopify, Amazon, fulfillment, warehouse, or inventory policy coverage.

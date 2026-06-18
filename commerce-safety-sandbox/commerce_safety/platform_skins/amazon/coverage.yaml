@@ -6,7 +6,7 @@ routes:
   getListingsItem: stateful
   patchListingsItemQuantity: stateful
   createFeed: stateful
-  getFeed: stateful
+  getFeed: stateful_with_processing_report
   getOrder: stateful
   getOrderItems: stateful
   confirmShipment: stateful
@@ -23,3 +23,24 @@ stubs:
   refunds: stub
   inbound_fba: stub
   real_sp_api: explicit_non_goal
+  unsupported_notifications: explicit_stub
+  unsupported_seller_ops_actions: explicit_stub
+binding:
+  sellerId:
+    canonical: A1COMMERCESELLER
+    aliases:
+      - seller_123
+      - A1COMMERCESELLER
+  marketplaceIds:
+    default: ATVPDKIKX0DER
+  sku:
+    resolves:
+      - SellerSKU
+      - ASIN
+      - FNSKU
+      - OrderItemId
+faults:
+  rate_limit_429:
+    status: stateful
+    retryable: true
+    retry_after_seconds: 2

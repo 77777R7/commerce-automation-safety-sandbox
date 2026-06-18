@@ -1,0 +1,103 @@
+name: V3.5 CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+jobs:
+  release-hygiene:
+    name: Release hygiene and security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Compute changed paths
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" > /tmp/changed_paths.txt
+          else
+            git diff-tree --no-commit-id --name-only -r "${{ github.sha }}" > /tmp/changed_paths.txt
+          fi
+      - name: Run Stage 15 release hygiene
+        run: |
+          PYTHON=python ./tools/smoke_stage15_release_hygiene.sh
+          python tools/check_release_hygiene.py \
+            --source-pr-paths /tmp/changed_paths.txt
+      - name: Run Stage 16 security abuse hardening
+        run: |
+          PYTHON=python ./tools/smoke_stage16_security_abuse.sh
+      - name: Run Stage 17 artifact manifest gate
+        run: |
+          PYTHON=python ./tools/smoke_stage17_run_manifest.sh
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run unit tests
+        run: |
+          PYTHONPATH=commerce-safety-sandbox python -m pytest
+
+  agent-interface-gates:
+    name: MCP / HTTP / OpenAPI gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run agent-facing interface gates
+        run: |
+          PYTHON=python ./tools/smoke_stage9_real_mcp.sh
+          PYTHON=python ./tools/smoke_stage9_api_hardening.sh
+          PYTHON=python ./tools/smoke_stage10_mcp_p0_all.sh
+          PYTHON=python ./tools/smoke_stage10_http_p0_all.sh
+          PYTHON=python ./tools/smoke_stage11_openapi_contract.sh
+          PYTHON=python ./tools/smoke_stage18_agent_examples.sh
+          PYTHON=python ./tools/smoke_stage19_hosted_enterprise_poc.sh
+
+  platform-skin-gates:
+    name: Shopify / Amazon skin gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Run platform skin gates
+        run: |
+          PYTHON=python ./tools/smoke_stage12_shopify_skin_v0.sh
+          PYTHON=python ./tools/smoke_stage13_amazon_skin_v0.sh
+          PYTHON=python ./tools/smoke_stage13_amazon_mcp_v0.sh

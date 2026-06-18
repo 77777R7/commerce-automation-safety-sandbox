@@ -1,0 +1,1 @@
+{"action": "create_refund", "order_id": "order_4001", "amount": 120, "reason": "buyer_changed_mind", "actor": "example_action_log_unsafe_agent", "source_event_id": "refund_req_4001"}

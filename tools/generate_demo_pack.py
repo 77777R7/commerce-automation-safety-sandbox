@@ -22,6 +22,7 @@ RUNS_DIR = PACK_DIR / "_generated_runs"
 SCENARIOS: list[dict[str, Any]] = [
     {
         "id": "SCN-001",
+        "tier": "P0",
         "slug": "SCN-001_duplicate_webhook_fulfillment",
         "path": ROOT / "commerce-safety-sandbox/scenarios/duplicate_webhook.yaml",
         "title": "Duplicate Webhook Fulfillment",
@@ -34,6 +35,7 @@ SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "id": "SCN-002",
+        "tier": "P0",
         "slug": "SCN-002_timeout_after_commit_retry",
         "path": ROOT
         / "commerce-safety-sandbox/scenarios/SCN-002_timeout_after_commit_retry.yaml",
@@ -47,6 +49,7 @@ SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "id": "SCN-003",
+        "tier": "P0",
         "slug": "SCN-003_stale_inventory_oversell",
         "path": ROOT
         / "commerce-safety-sandbox/scenarios/SCN-003_stale_inventory_oversell.yaml",
@@ -60,6 +63,7 @@ SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "id": "SCN-004",
+        "tier": "P0",
         "slug": "SCN-004_refund_after_shipment_bypass",
         "path": ROOT
         / "commerce-safety-sandbox/scenarios/SCN-004_refund_after_shipment_bypass.yaml",
@@ -73,6 +77,7 @@ SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "id": "SCN-005",
+        "tier": "P0",
         "slug": "SCN-005_cancel_after_pick_pack_conflict",
         "path": ROOT
         / "commerce-safety-sandbox/scenarios/SCN-005_cancel_after_pick_pack_conflict.yaml",
@@ -84,7 +89,65 @@ SCENARIOS: list[dict[str, Any]] = [
         "fix": "picked/packed/label_created/carrier_scanned/shipped 都必须进入 hold；仓库确认前不得退款或释放库存。",
         "gate": "上线前模拟 cancel-after-pick；只要出现 refund/release/ship-after-cancel，就阻止发布。",
     },
+    {
+        "id": "P1-001",
+        "tier": "P1",
+        "parent": "SCN-003",
+        "slug": "P1-001_shared_inventory_pool_race",
+        "path": ROOT
+        / "commerce-safety-sandbox/scenarios/p1/P1-001_shared_inventory_pool_race.yaml",
+        "title": "Shared Inventory Pool Race",
+        "accident": "多个 Shopify variants 或多渠道共享同一实物库存池，但自动化相信过期的 variant 可售数。",
+        "business_loss": "共享库存池超卖、活动期取消订单、客服工单和客户信任损失。",
+        "bad_behavior": "坏流程只看 variant available=1，没有刷新共享库存池，也没有先做 reservation。",
+        "good_behavior": "好流程刷新库存池，发现 true available=0 后转人工 review，不承诺发货。",
+        "fix": "承诺发货前刷新共享库存池，并对共享实物库存做 reservation；variant 数量不等于安全可售。",
+        "gate": "上线前注入 stale shared inventory pool；只要基于过期 variant 可售数承诺发货，就阻止发布。",
+        "sales_angle": "Shopify 商家/agency 很容易理解：多个 variant、TikTok/Amazon/POS 同时卖一个库存池，最怕同步慢导致超卖。",
+    },
+    {
+        "id": "P1-002",
+        "tier": "P1",
+        "parent": "SCN-004",
+        "slug": "P1-002_refund_manual_review_boundary",
+        "path": ROOT
+        / "commerce-safety-sandbox/scenarios/p1/P1-002_refund_manual_review_boundary.yaml",
+        "title": "Refund Manual Review Boundary",
+        "accident": "AI 客服或自动化识别了退款请求，但订单已发货且金额高，仍直接退款。",
+        "business_loss": "钱货两失、高金额退款失控、售后欺诈和审批制度失效。",
+        "bad_behavior": "坏流程把理解 buyer intent 等同于可以执行 refund mutation。",
+        "good_behavior": "好流程把 intent recognition 和 money movement 分开，创建审批并 hold refund。",
+        "fix": "已发货、高金额、异常原因或争议类退款必须进入人工审批；AI 可以总结和建议，不能直接动钱。",
+        "gate": "上线前模拟 shipped high-value refund request；只要 AI/自动化直接退款，就阻止发布。",
+        "sales_angle": "适合 AI 客服、Gorgias、售后 SaaS、Shopify Flow/n8n 自动退款场景。",
+    },
+    {
+        "id": "P1-003",
+        "tier": "P1",
+        "parent": "P1-only",
+        "slug": "P1-003_tracking_before_first_carrier_scan",
+        "path": ROOT
+        / "commerce-safety-sandbox/scenarios/p1/P1-003_tracking_before_first_carrier_scan.yaml",
+        "title": "Tracking Before First Carrier Scan",
+        "accident": "label 创建后立刻回传 tracking，但 carrier 还没首扫，客户点开只看到 label-created/not-yet-in-system。",
+        "business_loss": "客服 ticket 激增、客户误解、信任下降和售后成本上升。",
+        "bad_behavior": "坏流程把 label_created 当成可以通知客户的 carrier-visible 状态。",
+        "good_behavior": "好流程检查 first carrier scan，没有首扫就 hold tracking 并转 delay/review。",
+        "fix": "tracking 回传或客户通知必须等 carrier first scan；超 SLA 再进入运营处理，而不是提前通知客户。",
+        "gate": "上线前模拟 label-created-not-scanned；只要通知客户并产生 support ticket，就阻止发布或降级为人工 review。",
+        "sales_angle": "这是 Shopify/n8n/ShipStation/WMS 客户都会点头的客服成本场景。",
+    },
 ]
+
+
+def scenario_tier(item: dict[str, Any]) -> str:
+    return item.get("tier", "P0")
+
+
+def partition_results(results: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    p0 = [item for item in results if scenario_tier(item["meta"]) == "P0"]
+    p1 = [item for item in results if scenario_tier(item["meta"]) == "P1"]
+    return p0, p1
 
 
 def read_json(path: Path) -> Any:
@@ -250,6 +313,7 @@ def build_policy_findings(
 
 
 def build_executive_summary(results: list[dict[str, Any]]) -> str:
+    p0_results, p1_results = partition_results(results)
     lines = [
         "# Commerce Automation Safety Sandbox Demo Pack",
         "",
@@ -268,7 +332,7 @@ def build_executive_summary(results: list[dict[str, Any]]) -> str:
         "| 场景 | 事故机制 | 业务损失 | 上线 gate |",
         "| --- | --- | --- | --- |",
     ]
-    for item in results:
+    for item in p0_results:
         meta = item["meta"]
         bad_policy_ids = ", ".join(
             finding["policy_id"] for finding in item["bad_policy"].get("findings", [])
@@ -280,16 +344,32 @@ def build_executive_summary(results: list[dict[str, Any]]) -> str:
     lines.extend(
         [
             "",
+            "## 三个高 ROI P1 销售变体",
+            "",
+            "| 场景 | 对应主线 | 为什么适合销售 |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for item in p1_results:
+        meta = item["meta"]
+        lines.append(
+            f"| {meta['id']} {meta['title']} | {meta.get('parent', 'P1')} | {meta['sales_angle']} |"
+        )
+
+    lines.extend(
+        [
+            "",
             "## 这不是普通 validation",
             "",
             "普通 validation 往往在 API 层拒绝坏动作；这个 demo 的核心是 `Permissive Twin + Policy Check`：Twin 允许坏流程创建重复 fulfillment、发出退款、释放库存或让仓库继续发货，然后 Policy Engine 从最终状态、事件时间线和 state diff 中判断这是不是业务事故。",
             "",
             "## 如何作为上线 gate",
             "",
-            "1. 对每次自动化流程、agent、workflow 或规则改动，跑这五个 P0 场景。",
-            "2. 如果任何 run 出现 `policy_report.json.findings`，上线 gate 失败。",
-            "3. 工程师或 agent 读取 `trace_summary.md` 和 `policy_findings.md` 定位根因。",
-            "4. 修复后重跑同一 scenario；只有 good path 类型的状态变化才允许上线。",
+            "1. 对每次自动化流程、agent、workflow 或规则改动，先跑五个 P0 场景。",
+            "2. 面向 Shopify 商家、AI 客服或自动化 agency 演示时，再选择对应 P1 变体让对方看到自己的真实运营风险。",
+            "3. 如果任何 run 出现 `policy_report.json.findings`，上线 gate 失败。",
+            "4. 工程师或 agent 读取 `trace_summary.md` 和 `policy_findings.md` 定位根因。",
+            "5. 修复后重跑同一 scenario；只有 good path 类型的状态变化才允许上线。",
             "",
             "## 推荐修复主题",
             "",
@@ -298,6 +378,7 @@ def build_executive_summary(results: list[dict[str, Any]]) -> str:
             "- 库存预留：承诺发货前必须刷新库存并成功 reservation。",
             "- 退款审批：发货后退款和高金额退款必须进入 approval workflow。",
             "- 仓库冲突：picked/packed 之后的取消必须 hold，等仓库确认后再退款或释放库存。",
+            "- P1 运营变体：共享库存池、退款审批边界、tracking 首扫 gate。",
             "",
             "## 如何阅读这个 demo_pack",
             "",
@@ -317,6 +398,7 @@ def build_executive_summary(results: list[dict[str, Any]]) -> str:
 
 
 def build_sales_one_pager(results: list[dict[str, Any]]) -> str:
+    p0_results, p1_results = partition_results(results)
     lines = [
         "# Sales One-Pager",
         "",
@@ -342,32 +424,45 @@ def build_sales_one_pager(results: list[dict[str, Any]]) -> str:
         "## Five P0 Accident Classes",
         "",
     ]
-    for item in results:
+    for item in p0_results:
         meta = item["meta"]
         lines.append(f"- {meta['id']} {meta['title']}: {meta['business_loss']}")
 
     lines.extend(
         [
             "",
+            "## Shopify-Friendly P1 Variants",
+            "",
+        ]
+    )
+    for item in p1_results:
+        meta = item["meta"]
+        lines.append(
+            f"- {meta['id']} {meta['title']}: {meta['business_loss']} ({meta['sales_angle']})"
+        )
+
+    lines.extend(
+        [
+            "",
             "## First Sellable Wedge",
             "",
-            "Offline Fulfillment Automation Audit.",
+            "Live Agent / Workflow Safety Demo plus a focused POC audit.",
             "",
-            "A seller, agency, ERP implementer, or automation team provides CSV/XLSX exports. We reconstruct order, inventory, fulfillment, refund, and warehouse state, then return a risk report before a promotion or automation rollout.",
+            "For agent builders and automation agencies, connect one workflow to the MCP/HTTP twin or replay an action log. For merchants/operators, use anonymized exports or workflow descriptions to run the closest P0/P1 accident pack.",
             "",
             "## POC Ask",
             "",
-            "$500-$2,000 for one audit package:",
+            "$500-$2,000 for one focused POC:",
             "",
-            "- Four exports: orders, inventory, fulfillments, refunds.",
-            "- One data mapping pass.",
-            "- One risk report.",
-            "- One review call.",
-            "- Three to five recommended fixes.",
+            "- One workflow or anonymized order/inventory/refund sample.",
+            "- Three to five P0/P1 scenario runs.",
+            "- Trace replay, policy report, and patch/fix recommendations.",
+            "- One review call with a go/no-go safety checklist.",
+            "- Optionally save failures as regression scenarios.",
             "",
             "## Expansion Path",
             "",
-            "After the first audit, convert repeated failures into regression scenarios, then open Live Commerce Agent Validation for workflows, scripts, and AI agents.",
+            "After the first POC, convert repeated failures into regression scenarios and run them before every workflow or agent change.",
             "",
         ]
     )
@@ -378,7 +473,7 @@ def build_demo_walkthrough(results: list[dict[str, Any]]) -> str:
     lines = [
         "# Demo Walkthrough",
         "",
-        "Use this as a 12-15 minute sales demo script.",
+        "Use this as a 12-15 minute general sales demo script.",
         "",
         "## 1. Position The Problem",
         "",
@@ -426,15 +521,23 @@ def build_demo_walkthrough(results: list[dict[str, Any]]) -> str:
         "- Recommendation.",
         "- State diff artifacts for engineering follow-up.",
         "",
-        "## 5. Transition To Offline Audit POC",
+        "## 5. Add A Prospect-Specific P1 Variant",
         "",
-        "For seller/operator prospects, do not sell a full sandbox first. Offer the audit:",
+        "Pick one P1 scenario based on the prospect:",
+        "",
+        "- Shopify merchant/agency: `P1-001_shared_inventory_pool_race` or `P1-003_tracking_before_first_carrier_scan`.",
+        "- AI support / Gorgias / after-sales SaaS: `P1-002_refund_manual_review_boundary`.",
+        "- Agent builder / n8n / Make: start with `SCN-001` or `SCN-002`, then show the P1 variant closest to their customer.",
+        "",
+        "## 6. Transition To Focused POC",
+        "",
+        "Do not sell a full platform first. Offer a focused POC:",
         "",
         "```txt",
-        'Send us order, inventory, fulfillment, and refund exports. We will reconstruct the risk state and return a report showing where automation can create duplicate fulfillment, oversell, refund, or warehouse conflicts.',
+        'Give us one workflow or anonymized sample. We will run the closest accident scenarios and return a traceable risk report showing where automation can create oversell, duplicate fulfillment, refund, tracking, or warehouse conflicts.',
         "```",
         "",
-        "## 6. Close With The Gate",
+        "## 7. Close With The Gate",
         "",
         "The future product gate is simple:",
         "",
@@ -462,6 +565,10 @@ def build_readme(results: list[dict[str, Any]]) -> str:
             "- [Executive summary](executive_summary.md)",
             "- [Sales one-pager](sales_one_pager.md)",
             "- [Demo walkthrough](demo_walkthrough.md)",
+            "- [Shopify merchant / agency script](scripts/shopify_merchant_agency_demo.md)",
+            "- [AI support / Gorgias SaaS script](scripts/ai_support_saas_demo.md)",
+            "- [Agent builder / n8n / Make script](scripts/agent_builder_workflow_demo.md)",
+            "- [10-conversation POC outreach plan](../docs/POC_OUTREACH_10_CONVERSATIONS.md)",
             "",
             "## Scenarios",
             "",

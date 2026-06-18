@@ -21,27 +21,54 @@ Amazon-shaped request -> normalized commerce action/event -> permissive twin -> 
 
 - `GET /sessions/{session_id}/amazon/sp-api/fba/inventory/v1/summaries`
   returns Amazon-shaped FBA inventory summaries with `_commerce_twin` snapshot
-  metadata.
+  metadata, canonical seller id, marketplace id, and SellerSKU/ASIN/FNSKU
+  binding details.
 - `GET /sessions/{session_id}/amazon/sp-api/listings/2021-08-01/items/{seller_id}/{sku}`
-  separates submitted listing quantity from live `fulfillmentAvailability`.
+  separates submitted listing quantity from live `fulfillmentAvailability` and
+  reports whether the seller id matched the session seller binding.
 - `PATCH /sessions/{session_id}/amazon/sp-api/listings/2021-08-01/items/{seller_id}/{sku}`
-  records accepted-but-not-processed listing quantity updates.
+  records accepted-but-not-processed listing quantity updates and marks the
+  next safe step as reading processing/report state before trusting the update.
 - `POST /sessions/{session_id}/amazon/sp-api/feeds/2021-06-30/feeds` records a
   feed submission and processing status.
 - `GET /sessions/{session_id}/amazon/sp-api/feeds/2021-06-30/feeds/{feed_id}`
-  returns feed processing status.
+  returns feed processing status and a processing report with processed,
+  successful, warning, and error counts.
 - `GET /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}`
   returns Amazon-shaped order status.
 - `GET /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/orderItems`
   returns Amazon-shaped order item IDs and Seller SKU binding.
 - `POST /sessions/{session_id}/amazon/sp-api/orders/v0/orders/{amazon_order_id}/shipmentConfirmation`
-  maps confirmShipment into the warehouse/fulfillment twin.
+  maps confirmShipment into the warehouse/fulfillment twin and records whether
+  it followed a buyer-cancel signal.
 - `POST /sessions/{session_id}/amazon/notifications` supports `ORDER_CHANGE`
   and `LISTINGS_ITEM_MFN_QUANTITY_CHANGE`.
 - `POST /sessions/{session_id}/amazon/actions/{action}` supports the seller-ops
   actions needed to complete the P0 incident paths.
 - `GET /sessions/{session_id}/amazon/coverage` returns machine-readable V0
   coverage.
+
+## Binding And Fault Metadata
+
+The skin now returns explicit seller and marketplace binding metadata while
+staying narrow:
+
+- canonical seller id: `A1COMMERCESELLER`
+- accepted local/demo alias: `seller_123`
+- default marketplace id: `ATVPDKIKX0DER`
+- SKU resolution through SellerSKU, ASIN, FNSKU, and OrderItemId
+
+Rate-limit simulation is supported as an injected fault, not as a full Amazon
+throttling model:
+
+```txt
+simulateRateLimit=true -> 429 rate_limited + retryAfterSeconds
+retry without the injected fault -> normal stateful response
+```
+
+Unsupported notification types and seller-ops actions return explicit stub
+coverage metadata with `_commerce_twin_stub: true`. This keeps long-tail SP-API
+coverage visible without pretending the skin is a full emulator.
 
 ## MCP Tools
 
@@ -90,6 +117,7 @@ Unsafe path:
 ORDER_CHANGE indicates buyer cancellation
 agent cancels the order
 agent calls confirmShipment anyway
+trace records prior cancellation, warehouse status, and risk signal
 PolicyEngine catches Amazon confirmShipment-after-cancel and warehouse findings
 ```
 

@@ -49,6 +49,17 @@ def map_shopify_webhook(
         "admin_graphql_api_id": body.get("admin_graphql_api_id"),
         "binding_source": binding_source,
     }
+    if topic == "orders/cancelled":
+        event.update(
+            {
+                "type": "cancel_request",
+                "amount": body.get("total_price")
+                or body.get("amount")
+                or body.get("captured_amount")
+                or 0,
+                "reason": body.get("cancel_reason") or body.get("reason") or "cancelled",
+            }
+        )
     return event
 
 

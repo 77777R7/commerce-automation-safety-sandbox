@@ -1,4 +1,5 @@
 .DS_Store
+**/.DS_Store
 .codex_spreadsheets/
 .skill_build/
 .pycache_tmp/
@@ -11,4 +12,8 @@ runs/
 offline_audits/
 regressions/
 demo_pack/_generated_runs/
+demo_pack/**/* 2.json
+demo_pack/**/* 2.md
 outputs/
+commerce-safety-site/node_modules/
+commerce-safety-site/dist/

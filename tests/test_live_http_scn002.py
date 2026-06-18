@@ -95,7 +95,8 @@ def test_http_create_session_returns_400_for_missing_scenario_file(tmp_path):
 
     assert status == 400
     assert body["ok"] is False
-    assert "not-real.yaml" in body["error"]
+    assert body["error"]["code"] == "scenario_not_allowed"
+    assert "allowlisted scenario" in body["error"]["message"]
 
 
 def test_http_scn002_good_external_agent_passes_with_stable_idempotency_key(tmp_path):
