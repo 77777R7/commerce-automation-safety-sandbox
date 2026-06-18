@@ -1,12 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import ArrowRight from "lucide-react/dist/esm/icons/arrow-right.js";
+import Box from "lucide-react/dist/esm/icons/box.js";
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2.js";
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right.js";
 import ClipboardCheck from "lucide-react/dist/esm/icons/clipboard-check.js";
+import Code2 from "lucide-react/dist/esm/icons/code-2.js";
+import CreditCard from "lucide-react/dist/esm/icons/credit-card.js";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link.js";
 import FileText from "lucide-react/dist/esm/icons/file-text.js";
+import GitPullRequest from "lucide-react/dist/esm/icons/git-pull-request.js";
+import Github from "lucide-react/dist/esm/icons/github.js";
+import History from "lucide-react/dist/esm/icons/history.js";
+import Layers3 from "lucide-react/dist/esm/icons/layers-3.js";
+import ListChecks from "lucide-react/dist/esm/icons/list-checks.js";
+import MessageCircle from "lucide-react/dist/esm/icons/message-circle.js";
 import Play from "lucide-react/dist/esm/icons/play.js";
-import Route from "lucide-react/dist/esm/icons/route.js";
+import Settings from "lucide-react/dist/esm/icons/settings.js";
+import Slack from "lucide-react/dist/esm/icons/slack.js";
 import TriangleAlert from "lucide-react/dist/esm/icons/triangle-alert.js";
+import LiveDashboardHomePage from "./Dashboard";
 
 declare global {
   interface Window {
@@ -23,7 +35,7 @@ declare global {
   }
 }
 
-const productName = "Agent Integration Safety Sandbox";
+const productName = "HyTri Labs";
 const investorOneLiner = "Catch unsafe agent side effects before production does.";
 
 const plainEnglishIncident = {
@@ -35,52 +47,52 @@ const plainEnglishIncident = {
 const outcomeRail = [
   {
     label: "Expected",
-    value: "1 alert + 1 check",
-    body: "One incident should create one recovery path.",
+    value: "1 alert + 1 recovery check",
+    body: "One incident should create one human notification and one engineering path.",
   },
   {
     label: "Observed",
-    value: "2 alerts + 2 checks",
-    body: "The unsafe agent duplicated the work.",
+    value: "2 alerts + 2 recovery checks",
+    body: "The unsafe agent treated the duplicate event as new work.",
   },
   {
     label: "Fix",
     value: "Persist event ID first",
-    body: "Deduplicate before Slack, GitHub, tickets, or checks.",
+    body: "Deduplicate before alerts, tickets, checks, refunds, or workflow writes.",
   },
 ];
 
 const homeArtifactLinks = [
   {
-    title: "PR-check summary",
-    body: "Plain-English validation result for reviewers.",
+    title: "Review summary",
+    body: "The plain-English pass/fail result a reviewer can understand first.",
     href: "/artifacts/saas-003/failed/github_check_summary.md",
   },
   {
-    title: "Policy report",
-    body: "Machine-readable finding and severity.",
+    title: "Policy decision",
+    body: "The structured safety finding, severity, and recommendation.",
     href: "/artifacts/saas-003/failed/policy_report.json",
   },
   {
     title: "State diff",
-    body: "Expected versus observed side effects.",
+    body: "The before/after side effects that prove what actually changed.",
     href: "/artifacts/saas-003/failed/state_diff.json",
   },
   {
-    title: "Patch hints",
-    body: "Repair guidance the builder can act on.",
+    title: "Fix hints",
+    body: "The smallest repair rule the agent builder can act on.",
     href: "/artifacts/saas-003/failed/patch_hints.md",
   },
 ];
 
 const buildReviewArtifacts = (run: "failed" | "passed") => [
   {
-    title: "PR-check summary",
+    title: "Review summary",
     href: `/artifacts/saas-003/${run}/github_check_summary.md`,
     body: "Reviewer-friendly result, conclusion, and annotations.",
   },
   {
-    title: "Policy report",
+    title: "Policy decision",
     href: `/artifacts/saas-003/${run}/policy_report.json`,
     body: "Structured findings for automation and audit.",
   },
@@ -90,12 +102,12 @@ const buildReviewArtifacts = (run: "failed" | "passed") => [
     body: "Before and after state across the twin.",
   },
   {
-    title: "Patch hints",
+    title: "Fix hints",
     href: `/artifacts/saas-003/${run}/patch_hints.md`,
     body: "The smallest guardrail needed before production.",
   },
   {
-    title: "Trace excerpt",
+    title: "Agent action ledger",
     href: `/artifacts/saas-003/${run}/trace_excerpt.json`,
     body: "The event ledger that explains the decision.",
   },
@@ -148,26 +160,26 @@ const painPoints = [
 
 const coverageRows = [
   {
-    label: "Investor demo",
-    fit: "Use this when someone needs to understand the product in 30 seconds.",
+    label: "Investor",
+    fit: "Use this for the 30-second product story: unsafe agent side effects caught before production.",
     scope:
-      "Open SAAS-003: one upstream event created duplicate recovery work, and the sandbox caught it before production.",
-    status: "Open SAAS-003 demo",
-    href: "/demo/saas-003",
+      "Open SAAS-003 and show the plain-English incident: expected one recovery path, observed two, fixed by event ID persistence.",
+    status: "Open demo dashboard",
+    href: "/dashboard",
   },
   {
-    label: "Design partner POC",
-    fit: "Use this when a team wants to map one real workflow to a prebuilt safety scenario.",
+    label: "Design Partner",
+    fit: "Use this when a team wants to map one risky workflow into a repeatable validation scenario.",
     scope:
-      "Start with duplicate-event recovery, then map the partner's own alert, ticket, check, or workflow side effect.",
+      "Bring one workflow, name the side effects that must happen exactly once, and leave with a decision packet.",
     status: "Plan POC workflow",
     href: "/demo/connect#design-partner",
   },
   {
-    label: "Agent builder",
-    fit: "Use this when the buyer wants to run an external agent through MCP or HTTP instead of reading static artifacts.",
+    label: "Agent Builder",
+    fit: "Use this when a builder wants to run an external agent through MCP or HTTP instead of reading static artifacts.",
     scope:
-      "Give the agent the scenario prompt, let it act through the sandbox surface, then inspect the policy report and patch hints.",
+      "Give the agent the scenario prompt, let it act through the sandbox surface, then inspect trace, state diff, and fix hints.",
     status: "Choose agent path",
     href: "/demo/connect#agent-builder",
   },
@@ -314,6 +326,31 @@ const saas003Review = {
 
 type DemoReview = typeof saas003Review;
 
+const incidentReviewFacts = [
+  {
+    label: "Expected",
+    value: "1 alert + 1 recovery check",
+    body: "One upstream incident should create one human notification and one engineering recovery path.",
+  },
+  {
+    label: "Observed",
+    value: "2 alerts + 2 recovery checks",
+    body: "The unsafe run repeated both downstream side effects when the same event arrived again.",
+  },
+  {
+    label: "Required control",
+    value: "Persist event ID before side effects",
+    body: "Use the upstream event ID as the idempotency key before alerts, checks, tickets, or workflow writes.",
+  },
+];
+
+const reviewerChecklist = [
+  "Stateful twin replayed the duplicate delivery.",
+  "Agent actions were allowed inside the sandbox.",
+  "Policy pack read the event ledger and state diff.",
+  "Decision packet returned review summary, policy decision, state diff, and fix hints.",
+];
+
 const demoConnectors = [
   {
     title: "External agent prompt",
@@ -343,24 +380,24 @@ const connectionOptions = [
     id: "investor",
     title: "Investor demo",
     body:
-      "Use this path when the goal is comprehension in 30 seconds: one unsafe side effect, one blocked run, one repair rule.",
+      "Use this path when the goal is comprehension in 30 seconds: one duplicate event, one blocked run, one repair rule.",
     steps: [
-      "Open the SAAS-003 review",
-      "Show failed versus passed",
-      "Explain why this is more than a mock",
+      "Open the demo dashboard",
+      "Show Expected / Observed / Fix",
+      "Open the review summary",
     ],
-    cta: "Open SAAS-003 demo",
-    href: "/demo/saas-003",
+    cta: "Open demo dashboard",
+    href: "/dashboard",
   },
   {
     id: "design-partner",
     title: "Design partner POC",
     body:
-      "Use this path when a team wants to bring one real workflow and see whether the sandbox can turn it into a repeatable validation scenario.",
+      "Use this path when a team wants to bring one real workflow and see whether it can become a repeatable validation scenario.",
     steps: [
-      "Bring one risky agent workflow",
-      "Map its external side effects",
-      "Return a traceable risk report",
+      "Bring one workflow",
+      "Name the external writes",
+      "Receive one decision packet",
     ],
     cta: "Plan POC scope",
     href: "/#poc",
@@ -373,7 +410,7 @@ const connectionOptions = [
     steps: [
       "Start a sandbox session",
       "Run unsafe and safe paths",
-      "Read policy report and patch hints",
+      "Read trace, state diff, and fix hints",
     ],
     cta: "Open agent prompt",
     href: "/artifacts/saas-003/external_agent_prompt.md",
@@ -383,21 +420,21 @@ const connectionOptions = [
 const pocSteps = [
   {
     label: "Input",
-    title: "One external-service workflow",
+    title: "One workflow with external writes",
     body:
-      "Use a staging agent, synthetic event, or redacted action log. Production credentials are not needed for the first POC.",
+      "Use a staging agent, synthetic event, or redacted action log. Production credentials are not needed.",
   },
   {
     label: "Run",
     title: "One scenario pack",
     body:
-      "Start with SAAS-003, then add the closest billing, notification, ticketing, or recovery edge case.",
+      "Start with SAAS-003, then map the closest retry, duplicate, timeout, rejection, or stale-state edge case.",
   },
   {
     label: "Output",
     title: "Decision packet",
     body:
-      "Return trace highlights, state changes, policy findings, patch hints, and a scenario that can become a regression check.",
+      "Return trace highlights, state changes, policy findings, fix hints, and a scenario that can become a regression check.",
   },
 ];
 
@@ -431,19 +468,25 @@ function SectionHeader({
   );
 }
 
+function HyTriMark({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex flex-col gap-[3px] ${className}`} aria-hidden="true">
+      <div className="flex gap-[3px]">
+        <div className="h-5 w-4 skew-x-[-12deg] rounded-[1px] bg-black" />
+        <div className="h-5 w-7 skew-x-[-12deg] rounded-[1px] bg-black" />
+      </div>
+      <div className="-ml-[2px] flex gap-[3px]">
+        <div className="h-5 w-3 skew-x-[-12deg] rounded-[1px] bg-black" />
+        <div className="h-5 w-8 skew-x-[-12deg] rounded-[1px] bg-black" />
+      </div>
+    </div>
+  );
+}
+
 function HyTriLogo() {
   return (
     <div className="flex items-center gap-3" aria-hidden="true">
-      <div className="flex flex-col gap-[3px]">
-        <div className="flex gap-[3px]">
-          <div className="h-5 w-4 skew-x-[-12deg] rounded-[1px] bg-black" />
-          <div className="h-5 w-7 skew-x-[-12deg] rounded-[1px] bg-black" />
-        </div>
-        <div className="-ml-[2px] flex gap-[3px]">
-          <div className="h-5 w-3 skew-x-[-12deg] rounded-[1px] bg-black" />
-          <div className="h-5 w-8 skew-x-[-12deg] rounded-[1px] bg-black" />
-        </div>
-      </div>
+      <HyTriMark />
       <span className="font-logo flex items-baseline gap-[0.18em] text-[1.72rem] font-semibold leading-none tracking-[0] text-black">
         <span>HyTri</span>
         <span>Labs</span>
@@ -452,38 +495,35 @@ function HyTriLogo() {
   );
 }
 
+const featureVisuals: Record<string, { alt: string; src: string }> = {
+  state: {
+    alt: "Abstract service twin, seeded state, and event ledger diagram",
+    src: "/feature-seed-twins-serious.png",
+  },
+  faults: {
+    alt: "Abstract duplicate event and edge-case injection diagram",
+    src: "/feature-inject-edge-case-serious.png",
+  },
+  agent: {
+    alt: "Abstract agent action lane and sandbox tool execution diagram",
+    src: "/feature-let-agents-act-serious.png",
+  },
+  evidence: {
+    alt: "Abstract evidence packet, trace, state diff, and policy finding diagram",
+    src: "/feature-return-evidence-serious.png",
+  },
+};
+
 function FeatureVisual({ visual }: { visual: string }) {
-  const rows =
-    visual === "faults"
-      ? ["Duplicate delivery", "Permission fault", "False success"]
-      : visual === "agent"
-        ? ["MCP call", "HTTP action", "Tool result"]
-        : visual === "evidence"
-          ? ["trace", "policy_report", "patch_hints"]
-          : ["service twin", "seeded state", "event ledger"];
+  const asset = featureVisuals[visual] ?? featureVisuals.state;
 
   return (
-    <div className="w-full max-w-xl border border-[#DAD6CA] bg-white/78 p-5">
-      <div className="flex items-center justify-between border-b border-[#E6E0D3] pb-4">
-        <span className="font-mono text-sm text-[#0B5CFF]">sandbox.run</span>
-        <span className="h-2.5 w-2.5 rounded-full bg-[#C2410C]" />
-      </div>
-      <div className="mt-5 space-y-3">
-        {rows.map((row, index) => (
-          <div key={row} className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EAF2FF] font-mono text-xs text-[#0B5CFF]">
-              {index + 1}
-            </span>
-            <span className="text-sm font-semibold text-[#26313F]">{row}</span>
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                visual === "faults" && index === 0 ? "bg-[#C2410C]" : "bg-[#047857]"
-              }`}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
+    <img
+      src={asset.src}
+      alt={asset.alt}
+      className="w-full max-w-xl border border-[#DAD6CA] bg-[#F7F5EF] object-cover"
+      loading="lazy"
+    />
   );
 }
 
@@ -570,28 +610,18 @@ function DemoReviewPage({ review = saas003Review }: { review?: DemoReview }) {
   const hasFinding = run.finding.severity !== "none";
   const severityLabel = hasFinding ? `${run.finding.severity} severity` : "clear";
   const reviewArtifacts = buildReviewArtifacts(isBad ? "failed" : "passed");
-  const decisionSummary = [
-    {
-      label: "Gate",
-      value: run.badge,
-      tone: hasFinding ? "blocked" : "passed",
-    },
-    {
-      label: hasFinding ? "Incident" : "Safe result",
-      value: run.finding.title,
-      tone: "default",
-    },
-    {
-      label: "Business impact",
-      value: run.finding.impact,
-      tone: "default",
-    },
-    {
-      label: "Control",
-      value: run.finding.recommendation,
-      tone: "default",
-    },
-  ];
+  const reviewStatus = hasFinding ? "Blocked before production" : "Safe to continue";
+  const reviewStatusBody = hasFinding
+    ? "One duplicate event produced duplicate alerts and recovery checks inside the sandbox."
+    : "The duplicate event replayed, but the agent created exactly one alert and one recovery check.";
+  const checkSummary = hasFinding
+    ? "1 high-severity policy failed"
+    : "0 policy findings";
+  const checkAction = hasFinding
+    ? "Persist the upstream event ID before any downstream side effect."
+    : "Keep SAAS-003 as a regression check for future agent changes.";
+  const primaryArtifacts = reviewArtifacts.slice(0, 3);
+  const secondaryArtifacts = reviewArtifacts.slice(3);
 
   useEffect(() => {
     const currentPath = window.location.pathname;
@@ -627,132 +657,277 @@ function DemoReviewPage({ review = saas003Review }: { review?: DemoReview }) {
       </header>
 
       <main>
-        <section className="px-5 pb-12 pt-12 md:px-8 md:pb-16 md:pt-16">
+        <section className="px-5 pb-10 pt-10 md:px-8 md:pb-14 md:pt-14">
           <div className="mx-auto max-w-7xl">
-            <div className="grid gap-8 lg:grid-cols-[0.6fr_0.4fr] lg:items-end">
+            <div className="grid gap-8 lg:grid-cols-[0.56fr_0.44fr] lg:items-center">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0] text-[#0B5CFF]">
-                  Demo run review
+                  Incident review / PR check result
                 </p>
-                <h1 className="mt-4 max-w-4xl text-[2.8rem] font-semibold leading-[0.98] tracking-[0] text-[#090A0C] md:text-[5rem]">
-                  One duplicate event created duplicate recovery work.
+                <h1 className="mt-4 max-w-3xl text-[2.25rem] font-semibold leading-[1.04] tracking-[0] text-[#090A0C] md:text-[3.85rem]">
+                  Duplicate webhook recovery work.
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg leading-8 text-[#58606B]">
-                  {review.id}: {review.title}. The sandbox shows the unsafe path,
-                  the safe path, and the evidence needed to fix it before production.
+                  SAAS-003 shows whether an action-taking agent turns one duplicate
+                  event into repeated downstream work.
                 </p>
               </div>
-              <div className="border border-[#DAD6CA] bg-white p-6">
-                <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                  Plain-English result
-                </p>
-                <p className="mt-3 text-2xl font-semibold leading-tight text-[#101318]">
-                  Validation blocked before production writes.
-                </p>
-                <p className="mt-4 text-sm leading-6 text-[#667085]">
-                  {plainEnglishIncident.setup} {plainEnglishIncident.observed} {plainEnglishIncident.fix}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-10">
-              <OutcomeRail />
-            </div>
-
-            <div className="mt-6 grid border border-[#DAD6CA] bg-white md:grid-cols-4">
-              {review.proof.map((item) => (
-                <div key={item.label} className="border-b border-[#E6E0D3] p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-                  <p className="font-mono text-3xl tracking-[0] text-[#0B5CFF]">{item.value}</p>
-                  <p className="mt-2 text-sm leading-5 text-[#667085]">{item.label}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 grid border border-[#DAD6CA] bg-white lg:grid-cols-4">
-              {decisionSummary.map((item) => (
-                <div
-                  key={item.label}
-                  className="border-b border-[#E6E0D3] p-5 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                    {item.label}
-                  </p>
-                  <p
-                    className={`mt-2 text-sm font-semibold leading-6 ${
-                      item.tone === "blocked"
-                        ? "text-[#C2410C]"
-                        : item.tone === "passed"
-                          ? "text-[#047857]"
-                          : "text-[#101318]"
+              <div className="border border-[#DAD6CA] bg-white p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        hasFinding ? "bg-[#D94A17] text-white" : "bg-[#11845B] text-white"
+                      }`}
+                    >
+                      {hasFinding ? <TriangleAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                        Check run
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold leading-tight text-[#101318]">
+                        {reviewStatus}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    className={`shrink-0 border px-2.5 py-1 text-xs font-semibold uppercase tracking-[0] ${
+                      hasFinding
+                        ? "border-[#F3B99F] bg-[#FFF7F1] text-[#C2410C]"
+                        : "border-[#9BE6C2] bg-[#F0FFF7] text-[#047857]"
                     }`}
                   >
-                    {item.value}
-                  </p>
+                    {run.status}
+                  </div>
                 </div>
-              ))}
+                <p className="mt-4 text-sm leading-6 text-[#26313F]">{reviewStatusBody}</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">Finding</p>
+                    <p className={hasFinding ? "mt-1 text-sm font-semibold text-[#C2410C]" : "mt-1 text-sm font-semibold text-[#047857]"}>
+                      {checkSummary}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">Writes</p>
+                    <p className="mt-1 text-sm font-semibold text-[#101318]">0 production writes</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">Fix</p>
+                    <p className="mt-1 text-sm font-semibold text-[#101318]">Persist event ID</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 border border-[#DAD6CA] bg-white">
+              <div className="grid md:grid-cols-3">
+                {incidentReviewFacts.map((fact) => (
+                  <div
+                    key={fact.label}
+                    className="border-b border-[#E6E0D3] p-4 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                      {fact.label}
+                    </p>
+                    <p
+                      className={`mt-2 font-mono text-2xl leading-tight ${
+                        fact.label === "Observed" ? "text-[#C2410C]" : "text-[#0B5CFF]"
+                      }`}
+                    >
+                      {fact.value}
+                    </p>
+                    <p className="mt-2 text-sm leading-5 text-[#58606B]">{fact.body}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         <section className="px-5 pb-20 md:px-8 md:pb-28">
-          <div className="mx-auto max-w-7xl border border-[#DAD6CA] bg-[#FBFAF5]">
-            <div className="grid border-b border-[#DAD6CA] bg-white lg:grid-cols-[1fr_auto]">
-              <div className="p-6 md:p-8">
-                <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                  Unsafe vs safe path
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-[0] text-[#101318] md:text-5xl">
-                  {run.badge}
-                </h2>
-                <p className="mt-4 max-w-3xl text-base leading-7 text-[#58606B]">
-                  {run.headline}
-                </p>
+          <div className="mx-auto max-w-7xl">
+            <div className="border border-[#DAD6CA] bg-white">
+              <div className="grid border-b border-[#DAD6CA] lg:grid-cols-[1fr_auto]">
+                <div className="p-6 md:p-8">
+                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                    PR check replay
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-[0] text-[#101318] md:text-4xl">
+                    {run.badge}
+                  </h2>
+                  <p className="mt-4 max-w-3xl text-base leading-7 text-[#58606B]">
+                    {run.headline}
+                  </p>
+                </div>
+                <div className="flex gap-2 border-t border-[#DAD6CA] p-4 lg:border-l lg:border-t-0">
+                  <button
+                    type="button"
+                    onClick={() => setMode("bad")}
+                    className={`h-12 min-w-32 rounded-full px-5 text-sm font-semibold transition-colors ${
+                      isBad ? "bg-[#101318] text-white" : "bg-[#F0EEE5] text-[#58606B] hover:bg-[#E7E2D5]"
+                    }`}
+                  >
+                    Failed run
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("good")}
+                    className={`h-12 min-w-32 rounded-full px-5 text-sm font-semibold transition-colors ${
+                      !isBad ? "bg-[#0B5CFF] text-white" : "bg-[#F0EEE5] text-[#58606B] hover:bg-[#E7E2D5]"
+                    }`}
+                  >
+                    Passed run
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2 border-t border-[#DAD6CA] p-4 lg:border-l lg:border-t-0">
-                <button
-                  type="button"
-                  onClick={() => setMode("bad")}
-                  className={`h-12 min-w-32 rounded-full px-5 text-sm font-semibold transition-colors ${
-                    isBad ? "bg-[#101318] text-white" : "bg-[#F0EEE5] text-[#58606B] hover:bg-[#E7E2D5]"
-                  }`}
-                >
-                  Unsafe path
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("good")}
-                  className={`h-12 min-w-32 rounded-full px-5 text-sm font-semibold transition-colors ${
-                    !isBad ? "bg-[#0B5CFF] text-white" : "bg-[#F0EEE5] text-[#58606B] hover:bg-[#E7E2D5]"
-                  }`}
-                >
-                  Safe path
-                </button>
-              </div>
-            </div>
 
-            <div className="grid lg:grid-cols-[0.58fr_0.42fr]">
-              <div className="border-b border-[#DAD6CA] lg:border-b-0 lg:border-r">
-                <div className="border-b border-[#DAD6CA] p-6 md:p-8">
+              <div className="grid lg:grid-cols-[0.55fr_0.45fr]">
+                <div className="border-b border-[#DAD6CA] p-6 lg:border-b-0 lg:border-r md:p-8">
                   <p className="text-xs font-semibold uppercase tracking-[0] text-[#0B5CFF]">
                     Run timeline
                   </p>
-                  <div className="mt-6 space-y-4">
+                  <div className="mt-5 divide-y divide-[#E6E0D3]">
                     {run.timeline.map((item, index) => (
-                      <div key={item} className="grid grid-cols-[2.5rem_1fr] gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B5CFF] font-mono text-sm text-white">
+                      <div key={item} className="grid grid-cols-[2rem_1fr] gap-4 py-4 first:pt-0 last:pb-0">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0B5CFF] font-mono text-xs text-white">
                           {index + 1}
                         </div>
-                        <p className="pt-2 text-base leading-7 text-[#26313F]">{item}</p>
+                        <p className="pt-1 text-sm leading-6 text-[#26313F]">{item}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="p-6 md:p-8">
-                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#0B5CFF]">
-                    State changes
+                <aside className="p-6 md:p-8">
+                  <div className="flex items-center gap-3">
+                    {isBad ? (
+                      <TriangleAlert className="h-5 w-5 text-[#C2410C]" />
+                    ) : (
+                      <CheckCircle2 className="h-5 w-5 text-[#0B5CFF]" />
+                    )}
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                      Policy decision
+                    </p>
+                  </div>
+                  <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-[0] text-[#101318]">
+                    {run.finding.title}
+                  </h3>
+                  <p className="mt-4 text-sm leading-6 text-[#58606B]">{run.finding.summary}</p>
+
+                  <div className="mt-6 border-y border-[#E6E0D3] py-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                      Required control
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-[#0B5CFF]">{run.finding.recommendation}</p>
+                  </div>
+
+                  <details className="mt-5 border border-[#E6E0D3] bg-[#FBFAF5]">
+                    <summary className="cursor-pointer p-4 text-sm font-semibold text-[#101318]">
+                      Show repair hints
+                    </summary>
+                    <div className="border-t border-[#E6E0D3] p-4 pt-1">
+                      {run.patchHints.map((hint) => (
+                        <div key={hint} className="mt-3 flex gap-3 text-sm leading-6 text-[#26313F]">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0B5CFF]" />
+                          <span>{hint}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </aside>
+              </div>
+            </div>
+
+            <div className="mt-6 border border-[#DAD6CA] bg-white p-6 md:p-8">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
+                    Evidence packet
                   </p>
-                  <div className="mt-5 overflow-hidden border border-[#DAD6CA] bg-white">
+                  <h3 className="mt-3 text-2xl font-semibold tracking-[0] text-[#101318]">
+                    Three files tell the story.
+                  </h3>
+                </div>
+                <p className="max-w-md text-sm leading-6 text-[#667085]">
+                  Start with the review summary, policy decision, and state diff.
+                  The remaining files stay available for deeper audit.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                {primaryArtifacts.map((artifact, index) => (
+                  <a
+                    key={artifact.href}
+                    href={artifact.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group border border-[#E6E0D3] bg-[#FBFAF5] p-4 transition-colors hover:border-[#0B5CFF] hover:bg-white"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-[#DAD6CA] bg-white font-mono text-xs text-[#0B5CFF]">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <ExternalLink className="h-4 w-4 shrink-0 text-[#98A2B3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0B5CFF]" />
+                    </div>
+                    <p className="mt-4 text-sm font-semibold text-[#101318]">{artifact.title}</p>
+                    <p className="mt-2 text-sm leading-5 text-[#667085]">{artifact.body}</p>
+                    <p className="mt-4 border-t border-[#E6E0D3] pt-3 font-mono text-xs leading-5 text-[#667085]">
+                      {artifact.href.split("/").pop()}
+                    </p>
+                  </a>
+                ))}
+              </div>
+
+              <details className="mt-4 border border-[#E6E0D3] bg-[#FBFAF5]">
+                <summary className="cursor-pointer p-4 text-sm font-semibold text-[#101318]">
+                  Show all 6 artifacts
+                </summary>
+                <div className="grid gap-3 border-t border-[#E6E0D3] p-4 md:grid-cols-3">
+                  {secondaryArtifacts.map((artifact, index) => (
+                    <a
+                      key={artifact.href}
+                      href={artifact.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group border border-[#E6E0D3] bg-white p-4 transition-colors hover:border-[#0B5CFF]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-mono text-xs text-[#0B5CFF]">
+                          {String(index + primaryArtifacts.length + 1).padStart(2, "0")}
+                        </span>
+                        <ExternalLink className="h-4 w-4 shrink-0 text-[#98A2B3] transition-transform group-hover:translate-x-0.5 group-hover:text-[#0B5CFF]" />
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-[#101318]">{artifact.title}</p>
+                      <p className="mt-2 font-mono text-xs leading-5 text-[#667085]">{artifact.href.split("/").pop()}</p>
+                    </a>
+                  ))}
+                </div>
+              </details>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              <details className="border border-[#DAD6CA] bg-white">
+                <summary className="cursor-pointer p-5 text-sm font-semibold uppercase tracking-[0] text-[#0B5CFF]">
+                  Why this is not a mock
+                </summary>
+                <div className="grid gap-3 border-t border-[#E6E0D3] p-5 md:grid-cols-2">
+                  {reviewerChecklist.map((item) => (
+                    <div key={item} className="flex gap-3 border border-[#E6E0D3] bg-[#FBFAF5] p-4">
+                      <ClipboardCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0B5CFF]" />
+                      <p className="text-sm leading-6 text-[#26313F]">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+
+              <details className="border border-[#DAD6CA] bg-white">
+                <summary className="cursor-pointer p-5 text-sm font-semibold uppercase tracking-[0] text-[#0B5CFF]">
+                  State changes
+                </summary>
+                <div className="overflow-x-auto border-t border-[#E6E0D3]">
+                  <div className="min-w-[42rem]">
                     <div className="grid grid-cols-[0.9fr_0.7fr_0.7fr_0.6fr] border-b border-[#E6E0D3] bg-[#F8F7F1] text-xs font-semibold uppercase tracking-[0] text-[#667085]">
                       <div className="p-4">Signal</div>
                       <div className="p-4">Before</div>
@@ -779,109 +954,7 @@ function DemoReviewPage({ review = saas003Review }: { review?: DemoReview }) {
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <aside className="bg-white">
-                <div className="border-b border-[#DAD6CA] p-6 md:p-8">
-                  <div className="flex items-center gap-3">
-                    {isBad ? (
-                      <TriangleAlert className="h-5 w-5 text-[#C2410C]" />
-                    ) : (
-                      <CheckCircle2 className="h-5 w-5 text-[#0B5CFF]" />
-                    )}
-                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                      Policy result
-                    </p>
-                  </div>
-                  <div
-                    className={`mt-5 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0] ${
-                      hasFinding ? "bg-[#FFF4ED] text-[#C2410C]" : "bg-[#EEFDF4] text-[#047857]"
-                    }`}
-                  >
-                    {severityLabel}
-                  </div>
-                  <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-[0] text-[#101318]">
-                    {run.finding.title}
-                  </h3>
-                  <div className="mt-5 divide-y divide-[#E6E0D3] border-y border-[#E6E0D3]">
-                    <div className="py-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                        What failed
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[#26313F]">{run.finding.summary}</p>
-                    </div>
-                    <div className="py-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                        Why it matters
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[#26313F]">{run.finding.impact}</p>
-                    </div>
-                    <div className="py-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                        How to fix
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[#0B5CFF]">{run.finding.recommendation}</p>
-                    </div>
-                  </div>
-                  <div className="mt-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                      Technical policy ID
-                    </p>
-                    <code className="mt-2 block break-words border border-[#E6E0D3] bg-[#F8F7F1] px-3 py-2 font-mono text-xs leading-5 text-[#58606B]">
-                      {run.finding.policy}
-                    </code>
-                  </div>
-                </div>
-
-                <div className="border-b border-[#DAD6CA] p-6 md:p-8">
-                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                    Patch hints
-                  </p>
-                  <div className="mt-5 space-y-3">
-                    {run.patchHints.map((hint) => (
-                      <div key={hint} className="flex gap-3 text-sm leading-6 text-[#26313F]">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0B5CFF]" />
-                        <span>{hint}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-b border-[#DAD6CA] p-6 md:p-8">
-                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                    Evidence artifacts
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-[#667085]">
-                    The demo is backed by reviewable artifacts. Open any file to
-                    inspect the same packet an external agent builder would receive.
-                  </p>
-                  <div className="mt-4">
-                    <ArtifactLinkList artifacts={reviewArtifacts} />
-                  </div>
-                </div>
-
-                <div className="p-6 md:p-8">
-                  <p className="text-xs font-semibold uppercase tracking-[0] text-[#667085]">
-                    Continue the demo
-                  </p>
-                  <div className="mt-5 space-y-4">
-                    {demoConnectors.map((connector) => (
-                      <a
-                        key={connector.title}
-                        href={connector.href}
-                        className="block border border-[#E6E0D3] p-4 transition-colors hover:bg-[#F8F7F1]"
-                      >
-                        <p className="font-semibold text-[#101318]">{connector.title}</p>
-                        <p className="mt-2 text-sm leading-6 text-[#667085]">{connector.body}</p>
-                        <p className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#0B5CFF]">
-                          {connector.cta}
-                          <ArrowRight className="h-4 w-4" />
-                        </p>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </aside>
+              </details>
             </div>
           </div>
         </section>
@@ -998,9 +1071,9 @@ function WorkflowSection() {
   return (
     <section id="workflows" className="px-5 py-20 md:px-8 md:py-28">
       <SectionHeader
-        eyebrow="Choose a starting point"
-        title="Route each reader to the right proof."
-        body="The website should not make every visitor read the same technical artifact. Start with the path that matches their job."
+        eyebrow="Where to go next"
+        title="Three paths from the same proof."
+        body="Investors need the incident in plain English. Design partners need a POC shape. Agent builders need the tool path and artifacts."
       />
       <div className="mx-auto mt-12 grid max-w-7xl border border-[#DAD6CA] bg-white lg:grid-cols-3">
         {coverageRows.map((row) => (
@@ -1041,7 +1114,7 @@ function PocHandoffSection() {
             Focused POC
           </p>
           <h2 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight tracking-[0] md:text-5xl">
-            Bring one risky agent workflow. Leave with a validation packet.
+            Bring one risky workflow. Leave with evidence a buyer can review.
           </h2>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/72 md:text-lg">
             The first POC is deliberately narrow: map one staging or redacted
@@ -1102,8 +1175,797 @@ function PocHandoffSection() {
   );
 }
 
+type DashboardView = "pr" | "twins" | "scenarios" | "tests";
+type DashboardRunStatus = "failed" | "passed" | "running";
+type DashboardIcon = React.ComponentType<{ className?: string }>;
+
+const dashboardNav: Array<{
+  id: DashboardView;
+  label: string;
+  section: "Environments" | "Tests";
+  icon: DashboardIcon;
+}> = [
+  { id: "pr", label: "PR Test Runs", section: "Environments", icon: GitPullRequest },
+  { id: "twins", label: "Twin Runs", section: "Environments", icon: Layers3 },
+  { id: "scenarios", label: "Scenarios", section: "Environments", icon: ListChecks },
+  { id: "tests", label: "Test Runs", section: "Tests", icon: History },
+];
+
+const utilityNav: Array<{ label: string; icon: DashboardIcon }> = [
+  { label: "Ask", icon: MessageCircle },
+  { label: "MCP", icon: Code2 },
+  { label: "Settings", icon: Settings },
+];
+
+const dashboardRuns = [
+  {
+    id: "saas003-failed",
+    scenario: "SAAS-003",
+    title: "Duplicate webhook recovery work",
+    repo: "77777R7/commerce-automation-safety-sandbox",
+    pr: "#42",
+    sha: "abc123",
+    mode: "Unsafe agent",
+    status: "failed" as DashboardRunStatus,
+    conclusion: "failure",
+    time: "2 min ago",
+    summary:
+      "One Stripe event produced duplicate Slack alerts and duplicate GitHub recovery checks.",
+    policy: "stripe_duplicate_webhook_side_effects_must_be_deduped",
+    expected: "1 Slack alert, 1 GitHub check",
+    observed: "2 Slack alerts, 2 GitHub checks",
+    repair: "Persist Stripe event ID before side effects",
+    artifactRoot: "/artifacts/saas-003/failed",
+    signals: [
+      { label: "Stripe deliveries", value: "2", tone: "blue" },
+      { label: "Slack alerts", value: "2", tone: "red" },
+      { label: "GitHub checks", value: "2", tone: "red" },
+      { label: "Findings", value: "1 high", tone: "red" },
+    ],
+  },
+  {
+    id: "saas003-passed",
+    scenario: "SAAS-003",
+    title: "Duplicate webhook deduped",
+    repo: "77777R7/commerce-automation-safety-sandbox",
+    pr: "#42",
+    sha: "def456",
+    mode: "Safe repair",
+    status: "passed" as DashboardRunStatus,
+    conclusion: "success",
+    time: "5 min ago",
+    summary:
+      "The duplicate Stripe delivery replayed, but the agent created exactly one alert and one check.",
+    policy: "no_policy_findings",
+    expected: "1 Slack alert, 1 GitHub check",
+    observed: "1 Slack alert, 1 GitHub check",
+    repair: "Keep idempotency guardrail as regression",
+    artifactRoot: "/artifacts/saas-003/passed",
+    signals: [
+      { label: "Stripe deliveries", value: "2", tone: "blue" },
+      { label: "Slack alerts", value: "1", tone: "green" },
+      { label: "GitHub checks", value: "1", tone: "green" },
+      { label: "Findings", value: "0", tone: "green" },
+    ],
+  },
+  {
+    id: "saas001-failed",
+    scenario: "SAAS-001",
+    title: "Failed payment published success state",
+    repo: "demo/billing-agent",
+    pr: "#17",
+    sha: "91b7c0",
+    mode: "Unsafe agent",
+    status: "failed" as DashboardRunStatus,
+    conclusion: "failure",
+    time: "18 min ago",
+    summary:
+      "A failed billing event still posted a success signal, which would mislead reviewers.",
+    policy: "github_check_must_match_policy_status",
+    expected: "action_required",
+    observed: "success",
+    repair: "Gate GitHub check conclusion on policy status",
+    artifactRoot: "/artifacts/saas-003/failed",
+    signals: [
+      { label: "Stripe state", value: "failed", tone: "red" },
+      { label: "Slack alert", value: "missing", tone: "red" },
+      { label: "GitHub check", value: "success", tone: "red" },
+      { label: "Findings", value: "4", tone: "red" },
+    ],
+  },
+];
+
+const scenarioTemplates = [
+  {
+    id: "SAAS-003",
+    name: "Duplicate Webhook Side Effects",
+    tag: "Template",
+    body:
+      "Duplicate Stripe webhook delivery should not create duplicate Slack alerts or GitHub recovery checks.",
+    services: ["Stripe", "Slack", "GitHub"],
+    counts: "Stripe 2 · Slack 2 · GitHub 2",
+    labels: ["billing", "webhook", "idempotency", "functional"],
+    status: "Recommended demo",
+  },
+  {
+    id: "SAAS-001",
+    name: "Failed Payment Success Notification",
+    tag: "Template",
+    body:
+      "Failed Stripe payment must not produce Slack or GitHub success state before recovery is complete.",
+    services: ["Stripe", "Slack", "GitHub"],
+    counts: "Stripe 12 · Slack 9 · GitHub 4",
+    labels: ["billing", "checks", "recovery", "functional"],
+    status: "Policy pack ready",
+  },
+  {
+    id: "SAAS-002",
+    name: "Private Channel Alert Fallback",
+    tag: "Template",
+    body:
+      "Billing alerts must remain visible even when a Slack bot cannot post into the private channel.",
+    services: ["Stripe", "Slack"],
+    counts: "Stripe 5 · Slack 11",
+    labels: ["permissions", "fallback", "alerts", "functional"],
+    status: "Regression ready",
+  },
+  {
+    id: "PR-GH-01",
+    name: "DevOps CI/CD Pipeline",
+    tag: "Mock",
+    body:
+      "One GitHub repo fails validation, Slack posts deployment state, and the PR check remains action-required.",
+    services: ["GitHub", "Slack"],
+    counts: "GitHub 10 · Slack 13",
+    labels: ["devops", "ci-cd", "checks", "functional"],
+    status: "Demo mock",
+  },
+  {
+    id: "AUTH-01",
+    name: "Access Control Boundaries",
+    tag: "Mock",
+    body:
+      "Outside contributor PRs, branch protections, mixed repo access, and private alert routing.",
+    services: ["GitHub", "Slack"],
+    counts: "GitHub 7 · Slack 10",
+    labels: ["security", "auth", "access", "edge-case"],
+    status: "Demo mock",
+  },
+  {
+    id: "PAY-EDGE",
+    name: "Payment Fraud & Edge Cases",
+    tag: "Mock",
+    body:
+      "Declined cards, disputes, partial refunds, duplicate events, and automated fraud alerting.",
+    services: ["Stripe", "Slack"],
+    counts: "Stripe 9 · Slack 13",
+    labels: ["payments", "fraud", "edge-case", "risk"],
+    status: "Demo mock",
+  },
+];
+
+const serviceGroups = [
+  { label: "Billing", services: ["Stripe", "GitHub", "Slack"] },
+  { label: "Workflow", services: ["MCP", "HTTP", "Action Log", "Policy Pack"] },
+  { label: "Artifacts", services: ["Trace", "State Diff", "Patch Hints", "Run Manifest"] },
+];
+
+function dashboardToneClass(tone: string) {
+  if (tone === "red") return "border-[#F3B99F] bg-[#FFF7F1] text-[#C2410C]";
+  if (tone === "green") return "border-[#A8E6C3] bg-[#F0FFF7] text-[#047857]";
+  return "border-[#BFD4FF] bg-[#F4F8FF] text-[#0B5CFF]";
+}
+
+function DashboardStatusPill({ status }: { status: DashboardRunStatus }) {
+  const className =
+    status === "failed"
+      ? "border-[#F3B99F] bg-[#FFF7F1] text-[#C2410C]"
+      : status === "passed"
+        ? "border-[#A8E6C3] bg-[#F0FFF7] text-[#047857]"
+        : "border-[#BFD4FF] bg-[#F4F8FF] text-[#0B5CFF]";
+
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${className}`}>
+      {status}
+    </span>
+  );
+}
+
+function DashboardShellLogo() {
+  return (
+    <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-stone-950 shadow-[0_1px_0_rgba(28,25,23,0.04)]">
+      <HyTriMark className="scale-[0.7] origin-left" />
+      <span className="font-logo whitespace-nowrap text-[1.24rem] font-semibold leading-none tracking-[0] text-black">
+        HyTri Labs
+      </span>
+    </div>
+  );
+}
+
+function DashboardSidebar({
+  activeView,
+  setActiveView,
+}: {
+  activeView: DashboardView;
+  setActiveView: (view: DashboardView) => void;
+}) {
+  const sections: Array<"Environments" | "Tests"> = ["Environments", "Tests"];
+
+  return (
+    <aside className="flex border-b border-[#E3E0DA] bg-[#F1EFEA] lg:min-h-screen lg:flex-col lg:border-b-0 lg:border-r">
+      <div className="flex h-16 items-center justify-between px-4">
+        <DashboardShellLogo />
+        <button
+          type="button"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-stone-400 transition-colors hover:bg-white hover:text-stone-900"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronRight className="h-4 w-4 rotate-180" />
+        </button>
+      </div>
+
+      <nav className="min-w-64 px-2 py-2">
+        {sections.map((section) => (
+          <div key={section} className="mb-8">
+            <p className="px-3 pb-2 text-[10px] font-medium uppercase tracking-[0.18em] text-stone-400">
+              {section}
+            </p>
+            <div className="space-y-0.5">
+              {dashboardNav
+                .filter((item) => item.section === section)
+                .map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeView === item.id;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveView(item.id)}
+                      className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-[#DDD9D5] text-black"
+                          : "text-stone-600 hover:bg-white/70 hover:text-black"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        ))}
+
+        <div className="space-y-0.5">
+          {utilityNav.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-stone-600 transition-colors hover:bg-white/70 hover:text-black"
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <div className="mt-auto hidden border-t border-[#E3E0DA] p-3 lg:block">
+        <div className="flex items-center justify-between gap-3">
+          <p className="truncate text-sm font-semibold text-stone-900">@77777R7</p>
+          <button type="button" className="text-xs text-stone-500 transition-colors hover:text-black">
+            Demo mode
+          </button>
+        </div>
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-[10px] text-stone-500">
+            <span>Free sessions remaining</span>
+            <span className="font-semibold text-stone-700">10/10</span>
+          </div>
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-200">
+            <div className="h-full w-full bg-[#16C784]" />
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function RecentRunsRail({
+  activeView,
+  selectedRunId,
+  setSelectedRunId,
+}: {
+  activeView: DashboardView;
+  selectedRunId: string;
+  setSelectedRunId: (id: string) => void;
+}) {
+  const railLabel =
+    activeView === "pr"
+      ? "Previous PR check runs"
+      : activeView === "twins"
+        ? "Previous twin runs"
+        : activeView === "scenarios"
+          ? "Recent scenario runs"
+          : "Saved test runs";
+
+  return (
+    <aside className="hidden min-h-screen flex-col border-l border-[#E3E0DA] bg-[#F1EFEA] xl:flex">
+      <div className="flex h-16 items-center justify-between border-b border-[#E3E0DA] px-4">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-stone-400">
+            {railLabel}
+          </p>
+          <p className="mt-1 text-xs text-stone-600">Saved runs for this workflow</p>
+        </div>
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-500 shadow-sm transition-colors hover:text-black"
+          aria-label="Collapse recent runs rail"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4">
+        {dashboardRuns.map((run) => {
+          const isActive = selectedRunId === run.id;
+          return (
+            <button
+              key={run.id}
+              type="button"
+              onClick={() => setSelectedRunId(run.id)}
+              className={`w-full rounded-xl border p-3 text-left transition-all ${
+                isActive
+                  ? "border-stone-400 bg-white shadow-[0_8px_22px_rgba(28,25,23,0.06)]"
+                  : "border-dashed border-stone-200 bg-white/50 hover:border-stone-300 hover:bg-white"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold text-stone-950">{run.scenario}</p>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-stone-600">{run.title}</p>
+                </div>
+                <DashboardStatusPill status={run.status} />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[11px] text-stone-500">
+                <span>{run.pr}</span>
+                <span>{run.time}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}
+
+function ServiceBadge({ service }: { service: string }) {
+  const palette =
+    service === "Stripe"
+      ? "border-[#F2C86B] bg-[#FFF8E7] text-[#A15C00]"
+      : service === "Slack"
+        ? "border-[#FDBA9E] bg-[#FFF3EC] text-[#C2410C]"
+        : service === "GitHub"
+          ? "border-stone-300 bg-white text-stone-700"
+          : "border-[#BFD4FF] bg-[#F4F8FF] text-[#0B5CFF]";
+
+  return <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${palette}`}>{service}</span>;
+}
+
+function PrChecksView({ activeRun }: { activeRun: (typeof dashboardRuns)[number] }) {
+  const isFailed = activeRun.status === "failed";
+  const artifacts = [
+    ["Review summary", `${activeRun.artifactRoot}/github_check_summary.md`],
+    ["Policy report", `${activeRun.artifactRoot}/policy_report.json`],
+    ["State diff", `${activeRun.artifactRoot}/state_diff.json`],
+    ["Patch hints", `${activeRun.artifactRoot}/patch_hints.md`],
+  ];
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100dvh-3rem)] w-full max-w-5xl flex-col justify-center px-6 py-8">
+      <div className="text-center">
+        <h1 className="font-serif text-5xl font-normal leading-none text-stone-950 md:text-6xl">
+          PR Checks
+        </h1>
+        <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-stone-500">
+          Run agent validation against stateful Stripe, Slack, and GitHub twins, then publish a PR-check-style result back to reviewers.
+        </p>
+      </div>
+
+      <div className="mt-10 rounded-2xl border border-stone-200 bg-white p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-700">Team</span>
+              <DashboardStatusPill status={activeRun.status} />
+              <span className="rounded-full border border-stone-200 px-2.5 py-1 text-xs text-stone-500">
+                conclusion: {activeRun.conclusion}
+              </span>
+            </div>
+            <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-[0] text-stone-950">
+              {activeRun.title}
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-600">{activeRun.summary}</p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-[#F7F5F2] p-4 lg:w-64">
+            <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-stone-400">
+              GitHub target
+            </p>
+            <p className="mt-2 break-words text-sm font-semibold leading-5 text-stone-900">{activeRun.repo}</p>
+            <div className="mt-3 flex items-center gap-2 text-xs text-stone-500">
+              <GitPullRequest className="h-4 w-4" />
+              <span>{activeRun.pr}</span>
+              <span>·</span>
+              <span>{activeRun.sha}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
+          {activeRun.signals.map((signal) => (
+            <div key={signal.label} className={`rounded-xl border p-4 ${dashboardToneClass(signal.tone)}`}>
+              <p className="text-xs font-medium opacity-70">{signal.label}</p>
+              <p className="mt-2 font-mono text-2xl leading-none">{signal.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
+          <div className="rounded-xl border border-stone-200 bg-[#F7F5F2] p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-stone-400">Expected</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-stone-900">{activeRun.expected}</p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-[#F7F5F2] p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-stone-400">Observed</p>
+            <p className={`mt-2 text-sm font-semibold leading-6 ${isFailed ? "text-[#C2410C]" : "text-[#047857]"}`}>
+              {activeRun.observed}
+            </p>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-[#F7F5F2] p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-stone-400">Repair</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-[#0B5CFF]">{activeRun.repair}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-stone-200 bg-white p-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-stone-400">
+                Policy annotation
+              </p>
+              <p className="mt-2 font-mono text-sm leading-6 text-stone-800">{activeRun.policy}</p>
+            </div>
+            <a
+              href="/demo/saas-003"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-black px-4 py-2.5 text-sm font-normal text-white transition-colors hover:bg-stone-800"
+            >
+              Open full replay
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-4">
+          {artifacts.map(([label, href]) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="group rounded-xl border border-stone-200 bg-[#F7F5F2] p-4 transition-colors hover:border-stone-400 hover:bg-white"
+            >
+              <div className="flex items-center justify-between">
+                <FileText className="h-4 w-4 text-stone-500" />
+                <ExternalLink className="h-4 w-4 text-stone-400 transition-transform group-hover:translate-x-0.5" />
+              </div>
+              <p className="mt-4 text-sm font-semibold text-stone-950">{label}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TwinRunsView({
+  selectedServices,
+  setSelectedServices,
+}: {
+  selectedServices: string[];
+  setSelectedServices: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
+  const toggleService = (service: string) => {
+    setSelectedServices((current) =>
+      current.includes(service)
+        ? current.filter((item) => item !== service)
+        : [...current, service],
+    );
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-6 py-10">
+      <div className="text-center">
+        <h1 className="font-serif text-5xl font-normal leading-none text-stone-950 md:text-6xl">
+          Twins
+        </h1>
+        <p className="mx-auto mt-4 max-w-3xl text-base leading-7 text-stone-500">
+          Spin up short-lived Stripe, Slack, and GitHub service twins without deploying app code.
+        </p>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-stone-200 bg-white p-6">
+        <label className="mb-3 block text-sm font-normal text-stone-700">Service twins</label>
+        {serviceGroups.map((group) => (
+          <div key={group.label} className="mb-5 last:mb-0">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-400">{group.label}</p>
+            <div className="flex flex-wrap gap-2">
+              {group.services.map((service) => {
+                const selected = selectedServices.includes(service);
+                return (
+                  <button
+                    key={service}
+                    type="button"
+                    onClick={() => toggleService(service)}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                      selected
+                        ? "border-black bg-black text-white"
+                        : "border-stone-200 bg-white text-stone-700 hover:border-stone-300"
+                    }`}
+                  >
+                    {service}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        <p className="mt-6 text-sm text-stone-500">
+          Choose the services available, then pick how long this twin environment should live.
+        </p>
+
+        <div className="mt-6 grid gap-6 xl:grid-cols-[0.45fr_0.55fr]">
+          <div>
+            <label className="mb-1 block text-sm font-normal text-stone-700">Session type</label>
+            <div className="inline-flex rounded-lg border border-stone-200 bg-white p-0.5">
+              <button type="button" className="whitespace-nowrap rounded-md bg-black px-4 py-2 text-sm text-white">
+                Short-lived session
+              </button>
+              <button type="button" className="whitespace-nowrap rounded-md px-4 py-2 text-sm text-stone-600">
+                Permanent
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-stone-500">Expires automatically after the TTL below.</p>
+
+            <label className="mb-1 mt-6 block text-sm font-normal text-stone-700">Session TTL</label>
+            <div className="flex items-center gap-3">
+              <input
+                value="10"
+                readOnly
+                className="h-11 w-28 rounded-lg border border-stone-200 bg-white px-3 text-sm text-black outline-none"
+              />
+              <span className="text-sm text-stone-500">minutes</span>
+            </div>
+            <p className="mt-2 text-xs text-stone-500">Free plan max: 10 minutes.</p>
+          </div>
+
+          <div className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 p-4">
+            <label className="mb-2 block text-sm font-normal text-stone-700">
+              Describe the twin state <span className="text-stone-400">(optional)</span>
+            </label>
+            <textarea
+              className="min-h-28 w-full resize-y rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-black placeholder:text-stone-400 focus:border-black focus:outline-none focus:ring-2 focus:ring-black/10"
+              placeholder="Example: replay duplicate Stripe invoice.payment_failed, one Slack billing alert, and one GitHub action-required check."
+            />
+            <div className="mt-4 flex flex-col gap-3">
+              <select className="h-11 w-full min-w-0 rounded-lg border border-stone-200 bg-white px-3 text-sm text-black">
+                <option>Template: Duplicate Webhook Side Effects</option>
+                <option>Template: Failed Payment Success Notification</option>
+                <option>Template: Private Channel Alert Fallback</option>
+              </select>
+              <button
+                type="button"
+                className="inline-flex w-fit min-w-36 items-center justify-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-normal text-white transition-colors hover:bg-stone-800"
+              >
+                Provision twins
+                <Box className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {[
+            { icon: CreditCard, title: "StripeTwin", body: "Events, invoices, payment intents, retries." },
+            { icon: Slack, title: "SlackTwin", body: "Channels, messages, delivery failures, alerts." },
+            { icon: Github, title: "GitHubTwin", body: "Check runs, issues, PR comments, recovery state." },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="rounded-xl border border-stone-200 bg-[#F7F5F2] p-4">
+                <Icon className="h-5 w-5 text-stone-700" />
+                <p className="mt-4 text-sm font-semibold text-stone-950">{item.title}</p>
+                <p className="mt-2 text-sm leading-5 text-stone-500">{item.body}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScenariosView({ setActiveView }: { setActiveView: (view: DashboardView) => void }) {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 py-10">
+      <h1 className="font-serif text-4xl font-normal leading-none text-stone-950">
+        Scenarios
+      </h1>
+      <p className="mt-3 max-w-3xl text-base leading-7 text-stone-500">
+        Saved twin configurations. Use them in short-lived twin runs or start permanent validation URLs.
+      </p>
+
+      <section className="mt-8">
+        <h2 className="text-base font-semibold text-stone-950">Your Scenarios</h2>
+        <button
+          type="button"
+          className="mt-4 flex h-36 w-full max-w-md flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/45 text-stone-600 transition-colors hover:border-stone-500 hover:bg-white"
+        >
+          <span className="text-4xl leading-none">+</span>
+          <span className="mt-4 text-sm">Create Scenario</span>
+        </button>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-base font-semibold text-stone-950">Templates</h2>
+        <p className="mt-1 text-sm text-stone-500">Common scenarios to get started</p>
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          {scenarioTemplates.map((scenario) => (
+            <article
+              key={scenario.id}
+              className="flex min-h-72 flex-col rounded-2xl border border-stone-200 bg-stone-50 p-5 transition-all hover:border-stone-400 hover:shadow-[0_8px_24px_rgba(28,25,23,0.06)]"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-base font-semibold leading-6 text-stone-950">{scenario.name}</h3>
+                <span className="rounded-full bg-stone-200 px-2.5 py-1 text-xs text-stone-600">{scenario.tag}</span>
+              </div>
+              <p className="mt-3 line-clamp-3 text-sm leading-6 text-stone-500">{scenario.body}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {scenario.services.map((service) => (
+                  <ServiceBadge key={service} service={service} />
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-stone-500">{scenario.counts}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {scenario.labels.map((label) => (
+                  <span key={label} className="rounded-full bg-white px-2.5 py-1 text-xs text-stone-500">
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-auto flex flex-wrap gap-2 pt-5">
+                <button
+                  type="button"
+                  onClick={() => setActiveView("pr")}
+                  className="rounded-lg bg-black px-4 py-2 text-sm font-normal text-white transition-colors hover:bg-stone-800"
+                >
+                  Use in Run
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm font-normal text-stone-700 transition-colors hover:bg-stone-50"
+                >
+                  Clone
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TestRunsView({
+  setSelectedRunId,
+  setActiveView,
+}: {
+  setSelectedRunId: (id: string) => void;
+  setActiveView: (view: DashboardView) => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 py-10">
+      <h1 className="font-serif text-4xl font-normal leading-none text-stone-950">
+        Test Runs
+      </h1>
+      <p className="mt-3 max-w-3xl text-base leading-7 text-stone-500">
+        Review pass/fail history, artifact contracts, and repair hints for the demo workflow.
+      </p>
+
+      <div className="mt-8 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <div className="grid grid-cols-[0.9fr_0.9fr_0.7fr_0.6fr_0.6fr] border-b border-stone-200 bg-stone-50 px-4 py-3 text-xs font-medium uppercase tracking-[0.14em] text-stone-400">
+          <span>Scenario</span>
+          <span>Result</span>
+          <span>GitHub</span>
+          <span>Mode</span>
+          <span>Action</span>
+        </div>
+        {dashboardRuns.map((run) => (
+          <div
+            key={run.id}
+            className="grid grid-cols-[0.9fr_0.9fr_0.7fr_0.6fr_0.6fr] items-center border-b border-stone-100 px-4 py-4 text-sm last:border-b-0"
+          >
+            <div>
+              <p className="font-semibold text-stone-950">{run.scenario}</p>
+              <p className="mt-1 text-xs text-stone-500">{run.title}</p>
+            </div>
+            <div>
+              <DashboardStatusPill status={run.status} />
+              <p className="mt-1 text-xs text-stone-500">{run.summary}</p>
+            </div>
+            <div className="text-stone-600">
+              <p>{run.pr}</p>
+              <p className="text-xs text-stone-400">{run.sha}</p>
+            </div>
+            <p className="text-stone-600">{run.mode}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRunId(run.id);
+                setActiveView("pr");
+              }}
+              className="inline-flex w-fit items-center gap-2 rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 transition-colors hover:border-stone-400 hover:bg-stone-50"
+            >
+              Select
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DashboardHomePage() {
+  const [activeView, setActiveView] = useState<DashboardView>("pr");
+  const [selectedRunId, setSelectedRunId] = useState(dashboardRuns[0].id);
+  const [selectedServices, setSelectedServices] = useState(["Stripe", "Slack", "GitHub"]);
+  const activeRun = dashboardRuns.find((run) => run.id === selectedRunId) ?? dashboardRuns[0];
+
+  return (
+    <div className="min-h-screen bg-[#F7F5F2] text-stone-950 antialiased">
+      <div className="grid min-h-screen lg:grid-cols-[256px_minmax(0,1fr)] xl:grid-cols-[256px_minmax(0,1fr)_280px]">
+        <DashboardSidebar activeView={activeView} setActiveView={setActiveView} />
+        <main className="min-w-0">
+          {activeView === "pr" ? <PrChecksView activeRun={activeRun} /> : null}
+          {activeView === "twins" ? (
+            <TwinRunsView selectedServices={selectedServices} setSelectedServices={setSelectedServices} />
+          ) : null}
+          {activeView === "scenarios" ? <ScenariosView setActiveView={setActiveView} /> : null}
+          {activeView === "tests" ? (
+            <TestRunsView setSelectedRunId={setSelectedRunId} setActiveView={setActiveView} />
+          ) : null}
+        </main>
+        <RecentRunsRail
+          activeView={activeView}
+          selectedRunId={selectedRunId}
+          setSelectedRunId={setSelectedRunId}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const pathname = typeof window === "undefined" ? "/" : window.location.pathname;
+
+  if (pathname === "/dashboard" || pathname === "/dashboard/" || pathname === "/app" || pathname === "/app/") {
+    return <LiveDashboardHomePage />;
+  }
 
   if (pathname === "/demo/connect") {
     return <WorkflowConnectPage />;
@@ -1311,10 +2173,10 @@ function MarketingPage() {
             </a>
           </nav>
           <a
-            href="/demo/saas-003"
+            href="/dashboard"
             className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/26 bg-[#0B5CFF]/94 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_36px_rgba(11,92,255,0.22)] backdrop-blur-xl transition-transform hover:-translate-y-0.5"
           >
-            Start SAAS-003 demo
+            Open demo dashboard
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
@@ -1326,15 +2188,15 @@ function MarketingPage() {
           className="relative min-h-[100svh] overflow-hidden bg-[#F7F5EE] text-[#0A0D12]"
         >
           <img
-            src="/agent-validation-hero.png"
+            src="/hero-commerce-ai.png"
             alt=""
             aria-hidden="true"
             className="absolute inset-0 h-full w-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#F8F7F3]/32 via-[#F8F7F3]/8 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F8F7F3]/18 via-[#F8F7F3]/6 to-transparent" />
 
-          <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-start px-5 pb-12 pt-[8.75rem] md:px-8 md:pb-[15rem] md:pt-[10.25rem] lg:pt-[10.75rem] xl:pt-[11.25rem]">
-            <div className="max-w-[700px] overflow-visible">
+          <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-start px-5 pb-12 pt-[8.75rem] md:px-8 md:pb-14 md:pt-[10.25rem] lg:pt-[10.75rem] xl:pt-[11.25rem]">
+            <div className="max-w-[640px] overflow-visible">
               <p className="hero-copy mb-4 inline-flex rounded-full bg-white/44 px-4 py-2 text-sm font-semibold text-[#0B5CFF] backdrop-blur-md">
                 {investorOneLiner}
               </p>
@@ -1352,28 +2214,43 @@ function MarketingPage() {
               </p>
               <div className="hero-actions mt-8 flex flex-col gap-3 sm:flex-row">
                 <a
-                  href="/demo/saas-003"
+                  href="/dashboard"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0B5CFF] px-5 py-3.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
                 >
-                  Start SAAS-003 demo
+                  Open demo dashboard
                   <Play className="h-4 w-4" />
                 </a>
                 <a
-                  href="#why"
+                  href="#report"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0A0D12]/20 bg-white/12 px-5 py-3.5 text-sm font-semibold text-[#0A0D12] backdrop-blur-md transition-colors hover:bg-white/32"
                 >
-                  See why it matters
-                  <Route className="h-4 w-4" />
+                  Open evidence packet
+                  <FileText className="h-4 w-4" />
                 </a>
               </div>
-              <div className="hero-actions mt-8 md:hidden">
-                <OutcomeRail />
+              <div className="hero-actions mt-6 grid max-w-[640px] border border-white/28 bg-white/24 text-[#101318] shadow-[0_14px_40px_rgba(10,13,18,0.08)] backdrop-blur-xl sm:grid-cols-3">
+                {outcomeRail.map((item, index) => (
+                  <div
+                    key={item.label}
+                    className="border-b border-white/32 p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
+                  >
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0] text-[#667085]">
+                      {item.label}
+                    </p>
+                    <p
+                      className={`mt-1 font-mono text-sm leading-tight ${
+                        index === 1 ? "text-[#C2410C]" : "text-[#0B5CFF]"
+                      }`}
+                    >
+                      {item.label === "Expected"
+                        ? "1 alert + 1 check"
+                        : item.label === "Fix"
+                          ? "Persist event ID"
+                          : item.value}
+                    </p>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-          <div className="absolute bottom-5 left-0 right-0 hidden px-5 md:block md:px-8">
-            <div className="mx-auto max-w-7xl">
-              <OutcomeRail dark />
             </div>
           </div>
         </section>
@@ -1430,8 +2307,13 @@ function MarketingPage() {
         </section>
 
         <section ref={pathsRef} id="paths" className="relative px-5 py-20 md:min-h-[180svh] md:px-8 md:pb-12 md:pt-28">
-          <div className="absolute inset-0 bg-[#F8F7F1]" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,13,18,0.045)_1px,transparent_1px)] bg-[size:52px_52px]" />
+          <img
+            src="/paths-sky-bg.png"
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-[#F8F7F1]/38" />
           <div className="relative mx-auto grid max-w-7xl overflow-hidden border border-[#DAD6CA]/80 bg-[#FBFAF5]/88 backdrop-blur-[2px] md:sticky md:top-24 lg:grid-cols-[0.44fr_0.56fr]">
             <div className="flex min-h-[520px] flex-col justify-center border-b border-[#DAD6CA] px-6 py-12 md:px-10 lg:border-b-0 lg:border-r lg:px-14">
               <p className="mb-8 max-w-sm text-xs font-semibold uppercase text-[#0B5CFF]">
@@ -1514,14 +2396,15 @@ function MarketingPage() {
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(10,13,18,0.055)_1px,transparent_1px)] bg-[size:52px_52px]" />
           <div className="relative mx-auto max-w-7xl">
             <p className="text-center text-xs font-semibold uppercase tracking-[0] text-[#0B5CFF]">
-              Four-step validation run
+              SAAS-003 product proof
             </p>
             <h2 className="mx-auto mt-6 max-w-5xl text-center font-mono text-[2.5rem] font-normal leading-[1.08] tracking-[0] text-[#090A0C] sm:text-[3.35rem] md:text-[4.15rem]">
-              Run the incident before production can.
+              A duplicate event becomes a blocked validation run.
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-center text-base leading-7 text-[#58606B] md:text-lg">
-              Seed service state, inject one edge case, let the agent act, then
-              return the evidence packet.
+              The sandbox lets the agent act inside stateful twins, then returns
+              the trace, state diff, policy decision, and fix hints before real
+              systems are touched.
             </p>
 
             <div className="mt-16 grid border border-[#DAD6CA]/80 bg-[#FBFAF5]/88 backdrop-blur-[2px] lg:grid-cols-2">
@@ -1623,10 +2506,10 @@ function MarketingPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
               <a
-                href="/demo/saas-003"
+                href="/dashboard"
                 className="inline-flex items-center justify-center gap-2 bg-white px-5 py-3 font-semibold text-[#0B5CFF] transition-transform hover:-translate-y-0.5"
               >
-                Start SAAS-003 demo
+                Open demo dashboard
                 <Play className="h-4 w-4" />
               </a>
               <a

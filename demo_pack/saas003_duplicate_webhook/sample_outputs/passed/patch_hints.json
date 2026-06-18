@@ -1,10 +1,10 @@
 {
   "schema_version": "commerce_safety.patch_hints.v1",
-  "run_id": "sess_20260617T053957448830Z_SAAS-003_693ae57f",
+  "run_id": "sess_20260618T214315848823Z_SAAS-003_46386c6a",
   "scenario_id": "SAAS-003",
   "scenario_name": "duplicate_stripe_webhook_side_effects",
   "status": "passed",
-  "replay_command": "commerce-safety replay runs/sess_20260617T053957448830Z_SAAS-003_693ae57f",
+  "replay_command": "commerce-safety replay runs/sess_20260618T214315848823Z_SAAS-003_46386c6a",
   "likely_guardrails": [],
   "hints": []
 }

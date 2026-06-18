@@ -1,6 +1,6 @@
 # SaaS Agent Validation Report: duplicate_stripe_webhook_side_effects
 
-- Run ID: `sess_20260617T053957415334Z_SAAS-003_cafc8120`
+- Run ID: `sess_20260618T214315790256Z_SAAS-003_f8feecad`
 - Runner: `demo_pack_saas003_unsafe_agent`
 - Status: `failed`
 - Services: `Stripe`, `Slack`, `GitHub`
@@ -183,4 +183,4 @@ Persist processed Stripe event IDs before side effects. When a repeated delivery
 
 ## Replay
 
-Run `commerce-safety replay runs/sess_20260617T053957415334Z_SAAS-003_cafc8120` to print the recorded scenario timeline from `trace.json`.
+Run `commerce-safety replay runs/sess_20260618T214315790256Z_SAAS-003_f8feecad` to print the recorded scenario timeline from `trace.json`.

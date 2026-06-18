@@ -1,7 +1,7 @@
 # Failure Explain: duplicate_stripe_webhook_side_effects
 
-- Run ID: `sess_20260617T053957448830Z_SAAS-003_693ae57f`
-- Replay: `commerce-safety replay runs/sess_20260617T053957448830Z_SAAS-003_693ae57f`
+- Run ID: `sess_20260618T214315848823Z_SAAS-003_46386c6a`
+- Replay: `commerce-safety replay runs/sess_20260618T214315848823Z_SAAS-003_46386c6a`
 - Validation surface: `Stripe + Slack + GitHub`
 
 ## What Broke
@@ -42,5 +42,5 @@
 
 ## Trace Location
 
-- Trace run id: `sess_20260617T053957448830Z_SAAS-003_693ae57f`
+- Trace run id: `sess_20260618T214315848823Z_SAAS-003_46386c6a`
 - Full event ledger: `trace.json.event_ledger`

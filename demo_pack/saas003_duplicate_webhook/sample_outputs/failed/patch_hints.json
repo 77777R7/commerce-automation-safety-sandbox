@@ -1,10 +1,10 @@
 {
   "schema_version": "commerce_safety.patch_hints.v1",
-  "run_id": "sess_20260617T053957415334Z_SAAS-003_cafc8120",
+  "run_id": "sess_20260618T214315790256Z_SAAS-003_f8feecad",
   "scenario_id": "SAAS-003",
   "scenario_name": "duplicate_stripe_webhook_side_effects",
   "status": "failed",
-  "replay_command": "commerce-safety replay runs/sess_20260617T053957415334Z_SAAS-003_cafc8120",
+  "replay_command": "commerce-safety replay runs/sess_20260618T214315790256Z_SAAS-003_f8feecad",
   "likely_guardrails": [
     "Persist processed Stripe event IDs before creating Slack or GitHub side effects.",
     "Skip repeated webhook deliveries when the Stripe event ID was already handled.",

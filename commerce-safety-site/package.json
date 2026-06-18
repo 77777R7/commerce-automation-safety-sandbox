@@ -8,8 +8,11 @@
     "prebuild": "npm run sync:artifacts",
     "build": "vite build",
     "dev": "vite --host 127.0.0.1",
+    "api:dashboard": "node scripts/dashboard-api.mjs",
+    "dev:dashboard": "node scripts/dev-dashboard.mjs",
     "serve:spa": "node scripts/serve-spa.mjs",
-    "preview:local": "npm run build && node scripts/serve-spa.mjs --dir dist --host 127.0.0.1 --port 5175"
+    "preview:local": "npm run build && node scripts/serve-spa.mjs --dir dist --host 127.0.0.1 --port 5175",
+    "preview:dashboard": "npm run build && node scripts/dashboard-api.mjs --static-dir dist --host 127.0.0.1 --port 5175"
   },
   "dependencies": {
     "lucide-react": "0.487.0",
